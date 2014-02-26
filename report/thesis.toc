@@ -1,0 +1,13 @@
+\boolfalse {citerequest}\boolfalse {citetracker}\boolfalse {pagetracker}
+\defcounter {refsection}{0}
+\contentsline {chapter}{\chapternumberline {1}Introduction}{1}
+\defcounter {refsection}{0}
+\contentsline {chapter}{\chapternumberline {2}Background}{2}
+\defcounter {refsection}{0}
+\contentsline {chapter}{\chapternumberline {3}Game Theory Resource Manager}{3}
+\defcounter {refsection}{0}
+\contentsline {chapter}{\chapternumberline {4}Implementation}{4}
+\defcounter {refsection}{0}
+\contentsline {chapter}{\chapternumberline {5}Results}{5}
+\defcounter {refsection}{0}
+\contentsline {chapter}{\chapternumberline {6}Conclusion}{6}
