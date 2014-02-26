@@ -1,0 +1,44 @@
+\documentclass{LTHthesis}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}  %% Comment if you are not using utf8
+\usepackage{mathptmx, helvet}
+%\usepackage[swedish]{babel}  %% aktivera om rapporten är på svenska
+
+\usepackage{graphicx}
+
+%\addbibresource{mybib.bib}  %%  Comment if you don't want to use bibtex.
+\usepackage{titlesec}
+\titleformat{\chapter}
+  {\normalfont\LARGE\bfseries}{\thechapter}{1em}{}
+\titlespacing*{\chapter}{0pt}{3.5ex plus 1ex minus .2ex}{2.3ex plus .2ex}
+\begin{document}
+\begin{titlepages}
+\author{Fredrik Johnsson}
+\title{Resource management and prioritization in an embedded Linux system}
+\year{2014}
+\month{June}
+\TFRT{9999}  %%  You will get the number from the department.
+\printer{Media-Tryck}  %% Probably. You may get other information from the department.
+\end{titlepages}
+\setcounter{page}{1}
+\pagenumbering{roman}
+\chapter*{Abstract}
+A condensed decscription of my work.
+\chapter*{Acknowledgements}
+These people helped me a lot with my work.
+\newpage
+\tableofcontents
+\newpage
+\setcounter{page}{1}
+\pagenumbering{arabic}
+\chapter{Introduction}
+This is a description of my work.
+%%\cite{ast_wit2011}.
+\chapter{Background}
+It is becoming more common to have multiple resource intensive services running in Axis cameras.
+\chapter{Game Theory Resource Manager}
+\chapter{Implementation}
+\chapter{Results}
+\chapter{Conclusion}
+\printbibliography  %% Comment if you don't want to use bibtex
+\end{document}
