@@ -295,7 +295,7 @@
   \renewcommand\month[1]{\renewcommand\@month@{##1}}
   \renewcommand\year[1]{\renewcommand\@year@{##1}}
   \renewcommand\title[1]{\newcommand\@title@{##1}}
-  \renewcommand\author{\newcommand\@author@{##1}}
+  \renewcommand\author[1]{\newcommand\@author@{##1}}
   \newcommand\TFRT[1]{\newcommand\@TFRT@{##1}}
   \newcommand*\ThesisType[1]{\renewcommand*\@type@{##1}}
   \newcommand*\ISBNprint[1]{\renewcommand*\@ISBN@print{##1}}

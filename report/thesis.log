@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2014.2.17)  24 FEB 2014 13:40
+This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2014.2.17)  28 FEB 2014 13:39
 entering extended mode
  %&-line parsing enabled.
 **thesis
@@ -967,28 +967,10 @@ Package biblatex Info: Reference segment=0 on input line 14.
 \MPnumerator=\count224
 \everyMPtoPDFconversion=\toks45
 )
-! Illegal parameter number in definition of \author.
-<to be read again> 
-                   1
-l.15 \begin{titlepages}
-                       
-? 
-! Illegal parameter number in definition of \@author@.
-<to be read again> 
-                   1
-l.16 \author
-            {Fredrik Johnsson}
-? 
 LaTeX Font Info:    Try loading font information for T1+phv on input line 22.
-(/usr/share/texmf-texlive/tex/latex/psnfss/t1phv.fd
+ (/usr/share/texmf-texlive/tex/latex/psnfss/t1phv.fd
 File: t1phv.fd 2001/06/04 scalable font definitions for T1/phv.
 )
-! You can't use `macro parameter character #' in vertical mode.
-\@author@ ->##
-              1
-l.22 \end{titlepages}
-                     
-? 
 <LUBWsv.pdf, id=1, 305.67401pt x 375.49817pt>
 File: LUBWsv.pdf Graphic file (type pdf)
  <use LUBWsv.pdf> [1
@@ -1001,14 +983,7 @@ File: omsptm.fd
 )
 LaTeX Font Info:    Font shape `OMS/ptm/m/n' in size <10> not available
 (Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 22.
-
-! You can't use `macro parameter character #' in horizontal mode.
-\@author@ ->##
-              1
-l.22 \end{titlepages}
-                     
-? 
-[2]
+ [2]
 LaTeX Font Info:    Font shape `T1/ptm/bx/n' in size <14.4> not available
 (Font)              Font shape `T1/ptm/b/n' tried instead on input line 25.
  [1
@@ -1020,15 +995,16 @@ LaTeX Font Info:    Font shape `T1/ptm/bx/n' in size <14.4> not available
 
 ]
 LaTeX Font Info:    Try loading font information for T1+pbk on input line 30.
- (/usr/share/texmf-texlive/tex/latex/psnfss/t1pbk.fd
+
+(/usr/share/texmf-texlive/tex/latex/psnfss/t1pbk.fd
 File: t1pbk.fd 2001/06/04 font definitions for T1/pbk.
-)
-(./thesis.toc
+) (./thesis.toc
 LaTeX Font Info:    Font shape `T1/ptm/bx/n' in size <10> not available
 (Font)              Font shape `T1/ptm/b/n' tried instead on input line 3.
 LaTeX Font Info:    Try loading font information for OT1+ztmcm on input line 3.
 
- (/usr/share/texmf-texlive/tex/latex/psnfss/ot1ztmcm.fd
+
+(/usr/share/texmf-texlive/tex/latex/psnfss/ot1ztmcm.fd
 File: ot1ztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OT1/ztmcm.
 )
 LaTeX Font Info:    Try loading font information for OML+ztmcm on input line 3.
@@ -1071,7 +1047,12 @@ LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <6> not available
 
 ] [2
 
-] [3
+]
+LaTeX Font Info:    Font shape `T1/phv/bx/n' in size <10> not available
+(Font)              Font shape `T1/phv/b/n' tried instead on input line 40.
+LaTeX Font Info:    Font shape `T1/phv/bx/n' in size <12> not available
+(Font)              Font shape `T1/phv/b/n' tried instead on input line 40.
+ [3
 
 ]
 [4
@@ -1080,7 +1061,7 @@ LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <6> not available
 
 ]
 
-LaTeX Warning: Empty bibliography on input line 43.
+LaTeX Warning: Empty bibliography on input line 49.
 
 \tf@thm=\write5
 \openout5 = `thesis.thm'.
@@ -1093,21 +1074,22 @@ LaTeX Warning: Empty bibliography on input line 43.
 
  (./thesis.aux) ) 
 Here is how much of TeX's memory you used:
- 9608 strings out of 493857
- 133974 string characters out of 1153305
- 318079 words of memory out of 3000000
- 12756 multiletter control sequences out of 15000+50000
- 35639 words of font info for 60 fonts, out of 3000000 for 9000
+ 9620 strings out of 493857
+ 134122 string characters out of 1153305
+ 319082 words of memory out of 3000000
+ 12766 multiletter control sequences out of 15000+50000
+ 40002 words of font info for 63 fonts, out of 3000000 for 9000
  714 hyphenation exceptions out of 8191
  37i,10n,33p,883b,322s stack positions out of 5000i,500n,10000p,200000b,50000s
 {/usr/share/texmf-texlive/fonts/enc/dvips/base/8r.enc}</usr/sh
 are/texmf-texlive/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texmf-t
 exlive/fonts/type1/urw/bookman/ubkl8a.pfb></usr/share/texmf-texlive/fonts/type1
-/urw/helvetic/uhvr8a.pfb></usr/share/texmf-texlive/fonts/type1/urw/times/utmb8a
-.pfb></usr/share/texmf-texlive/fonts/type1/urw/times/utmr8a.pfb>
-Output written on thesis.pdf (14 pages, 99325 bytes).
+/urw/helvetic/uhvb8a.pfb></usr/share/texmf-texlive/fonts/type1/urw/helvetic/uhv
+r8a.pfb></usr/share/texmf-texlive/fonts/type1/urw/times/utmb8a.pfb></usr/share/
+texmf-texlive/fonts/type1/urw/times/utmr8a.pfb>
+Output written on thesis.pdf (14 pages, 109605 bytes).
 PDF statistics:
- 72 PDF objects out of 1000 (max. 8388607)
+ 76 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
  6 words of extra memory for PDF output out of 10000 (max. 10000000)
 

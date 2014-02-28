@@ -6,7 +6,17 @@
 \defcounter {refsection}{0}
 \contentsline {chapter}{\chapternumberline {3}Game Theory Resource Manager}{3}
 \defcounter {refsection}{0}
+\contentsline {section}{\numberline {3.1}Background}{3}
+\defcounter {refsection}{0}
+\contentsline {section}{\numberline {3.2}Theory}{3}
+\defcounter {refsection}{0}
 \contentsline {chapter}{\chapternumberline {4}Implementation}{4}
+\defcounter {refsection}{0}
+\contentsline {section}{\numberline {4.1}Axis hardware}{4}
+\defcounter {refsection}{0}
+\contentsline {section}{\numberline {4.2}Constraints}{4}
+\defcounter {refsection}{0}
+\contentsline {section}{\numberline {4.3}Code}{4}
 \defcounter {refsection}{0}
 \contentsline {chapter}{\chapternumberline {5}Results}{5}
 \defcounter {refsection}{0}
