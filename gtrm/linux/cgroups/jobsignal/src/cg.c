@@ -25,6 +25,8 @@ void cg_create(const char *group)
 	int retval = mkdir(cg, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
         assert(retval == 0);
 
+/*	UNCOMMENT FOR CPUSET
+
 	char cg_cpus[PATH_SIZE_MAX];
 	snprintf(cg_cpus, PATH_SIZE_MAX, MOUNT_POINT "/cpuset.cpus");
 	FILE *f = fopen(cg_cpus, "r");
@@ -49,6 +51,7 @@ void cg_create(const char *group)
 	setvbuf(f, NULL, _IONBF, 0);
 	fprintf(f, "0");
 	fclose(f);
+*/
 }
 
 void cg_destroy(const char *group)
@@ -131,6 +134,7 @@ void cg_detach_all(const char *group)
 
 void cg_set_cpus_str(const char *group, const char *cpus)
 {
+	return; // delete for cpuset
 	assert(group != NULL);
 	assert(cpus != NULL);
 
@@ -145,6 +149,7 @@ void cg_set_cpus_str(const char *group, const char *cpus)
 
 void cg_set_cpus(const char *group, unsigned int first, unsigned int last)
 {
+	return;	// delete for cpuset 
 	assert(group != NULL);
 	assert(first <= last);
 

@@ -243,7 +243,7 @@
             apps[id_counter].performance, apps[id_counter].weight);
           monitor_application_stop(a);
         } else {
-	  printf("error in gtrm_fun.write_log")
+	  printf("error in gtrm_fun.write_log");
 	}
       }
       fclose(logfile);

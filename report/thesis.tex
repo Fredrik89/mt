@@ -6,7 +6,8 @@
 
 \usepackage{graphicx}
 
-%\addbibresource{mybib.bib}  %%  Comment if you don't want to use bibtex.
+\addbibresource{mybib.bib}  %%  Comment if you don't want to use bibtex.
+%\usepackage{natbib}
 \usepackage{titlesec}
 \titleformat{\chapter}
   {\normalfont\LARGE\bfseries}{\thechapter}{1em}{}
@@ -33,20 +34,24 @@ These people helped me a lot with my work.
 \pagenumbering{arabic}
 \chapter{Introduction}
 This is a description of my work.
-%%\cite{ast_wit2011}.
+%\cite{ast_wit2011}.
 \chapter{Background}
 It is becoming more common to have multiple resource intensive services running in Axis cameras. At the same time the demands are increasing on reliable and consistent video framerate and quality. That means that there is a problem with different services for the same resources. This needs a robust method to manage and prioritize the resources between the different applications. This method must be dynamic and able to scale or close applications, some of which may be deployed after the devices was installed at the customer site.
 
 One method was developed at 
 \chapter{Game Theory Resource Manager}
 \section{Background} %Where it was developed and why and how etc.
+The Game Theory Resource Manager (GTRM) ~\cite{gtrm} was developed at the Department of Automatic Control at Lund University by among others our supervisor and examiner. 
 \section{Theory} %How it works, this should be very detailed
 \chapter{Implementation}
 \section{Axis hardware} %Description of camera and such
 \section{Constraints} %What we decided to do and not to do
-We decided that creating service levels for all the applications would not be a realistic approach.
+We decided that creating service levels for all the applications would not be a realistic approach. This is because there are many different applications, some of which may not even be developed at Axis, and we cannot expect people to modify them to implement the service level features needed. Instead we implemented the service level part only in the video streaming application.
 \section{Code} 
 \chapter{Results}
 \chapter{Conclusion}
 \printbibliography  %% Comment if you don't want to use bibtex
+%\bibliographystyle{plain}
+%\bibliography{mybib}
+\end{document}
 \end{document}

@@ -5,8 +5,8 @@
 
 #define PATH_SIZE_MAX (PATH_MAX)
 
-//#define MOUNT_POINT "/sys/fs/cgroup"
-#define MOUNT_POINT "/mnt/cgroups"
+#define MOUNT_POINT "/sys/fs/cgroup/cpu,cpuacct"
+//#define MOUNT_POINT "/mnt/cgroups"
 
 #endif
 

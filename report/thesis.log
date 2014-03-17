@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2014.2.17)  28 FEB 2014 13:39
+This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=latex 2014.2.17)  17 MAR 2014 10:07
 entering extended mode
  %&-line parsing enabled.
 **thesis
@@ -25,7 +25,7 @@ le document class
 \c@@memmarkcntra=\count80
 (/usr/share/texmf-texlive/tex/generic/oberdiek/ifpdf.sty
 Package: ifpdf 2009/04/10 v2.0 Provides the ifpdf switch (HO)
-Package ifpdf Info: pdfTeX in pdf mode detected.
+Package ifpdf Info: pdfTeX in pdf mode not detected.
 )
 Class memoir Info: An `ifetex' package is being emulated on input line 251.
 
@@ -898,15 +898,28 @@ Package: trig 1999/03/16 v1.09 sin cos tan (DPC)
 (/etc/texmf/tex/latex/config/graphics.cfg
 File: graphics.cfg 2009/08/28 v1.8 graphics configuration of TeX Live
 )
-Package graphics Info: Driver file: pdftex.def on input line 91.
+Package graphics Info: Driver file: dvips.def on input line 91.
 
-(/usr/share/texmf-texlive/tex/latex/pdftex-def/pdftex.def
-File: pdftex.def 2010/03/12 v0.04p Graphics/color for pdfTeX
-\Gread@gobject=\count218
+(/usr/share/texmf-texlive/tex/latex/graphics/dvips.def
+File: dvips.def 1999/02/16 v3.0i Driver-dependant file (DPC,SPQR)
 ))
 \Gin@req@height=\dimen161
 \Gin@req@width=\dimen162
 )
+! Undefined control sequence.
+l.9 \addbibresource
+                   {mybib.bib}  %%  Comment if you don't want to use bibtex.
+? 
+
+! LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.9 \addbibresource{m
+                     ybib.bib}  %%  Comment if you don't want to use bibtex.
+? 
 (/usr/share/texmf-texlive/tex/latex/titlesec/titlesec.sty
 Package: titlesec 2007/08/12 v2.8 Sectioning titles
 \ttl@box=\box30
@@ -925,23 +938,23 @@ Package biblatex Info: ... file 'english.lbx' found.
 (/usr/share/texmf/tex/latex/biblatex/lbx/english.lbx
 File: english.lbx 2010/03/19 v0.9a biblatex localization
 )
-\@quotelevel=\count219
+\@quotelevel=\count218
  (./thesis.aux)
 \openout1 = `thesis.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 14.
-LaTeX Font Info:    ... okay on input line 14.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 14.
-LaTeX Font Info:    ... okay on input line 14.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 14.
-LaTeX Font Info:    ... okay on input line 14.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 14.
-LaTeX Font Info:    ... okay on input line 14.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 14.
-LaTeX Font Info:    ... okay on input line 14.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 14.
-LaTeX Font Info:    ... okay on input line 14.
-LaTeX Font Info:    Try loading font information for T1+ptm on input line 14.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 15.
+LaTeX Font Info:    ... okay on input line 15.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 15.
+LaTeX Font Info:    ... okay on input line 15.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 15.
+LaTeX Font Info:    ... okay on input line 15.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 15.
+LaTeX Font Info:    ... okay on input line 15.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 15.
+LaTeX Font Info:    ... okay on input line 15.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 15.
+LaTeX Font Info:    ... okay on input line 15.
+LaTeX Font Info:    Try loading font information for T1+ptm on input line 15.
 
 (/usr/share/texmf-texlive/tex/latex/psnfss/t1ptm.fd
 File: t1ptm.fd 2001/06/04 font definitions for T1/ptm.
@@ -951,41 +964,27 @@ File: t1ptm.fd 2001/06/04 font definitions for T1/ptm.
 Package biblatex Info: Trying to load bibliographic data...
 Package biblatex Info: ... file 'thesis.bbl' found.
  (./thesis.bbl)
-Package biblatex Info: Reference section=0 on input line 14.
-Package biblatex Info: Reference segment=0 on input line 14.
+Package biblatex Info: Reference section=0 on input line 15.
+Package biblatex Info: Reference segment=0 on input line 15.
+LaTeX Font Info:    Try loading font information for T1+phv on input line 23.
 
-(/usr/share/texmf/tex/context/base/supp-pdf.mkii
-[Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count220
-\scratchdimen=\dimen168
-\scratchbox=\box31
-\nofMPsegments=\count221
-\nofMParguments=\count222
-\everyMPshowfont=\toks44
-\MPscratchCnt=\count223
-\MPscratchDim=\dimen169
-\MPnumerator=\count224
-\everyMPtoPDFconversion=\toks45
-)
-LaTeX Font Info:    Try loading font information for T1+phv on input line 22.
- (/usr/share/texmf-texlive/tex/latex/psnfss/t1phv.fd
+(/usr/share/texmf-texlive/tex/latex/psnfss/t1phv.fd
 File: t1phv.fd 2001/06/04 scalable font definitions for T1/phv.
 )
-<LUBWsv.pdf, id=1, 305.67401pt x 375.49817pt>
-File: LUBWsv.pdf Graphic file (type pdf)
- <use LUBWsv.pdf> [1
+File: LUBWsv.eps Graphic file (type eps)
+ <LUBWsv.eps> [1
 
-{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map} <./LUBWsv.pdf>]
-LaTeX Font Info:    Try loading font information for OMS+ptm on input line 22.
+]
+LaTeX Font Info:    Try loading font information for OMS+ptm on input line 23.
 
 (/usr/share/texmf-texlive/tex/latex/psnfss/omsptm.fd
 File: omsptm.fd 
 )
 LaTeX Font Info:    Font shape `OMS/ptm/m/n' in size <10> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 22.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 23.
  [2]
 LaTeX Font Info:    Font shape `T1/ptm/bx/n' in size <14.4> not available
-(Font)              Font shape `T1/ptm/b/n' tried instead on input line 25.
+(Font)              Font shape `T1/ptm/b/n' tried instead on input line 26.
  [1
 
 
@@ -994,7 +993,7 @@ LaTeX Font Info:    Font shape `T1/ptm/bx/n' in size <14.4> not available
 ] [3] [4
 
 ]
-LaTeX Font Info:    Try loading font information for T1+pbk on input line 30.
+LaTeX Font Info:    Try loading font information for T1+pbk on input line 31.
 
 (/usr/share/texmf-texlive/tex/latex/psnfss/t1pbk.fd
 File: t1pbk.fd 2001/06/04 font definitions for T1/pbk.
@@ -1049,19 +1048,28 @@ LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <6> not available
 
 ]
 LaTeX Font Info:    Font shape `T1/phv/bx/n' in size <10> not available
-(Font)              Font shape `T1/phv/b/n' tried instead on input line 40.
+(Font)              Font shape `T1/phv/b/n' tried instead on input line 43.
 LaTeX Font Info:    Font shape `T1/phv/bx/n' in size <12> not available
-(Font)              Font shape `T1/phv/b/n' tried instead on input line 40.
- [3
+(Font)              Font shape `T1/phv/b/n' tried instead on input line 43.
 
-]
-[4
+REQ:2:bibtex:
+binary=bibtex
+option=-min-crossrefs=2
+infile=thesis
+:REQ
+
+LaTeX Warning: Citation 'gtrm' on page 3 undefined on input line 44.
+
+REQ:1:latex:REQ
+[3
+
+] [4
 
 ] [5
 
 ]
 
-LaTeX Warning: Empty bibliography on input line 49.
+LaTeX Warning: Empty bibliography on input line 53.
 
 \tf@thm=\write5
 \openout5 = `thesis.thm'.
@@ -1072,24 +1080,23 @@ LaTeX Warning: Empty bibliography on input line 49.
 \tf@toc=\write6
 \openout6 = `thesis.toc'.
 
- (./thesis.aux) ) 
-Here is how much of TeX's memory you used:
- 9620 strings out of 493857
- 134122 string characters out of 1153305
- 319082 words of memory out of 3000000
- 12766 multiletter control sequences out of 15000+50000
- 40002 words of font info for 63 fonts, out of 3000000 for 9000
- 714 hyphenation exceptions out of 8191
- 37i,10n,33p,883b,322s stack positions out of 5000i,500n,10000p,200000b,50000s
-{/usr/share/texmf-texlive/fonts/enc/dvips/base/8r.enc}</usr/sh
-are/texmf-texlive/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texmf-t
-exlive/fonts/type1/urw/bookman/ubkl8a.pfb></usr/share/texmf-texlive/fonts/type1
-/urw/helvetic/uhvb8a.pfb></usr/share/texmf-texlive/fonts/type1/urw/helvetic/uhv
-r8a.pfb></usr/share/texmf-texlive/fonts/type1/urw/times/utmb8a.pfb></usr/share/
-texmf-texlive/fonts/type1/urw/times/utmr8a.pfb>
-Output written on thesis.pdf (14 pages, 109605 bytes).
-PDF statistics:
- 76 PDF objects out of 1000 (max. 8388607)
- 0 named destinations out of 1000 (max. 500000)
- 6 words of extra memory for PDF output out of 10000 (max. 10000000)
+ (./thesis.aux)
 
+LaTeX Warning: There were undefined references.
+
+
+Package biblatex Warning: Please (re)run BibTeX on the file(s):
+(biblatex)                thesis.aux
+(biblatex)                and rerun LaTeX afterwards.
+
+ ) 
+Here is how much of TeX's memory you used:
+ 9341 strings out of 493858
+ 130902 string characters out of 1153328
+ 315443 words of memory out of 3000000
+ 12502 multiletter control sequences out of 15000+50000
+ 31523 words of font info for 55 fonts, out of 3000000 for 9000
+ 714 hyphenation exceptions out of 8191
+ 37i,10n,33p,883b,774s stack positions out of 5000i,500n,10000p,200000b,50000s
+
+Output written on thesis.dvi (14 pages, 6644 bytes).
