@@ -1,0 +1,36 @@
+%A=zeros(100,6);
+%fid=fopen(getenv("LOG_NAME"),"o");
+%for i=1:10
+%	A=scanf(fid,
+%end
+ T=dlmread(getenv("LOG_NAME"),",\t");
+
+
+%current_time, performance, service_level, 
+%cpu_requirement, mem_requirement, id);
+
+%T(1:5,1)
+
+
+
+T1 = ones(size(T(:,1)))*T(1,1);
+
+T(:,1)=(T(:,1)-T1)/10^9;
+
+
+subplot(3,2,1);
+plot(T(:,1),T(:,2))
+
+subplot(3,2,2)
+plot(T(:,1),T(:,3))
+
+subplot(3,2,3);
+plot(T(:,1),T(:,4))
+
+subplot(3,2,4);
+plot(T(:,1),T(:,5))
+
+subplot(3,2,5);
+plot(T(:,1),T(:,6))
+
+
