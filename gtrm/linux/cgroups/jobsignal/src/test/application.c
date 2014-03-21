@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <signal.h>
+#include <params.h>
 
 // Using the library:
 #include <jobsignaler.h>
@@ -13,8 +14,10 @@
 #define MINIMUM_SERVICE_LEVEL 0.0001
 
 #define ERROR_APPLICATION 0
-#define LOGGING_APPLICATION 0
+#define LOGGING_APPLICATION -1
 #define EXIT_APPLICATIONFAILURE -1
+
+//#define APP_DEBUG 1
 
 uint id;
 _application_h* myself;
@@ -127,19 +130,55 @@ int main(int argc, char* argv[]) {
     int64_t cpu_requirement = a_cpu * service_level + b_cpu;
     int64_t mem_requirement = a_mem * service_level + b_mem;
 
+
+
+	
+	
     #ifdef LOGGING_APPLICATION
       struct timespec time_info;
       int64_t current_time;
       clock_gettime(CLOCK_REALTIME, &time_info);
       current_time = (int64_t) time_info.tv_sec*1000000000 
         + (int64_t) time_info.tv_nsec;
+
+
+	  //new, use cpuacct to store used cpu time for this job
+	  char cpuacct[20];
+	  sprintf(cpuacct,"%s/app%u/cpuacct.usage",MOUNT_POINT,myself->application_id);
+	  
+	 
+	  #ifdef APP_DEBUG
+	  	printf("cpuacct:%s",cpuacct);	  
+	  #endif
+	  
+      FILE* cpuacctfile = fopen(cpuacct, "r+");	
+
+      int64_t cpu_usage=0;  
+      
+  	if (cpuacctfile!=NULL)
+  	{
+	      fscanf(cpuacctfile,"%lld",&cpu_usage);	    
+	      
+	}
+	else
+	{
+		printf("fil:%s=NULL",cpuacct);
+	}
+	
+	
       char name[10];
       sprintf(name, "%u.log", myself->application_id);
       FILE* logfile = fopen(name, "a+");
-      fprintf(logfile, "%lld, %f, %f, %lld, %lld, %u\n", 
-        (long long int) current_time, performance, service_level, 
+      fprintf(logfile,"%lld, %lld, %f, %f, %lld, %lld, %u\n", 
+        (long long int) cpu_usage,(long long int) current_time, performance, service_level, 
         (long long int) cpu_requirement, (long long int) mem_requirement, id);
+        
+	//reset the cpu time
+	fprintf(cpuacctfile,"%d",0);
+
+
       fclose(logfile);
+      fclose(cpuacctfile);
     #endif
 
     // Do the required work  
