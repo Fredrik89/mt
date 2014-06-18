@@ -4,7 +4,7 @@
 \usepackage{mathptmx, helvet}
 \usepackage{xfrac}
 %\usepackage[swedish]{babel}  %% aktivera om rapporten är på svenska
-
+\usepackage[left=2.5cm,right=2.5cm,top=3cm,bottom=5cm]{geometry}
 \usepackage{graphicx}
 %\Setmaxbibnames{99}
 \addbibresource{mybib.bib}  %%  Comment if you don't want to use bibtex.
@@ -70,7 +70,7 @@ Systemd [sysd] is a system management daemon for Linux and it is the first proce
 Cgroups, abbreviated from control groups, can be used to set the amount of resources, such as CPU or memory, of a process or a group of process' via a virtual file system. Each application can be run as a "service" by specifying a service file which defines many different parameters and options. In this file we can specify which program or programs should be associated with which service and for example how much CPU shall be given to this service. The service file can then be placed in a certain folder in the cgroup file hierarchy. Different folder are used to represent different cgroup controllers or a different combination of controllers. Depending on which controllers are enabled different features are available, such as limiting CPU- and memory requirement. Services can be grouped into different slices and share properties depending on which slice they belong to. One can for example set how much CPU-time that shall be given to the applications in the slice and decide how the applications will divide it amongst themselves.
 
 \section{Video Streaming}
-
+The video streaming is based upon the GStreamer multimedia framework. W
 
 \section{Equipment} %Description of camera and such
 During the project we used two different cameras, the M1033 and the P3367, both manufactured by Axis. We first started using the M1033 because it came with systemd but we later switched to the P3367 because it ran a later version of systemd.
@@ -88,7 +88,7 @@ This is a small camera, connected to the network either wired or wireless. It su
 \begin{figure}
     \centering
     \includegraphics[width=\textwidth]{p3367}
-    \caption{Axis P3367}
+    \caption{Axis P3367, without its casing}
     \label{fig:Piechart}
 \end{figure}
 The Axis P3367 is a fixed dome network camera capable of multiple H.264 streams as well as Motion JPEG streams. It supports various frame rates and resolutions up to 5 MP at 12 FPS and of course HDTV, 1080p at 30 FPS, and has two way audio streaming capabilities. The power is supplied using Power over Ethernet, meaning it does not need a separate power supply, but is instead powered directly from the network cable. It features an ARTPEC-4 system-on-chip, developed by Axis, which contains a single-core CPU running at 400 MHz and a coprocessor dedicated to video analytics.
@@ -218,4 +218,4 @@ The end result would also be presented as nice diagrams and graphs presenting va
 %[socket]      http://infohost.nmt.edu/~eweiss/222_book/222_book/0201433079/ch16lev1sec2.html
 %[p3367]	http://www.axis.com/files/manuals/um_p3367v_49013_en_1211.pdf
 %[artpec-4]	http://www.axis.com/corporate/press/se/releases/viewstory.php?case_id=2374
-
+%[gst]		http://gstreamer.freedesktop.org/
