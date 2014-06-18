@@ -5,7 +5,7 @@
 %\usepackage[swedish]{babel}  %% aktivera om rapporten är på svenska
 
 \usepackage{graphicx}
-
+\Setmaxbibnames{99}
 \addbibresource{mybib.bib}  %%  Comment if you don't want to use bibtex.
 %\usepackage{natbib}
 \usepackage{titlesec}
@@ -66,7 +66,9 @@ The theory of decoupling the resource manager from the service level adaptation 
 The idea behind this way of using a resource manager (RM) and service level (SL) adaptation, separating it from the norm, is to let each application adapt its own SL continuously independent from the RM loop. This is different from the general theory where the SL instead would be handled by the RM. The RM would try and optimize the overall matching function, such as the mean matching function,  using both division of resources and adaptation of SL for all applications supporting it. The applications would then receive calls from the RM requesting a change of their SL.[gtrm, related work]
 
 \section{Systemd and cgroups}
-Systemd [sysd] is a system management daemon for Linux and it is the first process that starts during boot and thus it is given the PID number 1. It implements a lot of features for increased performance and system management. It also has different features for management of resources, using cgroups, which makes it interesting for our project. Cgroups, abbreviated from control groups, can be used to set the amount of resources, such as CPU or memory, of a process or a group of process’.
+Systemd [sysd] is a system management daemon for Linux and it is the first process that starts during boot and thus it is given the PID number 1. It implements a lot of features for increased performance and system management. It also has different features for management of resources, using cgroups, which makes it interesting for our project. 
+
+Cgroups, abbreviated from control groups, can be used to set the amount of resources, such as CPU or memory, of a process or a group of process’. This is done via 
 
 \section{Video Streaming}
 
@@ -92,6 +94,65 @@ The resource management is implemented as a part of systemd, with all of the res
 The whole chain from the application to systemd is pretty long but most of it is managed in “sd-event” which serves as a wrapper around many different IPC events and messages. Our data transferred via sockets is picked up with the help of epoll, which is handled in sd-event. From this we can be notified and read data from the socket descriptor as soon it is available, in an interrupt based fashion. Finally we execute our dispatch function, which we register when the socket communication is established, and contain all the code that we want to execute when we receive a message to our socket. The function first extracts the data from the message, which is the PID of the sending application, its performance, whether it is satisfied or not and the weight attribute. We then update a hashmap which contains all our applications that are managed by GTRM. This data is then used when we calculate the virtual platforms and set the CPUShares in systemds “main-loop”.
 
 \section{Service Level}
+
+\chapter{Use cases}
+For implementation and testing reasons we came up with the following use-cases. In all the use cases we assume that the static slice is under heavy load so that no extra resources are given to the GTRM-slice. 
+\section{Normal mode}
+\begin{enumerate}
+\item The system runs under good conditions, meaning we have enough resources for all applications and the GTRM-slice can run at maximum SL without any problems.
+
+\item The GTRM and SL adaptation will not drag down performance compared to the old system.
+\end{enumerate}
+\section{Balancing a high load caused by video streaming}
+The applications mentioned here are all on the GTRM-slice.
+
+\begin{enumerate}
+\item The camera will film something that causes a high load, for example, a PTZ-camera is moving around or an intense scenery is being filmed.
+
+\item The applications with the worst performance  will adapt and lower their SL (e.g. quality) assuming they have weights setup to do so.
+
+\item The GTRM will increase the resources given to the applications with the worst performance. These resources are taken from other, better performing,  processes on the slice that in turn will lower their SL to accommodate for the change in CPU.
+
+\item When the scenery is “calmer” we will have an overall increase on the SL and the virtual platform will be redistributed.
+
+\item The frame rate will be about the same during the entire procedure.
+\end{enumerate}
+\section{Balancing a high load caused by other applications}
+In this case the static slice starts out not being under full load.
+\begin{enumerate}
+\item The static slice is giving extra resources to the GTRM-slice, making the applications on the GTRM-slice have a higher SL than they normally would.
+\item The resource demand of the applications on the static slice starts to grow. 
+\item The SL of the applications on the GTRM-slice will adapt and lower their SL:s (e.g. quality).
+\item The static slice is done with the more demanding tasks and starts giving extra resources to the GTRM-slice again. Now we will see an increase in the SL and a redistribution of CPU resources to the applications on the GTRM-slice.
+\item The frame rate will be about the same during the entire procedure.
+\item The applications in the static slice will run without any issues.
+\end{enumerate}
+\section{GTRM-slice not running}
+\begin{enumerate}
+\item No applications are running in the GTRM-slice.
+\item The static slice is allowed to use the entire amount of resources if necessary.
+\item Some applications on the GTRM-slice starts to run.
+\item The GTRM-slice will adjust its SL and virtual platforms as in ‘use case 3’ .
+\end{enumerate}
+
+\section{Applications with different weights}
+\begin{enumerate}
+\item Applications with different weights are running in the GTRM-slice. All applications have a good enough performance which means that no adaptation or resource management is running. 
+\item One of the applications performance goes bad.
+\item Resource management and SL adaptation for all applications starts.
+\item The applications with the higher weights adapts mainly by increasing their cpu, which typically goes faster than adjusting the SL, making them reach a good performance faster. At the same time the applications with lower weights changes more slowly toward a better performance and adapts mainly by lowering their SL.
+\item The system reaches a stable point.
+\end{enumerate}
+
+\section{System reaches stable point with some bad performances}
+\begin{enumerate}
+\item A number of applications are running with good performances and no adaptation or resource management is being made.
+\item A new application is started with a default SL.
+\item Resource manager and SL adaptation is started.
+\item The system reaches a stable point where not all applications have a good performance. 
+\item The applications that supports SL adaptation will have lowered this as much as possible.
+\item The GTRM loop will continue to run. The SL adaptation in the applications will not run if the SL is at minimum and the performance is below the defined boundary or if the SL is at maximum and the performance is above the boundary.
+\end{enumerate}
 
 \chapter{Testing}
 The end result will be a working prototype that can demonstrate that the system works and what results that can be expected. These are the main aspects that we want to test.
