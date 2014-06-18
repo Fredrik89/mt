@@ -2,6 +2,7 @@
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}  %% Comment if you are not using utf8
 \usepackage{mathptmx, helvet}
+\usepackage{xfrac}
 %\usepackage[swedish]{babel}  %% aktivera om rapporten är på svenska
 
 \usepackage{graphicx}
@@ -56,9 +57,10 @@ Regarding the resource management, similar approaches have been developed in the
 The resource management is based on the performance of the applications that are running. By calculating the difference between the applications deadline and its execution time we get the matching function of an application. Ideally the matching function should be zero. That means the application has neither too much resources nor too little. If the matching function is positive that means we have too much resources. If it is negative, the application has missed it deadline.
 
 The resource managing consists of two parts:
-
+\subsection{Service Level}
 The Service Level (SL) defines the quality of service of the application. In our case this is the quality of the image, but it can mean different things to different applications. The idea is to change the SL to optimize the utilization of the amount of resources we have. If we don’t have enough resources, resulting in poor performance of our application, we will lower the SL. If we have more resources than we are using, we will instead increase the SL. This will make sure that the application is always presenting valid result in time but with quality as a trade-off. All this is done by the application itself.
 
+\subsection{Resource Manager}
 The resource manager, will also measure the performance of the applications. It will try to distribute the resource in the best possible way to the applications. The resources are modeled as “virtual platforms”, and is basically a percentage of the total available resources. For example the amount of time an application is allowed to use the CPU in proportion to the other applications. Of course “resources” could refer to something other than CPU, such as memory or network-resources, depending on different aspects of the system. The main criteria is that if an application is given more resources it should be able to execute at a higher SL and vice versa.
 
 The theory of decoupling the resource manager from the service level adaptation was developed at the Department of Automation at Lunds University. The resulting resource manager is referred to as Game Theoretic Resource Manager, GTRM. 
@@ -68,7 +70,7 @@ The idea behind this way of using a resource manager (RM) and service level (SL)
 \section{Systemd and cgroups}
 Systemd [sysd] is a system management daemon for Linux and it is the first process that starts during boot and thus it is given the PID number 1. It implements a lot of features for increased performance and system management. It also has different features for management of resources, using cgroups, which makes it interesting for our project. 
 
-Cgroups, abbreviated from control groups, can be used to set the amount of resources, such as CPU or memory, of a process or a group of process’. This is done via 
+Cgroups, abbreviated from control groups, can be used to set the amount of resources, such as CPU or memory, of a process or a group of process' via a virtual file system. Each application can be run as a "service" by specifying a service file which defines many different parameters and options. In this file we can specify which program or programs should be associated with which service and for example how much CPU shall be given to this service. The service file can then be placed in a certain folder in the cgroup file hierarchy. Different folder are used to represent different cgroup controllers or a different combination of controllers. Depending on which controllers are enabled different features are available, such as limiting CPU- and memory requirement. Services can be grouped into different slices and share properties depending on which slice they belong to. One can for example set how much CPU-time that shall be given to the applications in the slice and decide how the applications will divide it amongst themselves.
 
 \section{Video Streaming}
 
@@ -84,9 +86,9 @@ This is a small camera, connected to the network either wired or wireless. It su
 <insert image>
 The Axis P3367 is a fixed dome network camera capable of multiple H.264 streams as well as Motion JPEG streams. It supports various frame rates and resolutions up to 5 MP at 12 FPS and of course HDTV, 1080p at 30 FPS, and has two way audio streaming capabilities. The power is supplied using Power over Ethernet, meaning it does not need a separate power supply, but is instead powered directly from the network cable. It features an ARTPEC-4 system-on-chip, developed by Axis, which contains a single-core CPU running at 400 MHz and a coprocessor dedicated to video analytics.
 \chapter{Implementation}
-
+All code were written in C and cross-compiled using Axis' compiler for the corresponding platform e.g. camera. For the resource allocation different service files and slices were specified, and the resulting plots were generated with Octave.
 \section{Constraints} %What we decided to do and not to do
-We decided that creating service levels for all the applications would not be a realistic approach. This is because there are many different applications, some of which may not even be developed at Axis, and we cannot expect people to modify them to implement the service level features needed. Instead we implemented the service level part only in the video streaming application.
+We decided that creating service levels for all the applications running on the system would not be a realistic approach. This is because there are many different applications, some of which may not even be developed at Axis, and we cannot expect people to modify them to implement the performance measurements and service level features needed. Instead we implemented the service level part only in the video streaming application and on some test application that only does some random computations to stress the system.
 
 \section{Resource Management} 
 The resource management is implemented as a part of systemd, with all of the resource management source code integrated into systemds. If an application has a poor matching function it sends this information to systemd via UNIX-sockets. Sockets represent an endpoint of communication and from these we can obtain a socket descriptor. These are used in the same way as file descriptors by the applications [socket]. Our interprocess communication (IPC) consists of a socket in systemd and one for each application that we are monitoring. From these sockets we can read or write messages between the applications and systemd. This was implemented by more or less copying the “Notify” feature of systemd which is used by certain applications that want to for example notify systemd that they have started or other status changes [sysd-notify].
@@ -94,6 +96,22 @@ The resource management is implemented as a part of systemd, with all of the res
 The whole chain from the application to systemd is pretty long but most of it is managed in “sd-event” which serves as a wrapper around many different IPC events and messages. Our data transferred via sockets is picked up with the help of epoll, which is handled in sd-event. From this we can be notified and read data from the socket descriptor as soon it is available, in an interrupt based fashion. Finally we execute our dispatch function, which we register when the socket communication is established, and contain all the code that we want to execute when we receive a message to our socket. The function first extracts the data from the message, which is the PID of the sending application, its performance, whether it is satisfied or not and the weight attribute. We then update a hashmap which contains all our applications that are managed by GTRM. This data is then used when we calculate the virtual platforms and set the CPUShares in systemds “main-loop”.
 
 \section{Service Level}
+There are two ways of implementing SL, one simpler and one more advanced. The first one simply multiplies the current SL with the matching funtion and multiplies the result with a constant scale factor. This will decrease the service level if the performance i negative and increase it if it is positive. The scaling factor (called epsilon) also makes sure that we don't get too much overshoot. 
+\[sl_i(t+1)= sl_i(t) + \epsilon*(f_i(t)*sl_i(t)) \]
+The way also includes how much the virtual platform of the application has changed. This is calculated as the performance multiplier, PM.
+\[PM_i = (1+f_i)*(vp_i(i+1)/vp(i))\]
+After calculating the performance multiplier the new service level can be calculated like this
+\[sl_i(t+1)=sl_i(t) + (\epsilon*sl_i(t)*PM_i)\]
+
+\section{Resource Allocation}
+<insert piechart>
+Using slices we can set a minimum amount of available resources for the applications in the slice. If the applications under a slice/service don’t use all of the resources given to them, the unused resources are free to be used by other slices. Under each slice there can be sub-slices or services dividing the resources further, building a hierarchy in the cgroups folder. The slices in the pie chart above, represent two different sets of applications. The static green slice consists of applications that won’t be managed by GTRM and simply will share the resources under this slice according to a predefined setting. Good choices of applications to put here would be ones that doesn’t vary much in their resource requirements or ones that have very strict hard deadlines. The second slice, the red GTRM slice, consists of applications that will be managed by the GTRM and that might implement SL adaptation. Good choices of applications to put here would be ones that do vary much in their resource requirements and/or can vary it’s quality in some acceptable way to adapt to it’s available resources.
+
+All applications that are managed by the GTRM are run as services under the GTRM-slice. A service can, just as a slice, reserve a minimum percentage of allocated resources from it’s parent slice.
+
+In the Pie chart above the static slice would be guaranteed a minimum of \sfrac{1}{3} of the total resources while Service1 and Service2 would be given half of the \sfrac{2}{3} reserved by its parent slice, guaranteeing  them a minimum of \sfrac{1}{3} of the total available resources each.
+
+The resources of the applications running in the GTRM-slice will be managed by our GTRM. Some of the applications will have SL capabilities implemented and some will not. The reason for this is mainly because of the scope of our project. We are mainly concerned about using the SL to maintain a steady framerate but ideally all applications running in the GTRM-slice should, if it makes sense to the application, have a SL implemented to put the theory into practice. An extension of the project would be to have the entire system managed by the GTRM and have all applications manage their SL. The weight is the parameter that sets how big part of the adaptation that is made by changing the service level contra changing the amount of resources. By using the weight parameter we can make up for the fact that we can’t change SL of some applications and the GTRM will only manage their resources instead. 
 
 \chapter{Use cases}
 For implementation and testing reasons we came up with the following use-cases. In all the use cases we assume that the static slice is under heavy load so that no extra resources are given to the GTRM-slice. 
