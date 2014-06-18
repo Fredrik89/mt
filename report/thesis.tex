@@ -6,13 +6,10 @@
 %\usepackage[swedish]{babel}  %% aktivera om rapporten är på svenska
 
 \usepackage{graphicx}
-\Setmaxbibnames{99}
+%\Setmaxbibnames{99}
 \addbibresource{mybib.bib}  %%  Comment if you don't want to use bibtex.
 %\usepackage{natbib}
 \usepackage{titlesec}
-\titleformat{\chapter}
-  {\normalfont\LARGE\bfseries}{\thechapter}{1em}{}
-\titlespacing*{\chapter}{0pt}{3.5ex plus 1ex minus .2ex}{2.3ex plus .2ex}
 \begin{document}
 \begin{titlepages}
 \author{Fredrik Johnsson\\Olle Svensson}
@@ -79,11 +76,21 @@ Cgroups, abbreviated from control groups, can be used to set the amount of resou
 During the project we used two different cameras, the M1033 and the P3367, both manufactured by Axis. We first started using the M1033 because it came with systemd but we later switched to the P3367 because it ran a later version of systemd.
 
 \subsection{Axis M1033}
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{m1033}
+    \caption{Axis M1033}
+    \label{fig:Piechart}
+\end{figure}
 This is a small camera, connected to the network either wired or wireless. It supports multiple H.264 streams and Motion JPEG running at a maximum resolution of 800x600 at 30 FPS. It has two way audio streaming, which means it can both record and play audio clips.
-<insert image>
 
 \subsection{Axis P3367}
-<insert image>
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{p3367}
+    \caption{Axis P3367}
+    \label{fig:Piechart}
+\end{figure}
 The Axis P3367 is a fixed dome network camera capable of multiple H.264 streams as well as Motion JPEG streams. It supports various frame rates and resolutions up to 5 MP at 12 FPS and of course HDTV, 1080p at 30 FPS, and has two way audio streaming capabilities. The power is supplied using Power over Ethernet, meaning it does not need a separate power supply, but is instead powered directly from the network cable. It features an ARTPEC-4 system-on-chip, developed by Axis, which contains a single-core CPU running at 400 MHz and a coprocessor dedicated to video analytics.
 \chapter{Implementation}
 All code were written in C and cross-compiled using Axis' compiler for the corresponding platform e.g. camera. For the resource allocation different service files and slices were specified, and the resulting plots were generated with Octave.
@@ -104,7 +111,12 @@ After calculating the performance multiplier the new service level can be calcul
 \[sl_i(t+1)=sl_i(t) + (\epsilon*sl_i(t)*PM_i)\]
 
 \section{Resource Allocation}
-<insert piechart>
+\begin{figure}
+    \centering
+    \includegraphics{piechart.jpeg}
+    \caption{Pie chart describing how we split up our resources}
+    \label{fig:Piechart}
+\end{figure}
 Using slices we can set a minimum amount of available resources for the applications in the slice. If the applications under a slice/service don’t use all of the resources given to them, the unused resources are free to be used by other slices. Under each slice there can be sub-slices or services dividing the resources further, building a hierarchy in the cgroups folder. The slices in the pie chart above, represent two different sets of applications. The static green slice consists of applications that won’t be managed by GTRM and simply will share the resources under this slice according to a predefined setting. Good choices of applications to put here would be ones that doesn’t vary much in their resource requirements or ones that have very strict hard deadlines. The second slice, the red GTRM slice, consists of applications that will be managed by the GTRM and that might implement SL adaptation. Good choices of applications to put here would be ones that do vary much in their resource requirements and/or can vary it’s quality in some acceptable way to adapt to it’s available resources.
 
 All applications that are managed by the GTRM are run as services under the GTRM-slice. A service can, just as a slice, reserve a minimum percentage of allocated resources from it’s parent slice.
@@ -118,7 +130,6 @@ For implementation and testing reasons we came up with the following use-cases. 
 \section{Normal mode}
 \begin{enumerate}
 \item The system runs under good conditions, meaning we have enough resources for all applications and the GTRM-slice can run at maximum SL without any problems.
-
 \item The GTRM and SL adaptation will not drag down performance compared to the old system.
 \end{enumerate}
 \section{Balancing a high load caused by video streaming}
@@ -126,13 +137,9 @@ The applications mentioned here are all on the GTRM-slice.
 
 \begin{enumerate}
 \item The camera will film something that causes a high load, for example, a PTZ-camera is moving around or an intense scenery is being filmed.
-
 \item The applications with the worst performance  will adapt and lower their SL (e.g. quality) assuming they have weights setup to do so.
-
 \item The GTRM will increase the resources given to the applications with the worst performance. These resources are taken from other, better performing,  processes on the slice that in turn will lower their SL to accommodate for the change in CPU.
-
 \item When the scenery is “calmer” we will have an overall increase on the SL and the virtual platform will be redistributed.
-
 \item The frame rate will be about the same during the entire procedure.
 \end{enumerate}
 \section{Balancing a high load caused by other applications}
@@ -184,11 +191,8 @@ There are different things we can do and combine to stress the system in a reali
 \begin{itemize}
 
 \item The first and simplest case is a camera that is still and filming a scenery with minor changes. Here we would like maximal quality of the images since the scene itself does not require a lot of resources 
-
 \item We want to test more complex scenery, for example scenery with a lot of different things going on at the same time. This will stress the video streaming and we want to make sure that if necessary the quality will be reduced in favor for a steady FPS.
-
 \item A moving PTZ-camera will cause a high load when it is moving around. This will cause the whole picture to be redrawn and not partly as when the image is still, and will be the ultimate stress test for the streaming part.
-
 \item We will also stress the CPU and memory by creating different test applications that will be pointless but demanding in terms of resources. Just for the sake of seeing how things turn out during intense loads. Some of the applications will have a linear relationship between computational time and the SL while others will have a non linear one. This matters since the SL adaptation assumes a linear relationship between the SL and the computational time. If the steps in SL are small enough the linear relationship could still be assumed even for non linear ones.
 \end{itemize}
 To demonstrate how cleverly we can manage our resources, we could compare the old system with our version. We have thought of two realistic and demonstratively ways. The first would be to show how the FPS is decreased when we introduce a high load to the old system, and how we can maintain it in the new system. The high load could as an example be a SSL- key generation.
