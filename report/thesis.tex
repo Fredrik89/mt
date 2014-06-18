@@ -20,38 +20,119 @@
 \month{June}
 \TFRT{9999}  %%  You will get the number from the department.
 \printer{Media-Tryck}  %% Probably. You may get other information from the department.
+
 \end{titlepages}
 \setcounter{page}{1}
 \pagenumbering{roman}
+
 \chapter*{Abstract}
-A condensed decscription of my work.
+The problem of limited resources on an Axis camera is handled by a two part solution where a resource manager distributes the available resources and services adapt their service level (SL). This is done in a game theoretic approach where the services are players, varying their SL in order to get a good match between given resources and SL. This SL-adaptation scheme is then implemented in the streaming service on the camera and on some test-services and the resource manager is incorporated into Systemd using Cgroups to implement the distribution of resources.
+
 \chapter*{Acknowledgements}
 These people helped me a lot with my work.
+
 \newpage
 \tableofcontents
 \newpage
+
 \setcounter{page}{1}
 \pagenumbering{arabic}
-\chapter{Introduction}
-This is a description of my work.
-%\cite{ast_wit2011}.
-\chapter{Background}
-It is becoming more common to have multiple resource intensive services running in Axis cameras. At the same time the demands are increasing on reliable and consistent video framerate and quality. That means that there is a problem with different services for the same resources. This needs a robust method to manage and prioritize the resources between the different applications. This method must be dynamic and able to scale or close applications, some of which may be deployed after the devices was installed at the customer site.
 
-One method was developed at 
-\chapter{Game Theory Resource Manager}
-\section{Background} %Where it was developed and why and how etc.
-The Game Theory Resource Manager (GTRM) ~\cite{gtrm} was developed at the Department of Automatic Control at Lund University by among others our supervisor and examiner. 
-\section{Theory} %How it works, this should be very detailed
+\chapter{Introduction} %This is a description of my work.
+\section{Axis}
+Axis is a company founded and based in Lund and it is the global market leader in network video solutions. 
+\section{Problem formulation}
+It is becoming more common to have multiple resource intensive services running in Axis cameras. At the same time, the demands are increasing on reliable and consistent video framerate and quality. That means that there is a problem with different services competing for the same resources. This can result in poor performance of the camera which can be avoided. 
+The solution that we will evaluate is to apply some of the work carried out at the University of Lund, resulting in a resource manager called Game Theoretic Resource Manager. We want to see if it is possible to run this resource manager on an Axis camera running Linux. The goal is to be able to maintain a certain frame-rate by altering the image quality. In theory less image quality should mean less computation time per frame resulting in a higher frame-rate. And also to be able to manage the resources in such a way that we can both guarantee this frame-rate but without blocking other applications from executing at a satisfying level.
+
+\section{Related Work}
+Regarding the resource management, similar approaches have been developed in the past, but the resource manager we are evaluating is unique because it separates the algorithm into two parts, running concurrently resulting in a linear time complexity.
+
+\section{Outline of the report}
+
+\chapter{Background}
+
+\section{Game Theoretic Resource Manager}
+The resource management is based on the performance of the applications that are running. By calculating the difference between the applications deadline and its execution time we get the matching function of an application. Ideally the matching function should be zero. That means the application has neither too much resources nor too little. If the matching function is positive that means we have too much resources. If it is negative, the application has missed it deadline.
+
+The resource managing consists of two parts:
+
+The Service Level (SL) defines the quality of service of the application. In our case this is the quality of the image, but it can mean different things to different applications. The idea is to change the SL to optimize the utilization of the amount of resources we have. If we don’t have enough resources, resulting in poor performance of our application, we will lower the SL. If we have more resources than we are using, we will instead increase the SL. This will make sure that the application is always presenting valid result in time but with quality as a trade-off. All this is done by the application itself.
+
+The resource manager, will also measure the performance of the applications. It will try to distribute the resource in the best possible way to the applications. The resources are modeled as “virtual platforms”, and is basically a percentage of the total available resources. For example the amount of time an application is allowed to use the CPU in proportion to the other applications. Of course “resources” could refer to something other than CPU, such as memory or network-resources, depending on different aspects of the system. The main criteria is that if an application is given more resources it should be able to execute at a higher SL and vice versa.
+
+The theory of decoupling the resource manager from the service level adaptation was developed at the Department of Automation at Lunds University. The resulting resource manager is referred to as Game Theoretic Resource Manager, GTRM. 
+
+The idea behind this way of using a resource manager (RM) and service level (SL) adaptation, separating it from the norm, is to let each application adapt its own SL continuously independent from the RM loop. This is different from the general theory where the SL instead would be handled by the RM. The RM would try and optimize the overall matching function, such as the mean matching function,  using both division of resources and adaptation of SL for all applications supporting it. The applications would then receive calls from the RM requesting a change of their SL.[gtrm, related work]
+
+\section{Systemd and cgroups}
+Systemd [sysd] is a system management daemon for Linux and it is the first process that starts during boot and thus it is given the PID number 1. It implements a lot of features for increased performance and system management. It also has different features for management of resources, using cgroups, which makes it interesting for our project. Cgroups, abbreviated from control groups, can be used to set the amount of resources, such as CPU or memory, of a process or a group of process’.
+
+\section{Video Streaming}
+
+
+\section{Equipment} %Description of camera and such
+During the project we used two different cameras, the M1033 and the P3367, both manufactured by Axis. We first started using the M1033 because it came with systemd but we later switched to the P3367 because it ran a later version of systemd.
+
+\subsection{Axis M1033}
+This is a small camera, connected to the network either wired or wireless. It supports multiple H.264 streams and Motion JPEG running at a maximum resolution of 800x600 at 30 FPS. It has two way audio streaming, which means it can both record and play audio clips.
+<insert image>
+
+\subsection{Axis P3367}
+<insert image>
+The Axis P3367 is a fixed dome network camera capable of multiple H.264 streams as well as Motion JPEG streams. It supports various frame rates and resolutions up to 5 MP at 12 FPS and of course HDTV, 1080p at 30 FPS, and has two way audio streaming capabilities. The power is supplied using Power over Ethernet, meaning it does not need a separate power supply, but is instead powered directly from the network cable. It features an ARTPEC-4 system-on-chip, developed by Axis, which contains a single-core CPU running at 400 MHz and a coprocessor dedicated to video analytics.
 \chapter{Implementation}
-\section{Axis hardware} %Description of camera and such
+
 \section{Constraints} %What we decided to do and not to do
 We decided that creating service levels for all the applications would not be a realistic approach. This is because there are many different applications, some of which may not even be developed at Axis, and we cannot expect people to modify them to implement the service level features needed. Instead we implemented the service level part only in the video streaming application.
-\section{Code} 
+
+\section{Resource Management} 
+The resource management is implemented as a part of systemd, with all of the resource management source code integrated into systemds. If an application has a poor matching function it sends this information to systemd via UNIX-sockets. Sockets represent an endpoint of communication and from these we can obtain a socket descriptor. These are used in the same way as file descriptors by the applications [socket]. Our interprocess communication (IPC) consists of a socket in systemd and one for each application that we are monitoring. From these sockets we can read or write messages between the applications and systemd. This was implemented by more or less copying the “Notify” feature of systemd which is used by certain applications that want to for example notify systemd that they have started or other status changes [sysd-notify].
+
+The whole chain from the application to systemd is pretty long but most of it is managed in “sd-event” which serves as a wrapper around many different IPC events and messages. Our data transferred via sockets is picked up with the help of epoll, which is handled in sd-event. From this we can be notified and read data from the socket descriptor as soon it is available, in an interrupt based fashion. Finally we execute our dispatch function, which we register when the socket communication is established, and contain all the code that we want to execute when we receive a message to our socket. The function first extracts the data from the message, which is the PID of the sending application, its performance, whether it is satisfied or not and the weight attribute. We then update a hashmap which contains all our applications that are managed by GTRM. This data is then used when we calculate the virtual platforms and set the CPUShares in systemds “main-loop”.
+
+\section{Service Level}
+
+\chapter{Testing}
+The end result will be a working prototype that can demonstrate that the system works and what results that can be expected. These are the main aspects that we want to test.
+\begin{itemize}
+\item Can we keep the FPS we want even during high load of the system.
+\item Can we adapt so that other applications can perform well during high loads as well. \ldots
+\end{itemize}
+
+The tests output will consist of logs showing CPU-time for applications along with their service levels, performance and virtual platforms. The CPU-time can differ between how much resources are assigned and how much is actually used and it is of interest to see how much they vary if any. The FPS and video/sound quality are other outputs we can use.
+There are different things we can do and combine to stress the system in a realistic perspective. These things could be seen as testing the use cases and can be combined with each other. 
+\begin{itemize}
+
+\item The first and simplest case is a camera that is still and filming a scenery with minor changes. Here we would like maximal quality of the images since the scene itself does not require a lot of resources 
+
+\item We want to test more complex scenery, for example scenery with a lot of different things going on at the same time. This will stress the video streaming and we want to make sure that if necessary the quality will be reduced in favor for a steady FPS.
+
+\item A moving PTZ-camera will cause a high load when it is moving around. This will cause the whole picture to be redrawn and not partly as when the image is still, and will be the ultimate stress test for the streaming part.
+
+\item We will also stress the CPU and memory by creating different test applications that will be pointless but demanding in terms of resources. Just for the sake of seeing how things turn out during intense loads. Some of the applications will have a linear relationship between computational time and the SL while others will have a non linear one. This matters since the SL adaptation assumes a linear relationship between the SL and the computational time. If the steps in SL are small enough the linear relationship could still be assumed even for non linear ones.
+\end{itemize}
+To demonstrate how cleverly we can manage our resources, we could compare the old system with our version. We have thought of two realistic and demonstratively ways. The first would be to show how the FPS is decreased when we introduce a high load to the old system, and how we can maintain it in the new system. The high load could as an example be a SSL- key generation.
+
+In the second example we could show a scene with both video and audio recording while stressing the camera. In the old system we would have great video quality but very poor sound performance, e.g. impossible to hear anything. But with our version the video quality would be reduced but instead one could hear what is going on as well. To use this as a conclusive experiment, we would also have to make quantitative measures of the audio, for example signal to noise ratio to see how much audio quality would improve.
+
+The end result would also be presented as nice diagrams and graphs presenting various data that we are interested in, such as resources, bitrate and FPS.
+
 \chapter{Results}
+
 \chapter{Conclusion}
+
 \printbibliography  %% Comment if you don't want to use bibtex
 %\bibliographystyle{plain}
 %\bibliography{mybib}
 \end{document}
-\end{document}
+
+%KÄLLOR: 
+%[sysd] 		http://www.freedesktop.org/wiki/Software/systemd/
+%http://0pointer.de/blog/projects/systemd.html
+%[cgropus]	https://www.kernel.org/doc/Documentation/cgroups/cgroups.txt
+%[sysd-notify]	http://www.freedesktop.org/software/systemd/man/systemd-notify.html
+%[socket]      http://infohost.nmt.edu/~eweiss/222_book/222_book/0201433079/ch16lev1sec2.html
+%[p3367]	http://www.axis.com/files/manuals/um_p3367v_49013_en_1211.pdf
+%[artpec-4]	http://www.axis.com/corporate/press/se/releases/viewstory.php?case_id=2374
+
