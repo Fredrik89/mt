@@ -1,4 +1,5 @@
 \documentclass{LTHthesis}
+% !TeX spellcheck = en_GB
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}  %% Comment if you are not using utf8
 \usepackage{mathptmx, helvet}
@@ -24,10 +25,10 @@
 \pagenumbering{roman}
 
 \chapter*{Abstract}
-The problem of limited resources on an Axis camera is handled by a two part solution where a resource manager distributes the available resources and services adapt their service level (SL). This is done in a game theoretic approach where the services are players, varying their SL in order to get a good match between given resources and SL. This SL-adaptation scheme is then implemented in the streaming service on the camera and on some test-services and the resource manager is incorporated into Systemd using Cgroups to implement the distribution of resources.
+The problem of limited resources on an Axis camera is handled by a two part solution where a resource manager (RM) distributes the available resources and where services adapt their service level (SL) in order to let the services finish their jobs on time. This is done in a game theoretic approach where the services are players, varying their SL in order to get a good match between given resources and SL. This SL-adaptation scheme is then implemented on the streaming service on the camera and on some test-services performing simple math operations. The resource manager is incorporated into systemd using CGroups to implement the distribution of resources.
 
 \chapter*{Acknowledgements}
-These people helped me a lot with my work.
+We want to thank our 
 
 \newpage
 \tableofcontents
@@ -40,8 +41,9 @@ These people helped me a lot with my work.
 \section{Axis}
 Axis is a company founded and based in Lund and it is the global market leader in network video solutions. 
 \section{Problem formulation}
-It is becoming more common to have multiple resource intensive services running in Axis cameras. At the same time, the demands are increasing on reliable and consistent video framerate and quality. That means that there is a problem with different services competing for the same resources. This can result in poor performance of the camera which can be avoided. 
-The solution that we will evaluate is to apply some of the work carried out at the University of Lund, resulting in a resource manager called Game Theoretic Resource Manager. We want to see if it is possible to run this resource manager on an Axis camera running Linux. The goal is to be able to maintain a certain frame-rate by altering the image quality. In theory less image quality should mean less computation time per frame resulting in a higher frame-rate. And also to be able to manage the resources in such a way that we can both guarantee this frame-rate but without blocking other applications from executing at a satisfying level.
+It is becoming more common to have multiple resource intensive services running on Axis cameras. At the same time, the demands are increasing on reliable and consistent video frame rate and quality. That means that there is a problem with different services competing for resources like CPU and RAM. This can result in poor performance of the camera under scenarios where the camera is under heavier load than usual, one example being when answering calls from the network. The solution that we will evaluate is an application of the work carried out at the University of Lund, resulting in a resource manager called Game Theoretic Resource Manager and a library that lets services implement the SL adaptation and communication with the RM. The goal is to see if it is possible to run this resource manager on an Axis camera running Linux with the streaming application competing with some test applications for resources. In this test the cameras image quality will be its SL and the inverse of its frame rate the measurement for the time a job takes to finish.
+
+
 
 \section{Related Work}
 Regarding the resource management, similar approaches have been developed in the past, but the resource manager we are evaluating is unique because it separates the algorithm into two parts, running concurrently resulting in a linear time complexity.
