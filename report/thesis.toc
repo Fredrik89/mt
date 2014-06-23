@@ -14,19 +14,19 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {section}{\numberline {2.1}Game Theoretic Resource Manager}{3}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{Service Level}{3}
+\contentsline {subsection}{Service Level adaptation}{3}
 \defcounter {refsection}{0}\relax 
 \contentsline {subsection}{Resource Manager}{4}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {2.2}Systemd and cgroups}{4}
+\contentsline {section}{\numberline {2.2}systemd and cgroups}{4}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {2.3}Video Streaming}{5}
+\contentsline {section}{\numberline {2.3}Video Streaming}{6}
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {2.4}Equipment}{5}
+\contentsline {section}{\numberline {2.4}Equipment}{6}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{Axis M1033}{5}
+\contentsline {subsection}{Axis M1033}{6}
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{Axis P3367}{7}
+\contentsline {subsection}{Axis P3367}{6}
 \defcounter {refsection}{0}\relax 
 \contentsline {chapter}{\chapternumberline {3}Implementation}{9}
 \defcounter {refsection}{0}\relax 

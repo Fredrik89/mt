@@ -53,6 +53,16 @@
   \field{year}{2013}
 \endentry
 
+\entry{cgroups}{online}{}
+  \field{sortinit}{T}
+  \field{title}{title}
+  \verb{url}
+  \verb url
+  \endverb
+  \warn{\item Invalid format of field 'date' \item Invalid format of field
+  'date'}
+\endentry
+
 \lossort
 \endlossort
 

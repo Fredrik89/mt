@@ -26,7 +26,7 @@
 \pagenumbering{roman}
 
 \chapter*{Abstract}
-The problem of limited resources on an Axis camera is handled by a two part solution where a resource manager (RM) distributes the available resources and where services adapt their service level (SL) in order to let the services finish their jobs on time. This is done in a game theoretic approach where the services are players, varying their SL in order to get a good match between given resources and their SL. This SL-adaptation scheme is then implemented on the streaming service on the camera and on some test services performing simple math operations. The resource manager is incorporated into systemd which uses CGroups to implement the distribution of resources.
+The problem of limited resources on an Axis camera is handled by a two part solution where a resource manager (RM) distributes the available resources and where services adapt their service level (SL) in order to let the services finish their jobs on time. This is done in a game theoretic approach where the services are players, varying their SL in order to get a good match between given resources and their SL. This SL-adaptation scheme is then implemented on the streaming service on the camera and on some test services performing simple math operations. The resource manager is incorporated into systemd which uses CGroups \cite{cgroups} to implement the distribution of resources.
 
 \chapter*{Acknowledgements}
 We want to thank our 
@@ -63,16 +63,48 @@ The Service Level (SL) defines the quality of service of the application. In the
 This will make sure that the application is always presenting valid result in time but with quality as a trade-off. This adaptation is done by the application itself.
 
 \subsection{Resource Manager}
-The resource manager, will also measure the performance of the applications. It will try to distribute the resource in the best possible way to the applications. The resources are modeled as “virtual platforms”, and is basically a percentage of the total available resources. For example the amount of time an application is allowed to use the CPU in proportion to the other applications. Of course “resources” could refer to something other than CPU, such as memory or network-resources, depending on different aspects of the system. The main criteria is that if an application is given more resources it should be able to execute at a higher SL and vice versa.
+The resource manager(RM) will also measure the performance of the applications. It will try to distribute the resource in the best possible way to the applications. The resources are modelled as “virtual platforms”, and is basically a percentage of the total available resources. For example the amount of time an application is allowed to use the CPU in proportion to the other applications. Here “resources” could refer to something other than CPU, such as memory or network-resources, depending on different aspects of the system. The main property of the performance is that if an application is given more/less resources it should be able to execute at a higher/lower SL or have a shorter/longer execution time.
 
 The theory of decoupling the resource manager from the service level adaptation was developed at the Department of Automation at Lunds University. The resulting resource manager is referred to as Game Theoretic Resource Manager, GTRM. 
 
-The idea behind this way of using a resource manager (RM) and service level (SL) adaptation, separating it from the norm, is to let each application adapt its own SL continuously independent from the RM loop. This is different from the general theory where the SL instead would be handled by the RM. The RM would try and optimize the overall matching function, such as the mean matching function,  using both division of resources and adaptation of SL for all applications supporting it. The applications would then receive calls from the RM requesting a change of their SL.[gtrm, related work]
+The idea behind this way of using a resource manager (RM) and service level (SL) adaptation, separating it from the norm, is to let each application adapt its own SL continuously independent from the RM loop. One of the main benefits of this decoupling is that the task of adjusting SL is given to the applications that have the most knowledge of how to tune their parameters in order to adjust their needed resources, and at what cost in quality.
 
-\section{Systemd and cgroups}
-Systemd [sysd] is a system management daemon for Linux and it is the first process that starts during boot and thus it is given the PID number 1. It implements a lot of features for increased performance and system management. It also has different features for management of resources, using cgroups, which makes it interesting for our project. 
+\section{systemd and cgroups}
+Systemd [sysd] is a system management daemon for Linux and it is the first process that starts during boot and thus it is given the PID number 1. Systemd implements a lot of features for increased performance and system management. It also has different features for management of resources, using cgroups \cite{cgroups}, which makes it interesting for our project. 
 
-Cgroups, abbreviated from control groups, can be used to set the amount of resources, such as CPU or memory, of a process or a group of process' via a virtual file system. Each application can be run as a "service" by specifying a service file which defines many different parameters and options. In this file we can specify which program or programs should be associated with which service and for example how much CPU shall be given to this service. The service file can then be placed in a certain folder in the cgroup file hierarchy. Different folder are used to represent different cgroup controllers or a different combination of controllers. Depending on which controllers are enabled different features are available, such as limiting CPU- and memory requirement. Services can be grouped into different slices and share properties depending on which slice they belong to. One can for example set how much CPU-time that shall be given to the applications in the slice and decide how the applications will divide it amongst themselves.
+Cgroups, abbreviated from control groups, can be used to set the amount of resources, such as CPU or memory, of a process or a group of processes via a virtual file system. This file system forms a tree where the resources of a parent folder are shared by its children. The division of the resources among the children are determined by the amount of "shares" the children has been given. 
+
+
+
+
+
+
+
+
+
+
+ Each application can be run as a "service" by specifying a service file which defines many different parameters and options. In this file we can specify which program or programs should be associated with which service and for example how much CPU shall be given to this service. The service file can then be placed in a certain folder in the cgroup file hierarchy. Different folders are used to represent different cgroup controllers or a different combination of controllers. Depending on which controllers are enabled different features are available, such as limiting CPU- and memory requirement. Services can be grouped into different slices and share properties depending on which slice they belong to. One can for example set how much CPU-time that shall be given to the applications in the slice and decide how the applications will divide it amongst themselves.
+
+
+
+
+
+\begin{picture}(200,200)
+%\setlength{unitlength}{1mm}
+
+\put(100,160){\framebox(30,30){1000}}
+\put(115,160){\line(-2,-1){40}}
+\put(115,160){\line(2,-1){40}}
+\put(60,110){\framebox(30,30){Slice 1}}
+\put(140,110){\framebox(30,30){Slice 2}}
+
+\end{picture}
+
+
+
+
+
+
 
 \section{Video Streaming}
 The video streaming is based upon the GStreamer multimedia framework. W
