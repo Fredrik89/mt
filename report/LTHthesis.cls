@@ -367,7 +367,7 @@
 \PassOptionsToPackage{backend=bibtex}{biblatex}
 
 \RequirePackage{biblatex}
-\ExecuteBibliographyOptions{maxcitenames=2,maxbibnames=99,dashed=false}
+%\ExecuteBibliographyOptions{maxcitenames=2,maxbibnames=99,dashed=false}
 \ExecuteBibliographyOptions{firstinits=true,uniquename=init}
 \AtEveryBibitem{\clearfield{month}}
 
@@ -487,12 +487,12 @@
 
 % The original version has the form vol.num.
 % we want <bold>vol</bold>:num
-\renewbibmacro*{volume+number+eid}{%
-  \printfield[bold]{volume}%
-  \setunit*{\addcolon}%
-  \printfield{number}%
-  \setunit{\addcomma\space}%
-  \printfield{eid}}
+%\renewbibmacro*{volume+number+eid}{%
+%  \printfield[bold]{volume}%
+%  \setunit*{\addcolon}%
+%  \printfield{number}%
+%  \setunit{\addcomma\space}%
+%  \printfield{eid}}
 
 % The original version had the form address: publisher.
 % We want publisher, address.
