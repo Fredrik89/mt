@@ -11,6 +11,7 @@
 \addbibresource{mybib.bib}  %%  Comment if you don't want to use bibtex.
 %\usepackage{natbib}
 \usepackage{titlesec}
+%\bibliographystyle{alpha}
 \begin{document}
 \begin{titlepages}
 \author{Fredrik Johnsson\\Olle Svensson}
@@ -25,7 +26,7 @@
 \pagenumbering{roman}
 
 \chapter*{Abstract}
-The problem of limited resources on an Axis camera is handled by a two part solution where a resource manager (RM) distributes the available resources and where services adapt their service level (SL) in order to let the services finish their jobs on time. This is done in a game theoretic approach where the services are players, varying their SL in order to get a good match between given resources and SL. This SL-adaptation scheme is then implemented on the streaming service on the camera and on some test-services performing simple math operations. The resource manager is incorporated into systemd using CGroups to implement the distribution of resources.
+The problem of limited resources on an Axis camera is handled by a two part solution where a resource manager (RM) distributes the available resources and where services adapt their service level (SL) in order to let the services finish their jobs on time. This is done in a game theoretic approach where the services are players, varying their SL in order to get a good match between given resources and their SL. This SL-adaptation scheme is then implemented on the streaming service on the camera and on some test services performing simple math operations. The resource manager is incorporated into systemd which uses CGroups to implement the distribution of resources.
 
 \chapter*{Acknowledgements}
 We want to thank our 
@@ -41,23 +42,25 @@ We want to thank our
 \section{Axis}
 Axis is a company founded and based in Lund and it is the global market leader in network video solutions. 
 \section{Problem formulation}
-It is becoming more common to have multiple resource intensive services running on Axis cameras. At the same time, the demands are increasing on reliable and consistent video frame rate and quality. That means that there is a problem with different services competing for resources like CPU and RAM. This can result in poor performance of the camera under scenarios where the camera is under heavier load than usual, one example being when answering calls from the network. The solution that we will evaluate is an application of the work carried out at the University of Lund, resulting in a resource manager called Game Theoretic Resource Manager and a library that lets services implement the SL adaptation and communication with the RM. The goal is to see if it is possible to run this resource manager on an Axis camera running Linux with the streaming application competing with some test applications for resources. In this test the cameras image quality will be its SL and the inverse of its frame rate the measurement for the time a job takes to finish.
+It is becoming more common to have multiple resource intensive services running on Axis cameras. At the same time, the demands are increasing on reliable and consistent video frame rate and quality. This creates a problem where different services are competing for resources like CPU and RAM. This can result in poor performance of the camera under scenarios where the it is under heavier load than usual, one example being when answering calls from the network. The solution that we will evaluate is an application of the work carried out at the University of Lund \cite{gtrm}, resulting in a resource manager called Game Theoretic Resource Manager (GTRM) and a library that lets services implement the SL adaptation and communication with the RM. The goal is to see if it is possible to run this resource manager on an Axis camera running Linux with the streaming application competing with some test applications for resources. In this test the cameras image quality will be its SL and the inverse of its frame rate the measurement for the time a job takes to finish, where a jobs deadline will be set to 1/deadline.
 
 
 
 \section{Related Work}
-Regarding the resource management, similar approaches have been developed in the past, but the resource manager we are evaluating is unique because it separates the algorithm into two parts, running concurrently resulting in a linear time complexity.
+Regarding the resource management, similar approaches have been developed in the past, but the resource manager and SL adaptation being evaluated here is unique in that it lets the applications themselves determine their SL, as opposed to being set by a central unit. An example of a RM that determines both resources and SL for all applications is one developed by the ACTORS project  \cite{actors1}.  
+
 
 \section{Outline of the report}
 
 \chapter{Background}
 
 \section{Game Theoretic Resource Manager}
-The resource management is based on the performance of the applications that are running. By calculating the difference between the applications deadline and its execution time we get the matching function of an application. Ideally the matching function should be zero. That means the application has neither too much resources nor too little. If the matching function is positive that means we have too much resources. If it is negative, the application has missed it deadline.
+The resource management is based on the performance of the applications that are running. By calculating the difference between the applications deadline and its execution time one gets the performance, also called matching function, of the application. Ideally the matching function should be zero. When zero, the  application has just enough resources to meet its deadline running with some SL. When positive, too much resources are assigned to the application, indicating that the job is done before deadline, and when negative, too little resources are assigned indicating that the application has missed its deadline.
 
 The resource managing consists of two parts:
-\subsection{Service Level}
-The Service Level (SL) defines the quality of service of the application. In our case this is the quality of the image, but it can mean different things to different applications. The idea is to change the SL to optimize the utilization of the amount of resources we have. If we don’t have enough resources, resulting in poor performance of our application, we will lower the SL. If we have more resources than we are using, we will instead increase the SL. This will make sure that the application is always presenting valid result in time but with quality as a trade-off. All this is done by the application itself.
+\subsection{Service Level adaptation}
+The Service Level (SL) defines the quality of service of the application. In the case of the streaming application this is the quality of the image, but it can mean different things to different applications. The main property of the SL is that an increase in SL gives an increase in the required resources for the application. The idea is to change the SL to optimize the utilization of the amount of resources available. A high/low performance will be responded to by an increase/decrease in SL.
+This will make sure that the application is always presenting valid result in time but with quality as a trade-off. This adaptation is done by the application itself.
 
 \subsection{Resource Manager}
 The resource manager, will also measure the performance of the applications. It will try to distribute the resource in the best possible way to the applications. The resources are modeled as “virtual platforms”, and is basically a percentage of the total available resources. For example the amount of time an application is allowed to use the CPU in proportion to the other applications. Of course “resources” could refer to something other than CPU, such as memory or network-resources, depending on different aspects of the system. The main criteria is that if an application is given more resources it should be able to execute at a higher SL and vice versa.
@@ -207,9 +210,21 @@ The end result would also be presented as nice diagrams and graphs presenting va
 
 \chapter{Conclusion}
 
+
 \printbibliography  %% Comment if you don't want to use bibtex
-%\bibliographystyle{plain}
+
 %\bibliography{mybib}
+
+
+%\begin{thebibliography}{9}
+
+
+
+
+
+
+
+%5\end{thebibliography}
 \end{document}
 
 %KÄLLOR: 

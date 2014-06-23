@@ -57,3 +57,5 @@
 \contentsline {chapter}{\chapternumberline {6}Results}{21}
 \defcounter {refsection}{0}\relax 
 \contentsline {chapter}{\chapternumberline {7}Conclusion}{22}
+\defcounter {refsection}{0}\relax 
+\contentsline {chapter}{Bibliography}{23}
