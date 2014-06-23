@@ -211,7 +211,11 @@ Service 2 & 100 & $1/3 * 80 = 27$\\ \hline
 
 
 \section{Video Streaming}
-The video streaming is based upon the GStreamer multimedia framework. This is a modular system where a chain is built by linking elements together in a so called pipeline to form a process chain. Data flows downstream from a source element, through filter elements to finally end up in a sink element, see fig\ref{fig:pipeline}. The data flowing is contained in buffers, which can contain one or more frames. On the Axis camera the source will receive the images already compressed by external hardware through another application which reads a file descriptor for the in data. The data is then sent through a number of filters and is finally sent onto the network by the sink element. This chain is dynamically created depending on different settings like codecs used , jpeg or h264 etc., or network connection, http or udp. 	
+The video streaming is based upon the GStreamer multimedia framework. This is a modular system where a chain is built by linking elements together in a pipeline to form a process chain. Data flows downstream from a source element, through filter elements to finally end up in a sink element, see fig\ref{fig:pipeline}. The data is contained in buffers, which can contain one or more frames, flowing downstream. On the Axis camera the source element will receive the images already compressed by external hardware through another application which reads a file descriptor in order to get the frames from the encoding device. The data is then sent through a number of filters and is finally sent onto the network by the sink element. This chain is dynamically created depending on different settings like codecs used \emph{(jpeg,h264,...)}, or network connection \emph{(http or udp)}.
+
+
+
+	
 
 \begin{figure}
 \begin{framed}
@@ -231,7 +235,8 @@ The video streaming is based upon the GStreamer multimedia framework. This is a 
 \end{figure}
 
 
-
+\section{D-Bus}
+The communication between services and systemd is done with D-Bus and since the RM will run in the systemd main loop this is the communication that will be used to send data between the applications and the RM. D-Bus is  
 
 
 
@@ -439,3 +444,4 @@ The end result would also be presented as nice diagrams and graphs presenting va
 %[p3367]	http://www.axis.com/files/manuals/um_p3367v_49013_en_1211.pdf
 %[artpec-4]	http://www.axis.com/corporate/press/se/releases/viewstory.php?case_id=2374
 %[gst]		http://gstreamer.freedesktop.org/
+%http://docs.gstreamer.com/display/GstSDK/Tutorials
