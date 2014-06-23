@@ -146,7 +146,6 @@ The way also includes how much the virtual platform of the application has chang
 \[PM_i = (1+f_i)*(vp_i(i+1)/vp(i))\]
 After calculating the performance multiplier the new service level can be calculated like this
 \[sl_i(t+1)=sl_i(t) + (\epsilon*sl_i(t)*PM_i)\]
-
 \section{Resource Allocation}
 \begin{figure}
     \centering
@@ -161,6 +160,14 @@ All applications that are managed by the GTRM are run as services under the GTRM
 In the Pie chart above the static slice would be guaranteed a minimum of \sfrac{1}{3} of the total resources while Service1 and Service2 would be given half of the \sfrac{2}{3} reserved by its parent slice, guaranteeing  them a minimum of \sfrac{1}{3} of the total available resources each.
 
 The resources of the applications running in the GTRM-slice will be managed by our GTRM. Some of the applications will have SL capabilities implemented and some will not. The reason for this is mainly because of the scope of our project. We are mainly concerned about using the SL to maintain a steady framerate but ideally all applications running in the GTRM-slice should, if it makes sense to the application, have a SL implemented to put the theory into practice. An extension of the project would be to have the entire system managed by the GTRM and have all applications manage their SL. The weight is the parameter that sets how big part of the adaptation that is made by changing the service level contra changing the amount of resources. By using the weight parameter we can make up for the fact that we can’t change SL of some applications and the GTRM will only manage their resources instead. 
+
+\section{Source Code}
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{diag.png}
+    \caption{Sequence diagram}
+    \label{fig:sdiag}
+\end{figure}
 
 \chapter{Use cases}
 For implementation and testing reasons we came up with the following use-cases. In all the use cases we assume that the static slice is under heavy load so that no extra resources are given to the GTRM-slice. 
