@@ -83,22 +83,42 @@ Cgroups, abbreviated from control groups, can be used to set the amount of resou
 
 
 
- Each application can be run as a "service" by specifying a service file which defines many different parameters and options. In this file we can specify which program or programs should be associated with which service and for example how much CPU shall be given to this service. The service file can then be placed in a certain folder in the cgroup file hierarchy. Different folders are used to represent different cgroup controllers or a different combination of controllers. Depending on which controllers are enabled different features are available, such as limiting CPU- and memory requirement. Services can be grouped into different slices and share properties depending on which slice they belong to. One can for example set how much CPU-time that shall be given to the applications in the slice and decide how the applications will divide it amongst themselves.
+ Each application can be run as a "service" by specifying a service file which defines many different parameters and options. In this file we can specify which application or applications should be associated with which service and for example how much CPU shall be given to this service. The service file can then be placed in a certain folder in the cgroup file hierarchy, see fig~\ref{ctree}. Different folders are used to represent different cgroup controllers or a different combination of controllers. Depending on which controllers are enabled different features are available, such as limiting CPU- and memory.   
+ Services can be grouped into different slices and share properties depending on which slice they belong to.  
+One can for example set how much CPU-time that shall be given to the applications in the slice and decide how the applications will divide it amongst themselves.
 
 
 
+\subsection{CPUShares and the cgroup tree}
+In this implementation of the \emph{GTRM}, the resources are divided using the CPUShares property of the slice or service. Every slice is represented by a folder in the cgroup tree and has a CPUShares property that decides how much of the available resources of the parent slice it will get. A slice contains services and services contains applications. The services and slices are a form of units
 
+
+All the resources of a parent slice will be divided to the units under it according to how much shares they each have, a unit that has a third of the total shares of all units under the same slice will receive a third of the parents available resources and so on. An example of this is shown in fig\ref(ctree) and fig\ref(ctable).
 
 \begin{picture}(200,200)
-%\setlength{unitlength}{1mm}
 
-\put(100,160){\framebox(30,30){1000}}
+\put(100,160){\framebox(30,30){CPU}}
 \put(115,160){\line(-2,-1){40}}
 \put(115,160){\line(2,-1){40}}
 \put(60,110){\framebox(30,30){Slice 1}}
 \put(140,110){\framebox(30,30){Slice 2}}
 
+\put(75,110){\line(-2,-1){40}}
+\put(75,110){\line(2,-1){40}}
+\put(20,60){\framebox(30,30){Slice 3}}
+\put(100,60){\framebox(30,30){Slice 4}}
+
+\caption{ \emph{fig \ref{ctree}: The cgroup file tree representing the slices}}
+\label{ctree}
 \end{picture}
+
+
+
+\begin{tabular}{|c|c|c}
+
+\label{ctable}
+\end{tabular}
+
 
 
 
