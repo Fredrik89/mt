@@ -42,7 +42,7 @@ We want to thank our
 \section{Axis}
 Axis is a company founded and based in Lund and it is the global market leader in network video solutions. 
 \section{Problem formulation}
-It is becoming more common to have multiple resource intensive services running on Axis cameras. At the same time, the demands are increasing on reliable and consistent video frame rate and quality. This creates a problem where different services are competing for resources like CPU and RAM. This can result in poor performance of the camera under scenarios where the it is under heavier load than usual, one example being when answering calls from the network. The solution that we will evaluate is an application of the work carried out at the University of Lund \cite{gtrm}, resulting in a resource manager called Game Theoretic Resource Manager (GTRM) and a library that lets services implement the SL adaptation and communication with the RM. The goal is to see if it is possible to run this resource manager on an Axis camera running Linux with the streaming application competing with some test applications for resources. In this test the cameras image quality will be its SL and the inverse of its frame rate the measurement for the time a job takes to finish, where a jobs deadline will be set to 1/deadline.
+It is becoming more common to have multiple resource intensive services running on Axis cameras. At the same time, the demands are increasing on reliable and consistent video frame rate and quality. This creates a problem where different services are competing for resources like CPU and RAM. This can result in poor performance of the camera under scenarios where the it is under heavier load than usual, one example being when answering calls from the network. The solution that we will evaluate is an application of the work carried out at the University of Lund \cite{gtrm}, resulting in a resource manager called Game Theoretic Resource Manager (GTRM) and a library that lets services implement the SL adaptation and communication with the RM. The goal is to see if it is possible to run this resource manager on an Axis camera running Linux with the streaming application competing with some test applications for resources. In this test the cameras image quality will be its SL and the inverse of its frame rate the measurement for the time a job takes to finish, where a jobs deadline will be set to \(1/deadline\).
 
 
 
@@ -74,20 +74,7 @@ Systemd [sysd] is a system management daemon for Linux and it is the first proce
 
 Cgroups, abbreviated from control groups, can be used to set the amount of resources, such as CPU or memory, of a process or a group of processes via a virtual file system. This file system forms a tree where the resources of a parent folder are shared by its children. The division of the resources among the children are determined by the amount of "shares" the children has been given. 
 
-
-
-
-
-
-
-
-
-
- Each application can be run as a "service" by specifying a service file which defines many different parameters and options. In this file we can specify which program or programs should be associated with which service and for example how much CPU shall be given to this service. The service file can then be placed in a certain folder in the cgroup file hierarchy. Different folders are used to represent different cgroup controllers or a different combination of controllers. Depending on which controllers are enabled different features are available, such as limiting CPU- and memory requirement. Services can be grouped into different slices and share properties depending on which slice they belong to. One can for example set how much CPU-time that shall be given to the applications in the slice and decide how the applications will divide it amongst themselves.
-
-
-
-
+Each application can be run as a "service" by specifying a service file which defines many different parameters and options. In this file we can specify which program or programs should be associated with which service and for example how much CPU shall be given to this service. The service file can then be placed in a certain folder in the cgroup file hierarchy. Different folders are used to represent different cgroup controllers or a different combination of controllers. Depending on which controllers are enabled different features are available, such as limiting CPU- and memory requirement. Services can be grouped into different slices and share properties depending on which slice they belong to. One can for example set how much CPU-time that shall be given to the applications in the slice and decide how the applications will divide it amongst themselves.
 
 \begin{picture}(200,200)
 %\setlength{unitlength}{1mm}
@@ -99,12 +86,6 @@ Cgroups, abbreviated from control groups, can be used to set the amount of resou
 \put(140,110){\framebox(30,30){Slice 2}}
 
 \end{picture}
-
-
-
-
-
-
 
 \section{Video Streaming}
 The video streaming is based upon the GStreamer multimedia framework. W
@@ -132,7 +113,7 @@ The Axis P3367 is a fixed dome network camera capable of multiple H.264 streams 
 \chapter{Implementation}
 All code were written in C and cross-compiled using Axis' compiler for the corresponding platform e.g. camera. For the resource allocation different service files and slices were specified, and the resulting plots were generated with Octave.
 \section{Constraints} %What we decided to do and not to do
-We decided that creating service levels for all the applications running on the system would not be a realistic approach. This is because there are many different applications, some of which may not even be developed at Axis, and we cannot expect people to modify them to implement the performance measurements and service level features needed. Instead we implemented the service level part only in the video streaming application and on some test application that only does some random computations to stress the system.
+Creating service levels for all the applications running on the system would not be a realistic approach. This is because there are many different applications, some of which may not even be developed at Axis, and developers cannot be expected to modify all of them to implement the performance measurements and service level features needed. Instead the service level part is only implemented in the video streaming application and on some test application that does some random computations to stress the system.
 
 \section{Resource Management} 
 The resource management is implemented as a part of systemd, with all of the resource management source code integrated into systemds. If an application has a poor matching function it sends this information to systemd via UNIX-sockets. Sockets represent an endpoint of communication and from these we can obtain a socket descriptor. These are used in the same way as file descriptors by the applications [socket]. Our interprocess communication (IPC) consists of a socket in systemd and one for each application that we are monitoring. From these sockets we can read or write messages between the applications and systemd. This was implemented by more or less copying the “Notify” feature of systemd which is used by certain applications that want to for example notify systemd that they have started or other status changes [sysd-notify].
@@ -168,6 +149,18 @@ The resources of the applications running in the GTRM-slice will be managed by o
     \caption{Sequence diagram}
     \label{fig:sdiag}
 \end{figure}
+The sequence diagram in figure \ref{fig:sdiag} describes the flow of execution throughout the system via pseudo-code. Some functions call that are not relevant have been left out but will be described further below. 
+
+The first important part in the application is the calculation of its performance, the matching function, here called \emph{calculate\_performance()}. The matching function has to be properly calculated or else the application will not be managed correctly. According to this matching function the service level will then be adapted, \emph{update\_service\_level()} and finally the resource manager will be notified by the \emph{send\_performance()} call.
+
+The resource manager part basically consists of two parts that sort of runs in parallel. Upon receiving the performance of an application, the handler or dispatch function corresponding to such an event is executed. In the diagram it is labled as \emph{gtrm\_dispatch}, and its main responsibilities is to read and parse the received message and then update the hash-map which contains the relevant data about the applications being managed. Meanwhile the resource management runs as a part of the main-loop, and it uses the information in the hash-map previously mentioned to calculate the virtual platforms, \emph{calculate\_virtual\_platforms}. These virtual platforms are then used to set the amount of CPUShares which will be given to each application in the call to \emph{apply\_virtual\_platforms}. To get a better service level adaptation, the performance number which depends on how much the virtual platform has been changed is sent to the application \emph{send\_performance\_number}.
+
+The system is implemented by the functions described in the following source and header files. Note that some of these files originate from the source of systemd and have only been edited and not created by the authors.
+
+\subsubsection{manager}
+This file contains the 
+\subsubsection{}
+
 
 \chapter{Use cases}
 For implementation and testing reasons we came up with the following use-cases. In all the use cases we assume that the static slice is under heavy load so that no extra resources are given to the GTRM-slice. 
@@ -232,6 +225,7 @@ The end result will be a working prototype that can demonstrate that the system 
 
 The tests output will consist of logs showing CPU-time for applications along with their service levels, performance and virtual platforms. The CPU-time can differ between how much resources are assigned and how much is actually used and it is of interest to see how much they vary if any. The FPS and video/sound quality are other outputs we can use.
 There are different things we can do and combine to stress the system in a realistic perspective. These things could be seen as testing the use cases and can be combined with each other. 
+
 \begin{itemize}
 
 \item The first and simplest case is a camera that is still and filming a scenery with minor changes. Here we would like maximal quality of the images since the scene itself does not require a lot of resources 
@@ -254,14 +248,7 @@ The end result would also be presented as nice diagrams and graphs presenting va
 
 %\bibliography{mybib}
 
-
 %\begin{thebibliography}{9}
-
-
-
-
-
-
 
 %5\end{thebibliography}
 \end{document}
