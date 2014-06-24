@@ -44,7 +44,7 @@ We want to thank our
 
 \chapter{Introduction} %This is a description of my work.
 \section{Axis}
-Axis is a company founded and based in Lund and it is the global market leader in network video solutions. 
+Axis is a company founded and based in Lund that manufactures network relayed surveillance cameras and video encoders.
 \section{Problem formulation}
 It is becoming more common to have multiple resource intensive services running on Axis cameras. At the same time, the demands are increasing on reliable and consistent video frame rate and quality. This creates a problem where different services are competing for resources like CPU and RAM. This can result in poor performance of the camera under scenarios where the it is under heavier load than usual, one example being when answering calls from the network. The solution that we will evaluate is an application of the work carried out at the University of Lund \cite{gtrm}, resulting in a resource manager called Game Theoretic Resource Manager (GTRM) and a library that lets services implement the SL adaptation and communication with the RM. The goal is to see if it is possible to run this resource manager on an Axis camera running Linux with the streaming application competing with some test applications for resources. In this test the cameras image quality will be its SL and the inverse of its frame rate the measurement for the time a job takes to finish, where a jobs deadline will be set to \(1/deadline\).
 
@@ -79,8 +79,7 @@ Separating the service-level adjustment and the resource management has been pro
 \martina{End of rephrase}
 
 
-Regarding the resource management, similar approaches have been developed in the past, but the resource manager and SL adaptation being evaluated here is unique in that it lets the applications themselves determine their SL, as opposed to being set by a central unit. An example of a RM that determines both resources and SL for all applications is one developed by the ACTORS project  \cite{actors1}.  
-
+Regarding the resource management, similar approaches have been developed in the past, but the resource manager and SL adaptation being evaluated here is unique in that it lets the applications themselves determine their SL, as opposed to being set by a central unit.
 
 \section{Outline of the report}
 
@@ -153,17 +152,8 @@ Service 2 & 100 & $1/3 * 80 = 27$\\ \hline
 
 \end{figure}
 
-
-
-
-
-
-
 \section{Video Streaming}
 The video streaming is based upon the GStreamer multimedia framework. This is a modular system where a chain is built by linking elements together in a pipeline to form a process chain. Data flows downstream from a source element, through filter elements to finally end up in a sink element, see fig\ref{fig:pipeline}. The data is contained in buffers, which can contain one or more frames, flowing downstream. On the Axis camera the source element will receive the images already compressed by external hardware through another application which reads a file descriptor in order to get the frames from the encoding device. The data is then sent through a number of filters and is finally sent onto the network by the sink element. This chain is dynamically created depending on different settings like codecs used \emph{(jpeg,h264,...)}, or network connection \emph{(http or udp)}.
-
-
-
 	
 
 \begin{figure}
@@ -193,11 +183,6 @@ A call to the socket() api function creates a socket and returns an integer, a \
 A socket can be of the type \emph{stream} or \emph{datagram}, the latter is used by the gtrm socket.
 \subsection{epoll}
 Epoll is a linux system call that allows the user to listen to multiple sockets simultaneously. This is done by calling the api function epoll\_wait(...) which returns a queue of event-objects containing information about what fd:s that has received datagrams together with other misc. information. By looking at this queue the user knows what fd:s to read with the read(...) function.  
-
-
-
-
-
 
 
 \section{Equipment} %Description of camera and such
