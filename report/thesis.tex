@@ -85,11 +85,12 @@ Chapter 3, Implementation, is about how development went fourth, what decisions 
 Chapter 4, Use cases, this chapter describes the use cases that where presented during the project. These bring knowledge about what the product is supposed to do and not to do, and also what would be relevant to test in the finished prototype.
 Chapter 5, Testing, how and what was tested in the product.
 Chapter 6, Results, what results that could be extracted from this thesis.
-Chapter 7, Conclusions and Further Work, what could be concluded from the result and what could be improved given more time.
+Chapter 7, Conclusions and Further Work, what could be concluded from the result, what we would have done differently and what we would like to improve given more time.
+
 \chapter{Background}
 
 \section{Game Theoretic Resource Manager}
-The resource management is based on the performance of the applications that are running. By calculating the difference between the applications deadline and its execution time one gets the performance, also called matching function, of the application. Ideally the matching function should be zero. When zero, the  application has just enough resources to meet its deadline running with some SL. When positive, too much resources are assigned to the application, indicating that the job is done before deadline, and when negative, too little resources are assigned indicating that the application has missed its deadline.
+The resource management is based on the performance of the applications that are running. The performance, also called matching function, is calculated as the difference between the applications deadline and the execution time of the application. Ideally the matching function should be zero. When zero, the  application has just enough resources to meet its deadline running with some SL. When positive, too much resources are assigned to the application, indicating that the job is done before deadline, and when negative, too little resources are assigned indicating that the application has missed its deadline.
 
 The resource managing consists of two parts:
 \subsection{Service Level adaptation}
@@ -97,22 +98,20 @@ The Service Level (SL) defines the quality of service of the application. In the
 This will make sure that the application is always presenting valid result in time but with quality as a trade-off. This adaptation is done by the application itself.
 
 \subsection{Resource Manager}
-The resource manager(RM) will also measure the performance of the applications. It will try to distribute the resource in the best possible way to the applications. The resources are modelled as “virtual platforms”, and is basically a percentage of the total available resources. For example the amount of time an application is allowed to use the CPU in proportion to the other applications. Here “resources” could refer to something other than CPU, such as memory or network-resources, depending on different aspects of the system. The main property of the performance is that if an application is given more/less resources it should be able to execute at a higher/lower SL or have a shorter/longer execution time.
+The resource manager(RM) will also measure the performance of the applications. It will try to distribute the resource in the best possible way to the applications. The resources are modeled as “virtual platforms”, which is basically a percentage of the total available resources. For example the amount of time an application is allowed to use the CPU in proportion to the other applications. Here “resources” could refer to something other than CPU, such as memory or network-resources, depending on different aspects of the system. The main property of the performance is that if an application is given more/less resources it should be able to execute at a higher/lower SL or have a shorter/longer execution time.
 
 The theory of decoupling the resource manager from the service level adaptation was developed at the Department of Automation at Lunds University. The resulting resource manager is referred to as Game Theoretic Resource Manager, GTRM. 
 
 The idea behind this way of using a resource manager (RM) and service level (SL) adaptation, separating it from the norm, is to let each application adapt its own SL continuously independent from the RM loop. One of the main benefits of this decoupling is that the task of adjusting SL is given to the applications that have the most knowledge of how to tune their parameters in order to adjust their needed resources, and at what cost in quality.
 
-\section{systemd and cgroups}
-Systemd [sysd] is a system management daemon for Linux and it is the first process that starts during boot and thus it is given the PID number 1. Systemd implements a lot of features for increased performance and system management. It also has different features for management of resources, using cgroups \cite{cgroups}, which makes it interesting for our project. 
+\section{Systemd and Cgroups}
+Systemd [sysd] is a system management daemon for Linux and it is the first process that starts during boot and thus it is given the PID number 1. Systemd implements a lot of features for increased performance and system management over previous start up processes for example initd. It also has different features for management of resources, using cgroups \cite{cgroups}, which makes it interesting for our project. 
 
 Cgroups, abbreviated from control groups, can be used to set the amount of resources, such as CPU or memory, of a process or a group of processes via a virtual file system. This file system forms a tree where the resources of a parent folder are shared by its children. The division of the resources among the children are determined by the amount of "shares" the children has been given. 
 
 Each application can be run as a "service" by specifying a service file which defines many different parameters and options. In this file we can specify which application or applications should be associated with which service and for example how much CPU shall be given to this service. The service file can then be placed in a certain folder in the cgroup file hierarchy, see fig~\ref{ctree}. Different folders are used to represent different cgroup controllers or a different combination of controllers. Depending on which controllers are enabled different features are available, such as limiting CPU- and memory.   
  Services can be grouped into different slices and share properties depending on which slice they belong to.  
 One can for example set how much CPU-time that shall be given to the applications in the slice and decide how the applications will divide it amongst themselves.
-
-
 
 \subsection{CPUShares and the cgroups tree}
 In this implementation of the \emph{GTRM}, the resources are divided using the CPUShares property of the \emph{slices} or \emph{services}, both special cases of the base type \emph{units}. Every slice is represented by a folder in the cgroup tree and has a CPUShares property that decides how much of the available resources of the parent slice it will get. A slice contains services and services contains applications. 
@@ -380,16 +379,17 @@ The end result would also be presented as nice diagrams and graphs presenting va
 \end{document}
 
 %KÄLLOR: 
-%[sysd] 		http://www.freedesktop.org/wiki/Software/systemd/
-%http://0pointer.de/blog/projects/systemd.html
+%[sysd] 	http://www.freedesktop.org/wiki/Software/systemd/
+%		http://0pointer.de/blog/projects/systemd.html
 %[cgropus]	https://www.kernel.org/doc/Documentation/cgroups/cgroups.txt
 %[sysd-notify]	http://www.freedesktop.org/software/systemd/man/systemd-notify.html
-%[socket]      http://infohost.nmt.edu/~eweiss/222_book/222_book/0201433079/ch16lev1sec2.html
+%[socket]      	http://infohost.nmt.edu/~eweiss/222_book/222_book/0201433079/ch16lev1sec2.html
 %[p3367]	http://www.axis.com/files/manuals/um_p3367v_49013_en_1211.pdf
+%[m1033]	
 %[artpec-4]	http://www.axis.com/corporate/press/se/releases/viewstory.php?case_id=2374
 %[gst]		http://gstreamer.freedesktop.org/
-%http://docs.gstreamer.com/display/GstSDK/Tutorials
-%[sockets]http://beej.us/guide/bgnet/output/html/multipage/theory.html
-%http://pic.dhe.ibm.com/infocenter/zvm/v6r2/index.jsp?topic=/com.ibm.zos.r12.cbcpx01/ovsock.htm
-%[epoll]http://en.wikipedia.org/wiki/Epoll
+%		http://docs.gstreamer.com/display/GstSDK/Tutorials
+%[sockets]	http://beej.us/guide/bgnet/output/html/multipage/theory.html
+%		http://pic.dhe.ibm.com/infocenter/zvm/v6r2/index.jsp?topic=/com.ibm.zos.r12.cbcpx01/ovsock.htm
+%[epoll]	http://en.wikipedia.org/wiki/Epoll
 
