@@ -9,6 +9,7 @@
 \usepackage{graphicx}
 \usepackage{listings}
 \usepackage{url}
+\usepackage{verbatim}
 
 \usepackage{titlesec}
 \usepackage{todonotes}
@@ -213,9 +214,135 @@ All code were written in C and cross-compiled using Axis' compiler for the corre
 Creating service levels for all the applications running on the system would not be a realistic approach. This is because there are many different applications, some of which may not even be developed at Axis, and developers cannot be expected to modify all of them to implement the performance measurements and service level features needed. Instead the service level part is only implemented in the video streaming application and on some test applications that does some random computations to stress the system. This thesis only focuses on the implementation of the already mentioned work at LTH and will not look into proofs of convergence for the algorithm, neither will it look into other types of SL functions than the simple linear case where the CPU requirement are a linear function of the SL. It can be argued that the CPU requirement/SL relationship can be linearized around a point and hence still be linear in a small intervall.
 
 \section{Resource Management} 
-The resource management is implemented as a part of systemd, with all of the resource management source code integrated into systemds. If an application has a poor matching function it sends this information to systemd via UNIX-sockets. Sockets represent an endpoint of communication and from these we can obtain a socket descriptor. These are used in the same way as file descriptors by the applications [socket]. Our interprocess communication (IPC) consists of a socket in systemd and one for each application that we are monitoring. From these sockets we can read or write messages between the applications and systemd. This was implemented by more or less copying the “Notify” feature of systemd which is used by certain applications that want to for example notify systemd that they have started or other status changes [sysd-notify].
 
-The whole chain from the application to systemd is pretty long but most of it is managed in “sd-event” which serves as a wrapper around many different IPC events and messages. Our data transferred via sockets is picked up with the help of epoll, which is handled in sd-event. From this we can be notified and read data from the socket descriptor as soon it is available, in an interrupt based fashion. Finally we execute our dispatch function, which we register when the socket communication is established, and contain all the code that we want to execute when we receive a message to our socket. The function first extracts the data from the message, which is the PID of the sending application, its performance, whether it is satisfied or not and the weight attribute. We then update a hashmap which contains all our applications that are managed by GTRM. This data is then used when we calculate the virtual platforms and set the CPUShares in systemds “main-loop”.
+
+\subsection{IPC}
+The resource management is implemented as a part of systemd, with all of the resource management source code integrated into systemds. If an application has a poor matching function it sends information to systemd via UNIX-sockets. The interprocess communication (IPC) consists of one socket in systemd and one for each application that the RM is monitoring. The socket setup was implemented by more or less copying the “Notify” feature of systemd which is used by certain services that want to for example notify systemd that they have started or about other status changes [sysd-notify].
+Systemd uses epoll to find out which sockets has received new messages. The events returned from epoll\_wait() are then put in a prioritized queue. This prioritized queue is then popped and the callback function for top most event is called. This means that a message might not be read immediately after being read from the epoll buffer. Most of the functions used to manage epoll are located in  “sd-event”. 
+
+
+\subsubsection{Pseudo code}
+The epoll\_wait function is shown below
+\begin{verbatim}
+
+
+int epoll_wait(int epfd, struct epoll_event *events,
+                      int maxevents, int timeout);	 
+\end{verbatim}
+When there are messages to read on one of the fd:s being watched by the epoll instance referred to by the file descriptor \emph{epfd}, epoll\_wait returns the number of fd:s that have new messages to be read.
+The epoll\_event *\emph{events} points to a buffer that will be filled with the incoming events and that will contain a maximum of \emph{maxevents}.
+The epoll\_event structure is shown below:
+
+%\verbatiminput{pseudo_epoll.c}
+
+\begin{verbatim}
+typedef union epoll_data {
+ void    *ptr;
+ int      fd;
+ uint32_t u32;
+ uint64_t u64;
+} epoll_data_t;
+
+struct epoll_event {
+ uint32_t     events;    /* Epoll events */
+ epoll_data_t data;      /* User data variable */
+};
+\end{verbatim}
+
+The void pointer \emph{epoll\_event.data.ptr} will be set to point to a \emph{sd\_event\_source} structure which is the element that is put in the prioritized queue. This element contains information concerning the prioritization and  defines the event type but also contains a structure containing the fd for the event and the callback function to be used when such an event is received.
+In each iteration of the main loop the function \emph{sd\_event\_run} is called, the part of the code that is instructive in this function is shown below:
+
+\begin{verbatim}
+_public_ int sd_event_run(sd_event *e, uint64_t timeout) {
+
+struct epoll_event *ev_queue;
+unsigned ev_queue_max;
+sd_event_source *p;
+int r, i, m,timeout;
+            
+ev_queue = newa(struct epoll_event, ev_queue_max);
+
+m = epoll_wait(e->epoll_fd, ev_queue, ev_queue_max,timeout);
+
+for (i = 0; i < m; i++) {
+  if (ev_queue[i].data.ptr == INT_TO_PTR(SOURCE_MONOTONIC))
+    r = flush_timer(...);
+  else if (ev_queue[i].data.ptr == INT_TO_PTR(SOURCE_REALTIME))
+    r = flush_timer(...)
+  else if (ev_queue[i].data.ptr == INT_TO_PTR(SOURCE_SIGNAL))
+    r = process_signal(e, ev_queue[i].events);
+  else if (ev_queue[i].data.ptr == INT_TO_PTR(SOURCE_WATCHDOG))
+    r = flush_timer(e, e->watchdog_fd, ev_queue[i].events, NULL);
+  else
+    r = process_io(e, ev_queue[i].data.ptr, ev_queue[i].events);
+}
+
+
+p = event_next_pending(e);
+
+r = source_dispatch(p);
+
+return r;
+}
+\end{verbatim}
+
+As can be seen, the \emph{epoll\_wait} function is called and a for loop goes through all of the fd:s and checks what their event type is to call the appropriate function to add them to the prioritized queue.
+The gtrm fd is linked to a \emph{IO\_SOURCE} event which means that the function \emph{process\_io()} will be called.
+
+Next the queue is peeked to get the next event in the queue to be dispatched by calling event\_next\_pending():
+\begin{verbatim}
+	static sd_event_source* event_next_pending(sd_event *e) {
+	sd_event_source *p;
+
+	p = prioq_peek(e->pending);
+	if (!p)
+		  return NULL;
+
+	if (p->enabled == SD_EVENT_OFF)
+		  return NULL;
+	return p;
+	}
+\end{verbatim}
+
+Finally the \emph{source\_dispatch} function is called to call the callback function linked to the popped top \emph{sd\_event\_source*}.
+
+\begin{verbatim}
+	static int source_dispatch(sd_event_source *s) {
+	int r = 0;
+
+	switch (s->type) {
+
+	case SOURCE_IO:
+		  r = s->io.callback(s, s->io.fd, s->io.revents, s->userdata);
+		  break;
+
+	case SOURCE_MONOTONIC:
+		  r = s->time.callback(s, s->time.next, s->userdata);
+		  break;
+
+	case SOURCE_REALTIME:
+		  r = s->time.callback(s, s->time.next, s->userdata);
+		  break;
+	.
+	.
+	.
+		  r = s->exit.callback(s, s->userdata);
+		  break;
+
+	case SOURCE_WATCHDOG:
+		  assert_not_reached("Wut? I shouldn't exist.");
+	}
+	
+	return 1;
+	}
+\end{verbatim}  
+
+\subsection{asdfasdf}
+
+
+
+
+The callback function which is registered and linked to the events for the gtrm socket when the socket communication is established,  contains all the code that should execute when a message is received on the gtrm socket. The function extracts the data from the message, which is the PID of the sending application, its performance, whether it is satisfied or not and the weight attribute. The hashmap, which contains all the applications that are managed by GTRM, is then updated with this new data. The data is then used when the virtual platforms are calculated  and set the CPUShares in systemds “main-loop”.
 
 \section{Service Level}
 There are two ways of implementing SL, one simpler and one more advanced. The first one simply multiplies the current SL with the matching funtion and multiplies the result with a constant scale factor. This will decrease the service level if the performance i negative and increase it if it is positive. The scaling factor (called epsilon) also makes sure that we don't get too much overshoot. 
