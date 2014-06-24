@@ -235,8 +235,15 @@ The video streaming is based upon the GStreamer multimedia framework. This is a 
 \end{figure}
 
 
-\section{Sockets and epoll()}
+\section{Sockets and epoll}
+\subsection{Sockets}
 The communication between services and systemd is done with sockets and since the RM will run in the systemd main loop this is the communication that will be used to send data between the applications and the RM.
+Sockets are the endpoints for IPC \emph{(inter-process communication)} flows over a network,
+where the processes may reside on the same computer or just on the same network. These sockets are provided by the socket() system routine in linux which can be interacted with through calling functions in api header files. An analogy for sockets are physical ports on a computer and a printer where the wire in between is the channel.
+A call to the socket() api function creates a socket and returns an integer, a \emph{file descriptor},  which is unique for the socket and is used for referring to the sockets in future calls. A file descriptor \emph{(fd)} in Linux is associated with an open file, where the file can be anything that can be written to or read from. Having the fd gives access to read and write to/from the socket.
+A socket can be of the type \emph{stream} or \emph{datagram}, the latter is used by the gtrm socket.
+\subsection{epoll}
+Epoll is a linux system call that allows the user to listen to multiple sockets simultaneously. This is done by calling the api function epoll_wait(..) which returns a queue of event-objects containing information about what fd:s that has received datagrams together with other misc. information. By looking at this queue the user knows what fd:s to read with the read(...) function.  
 
 
 
@@ -445,4 +452,7 @@ The end result would also be presented as nice diagrams and graphs presenting va
 %[artpec-4]	http://www.axis.com/corporate/press/se/releases/viewstory.php?case_id=2374
 %[gst]		http://gstreamer.freedesktop.org/
 %http://docs.gstreamer.com/display/GstSDK/Tutorials
-%[D-bus] http://www.freedesktop.org/wiki/Software/dbus/
+%[sockets]http://beej.us/guide/bgnet/output/html/multipage/theory.html
+%http://pic.dhe.ibm.com/infocenter/zvm/v6r2/index.jsp?topic=/com.ibm.zos.r12.cbcpx01/ovsock.htm
+%[epoll]http://en.wikipedia.org/wiki/Epoll
+
