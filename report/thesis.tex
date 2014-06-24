@@ -46,8 +46,7 @@ We want to thank our
 \section{Axis}
 Axis is a company founded and based in Lund that manufactures network relayed surveillance cameras and video encoders.
 \section{Problem formulation}
-It is becoming more common to have multiple resource intensive services running on Axis cameras. At the same time, the demands are increasing on reliable and consistent video frame rate and quality. This creates a problem where different services are competing for resources like CPU and RAM. This can result in poor performance of the camera under scenarios where the it is under heavier load than usual, one example being when answering calls from the network. The solution that we will evaluate is an application of the work carried out at the University of Lund \cite{gtrm}, resulting in a resource manager called Game Theoretic Resource Manager (GTRM) and a library that lets services implement the SL adaptation and communication with the RM. The goal is to see if it is possible to run this resource manager on an Axis camera running Linux with the streaming application competing with some test applications for resources. In this test the cameras image quality will be its SL and the inverse of its frame rate the measurement for the time a job takes to finish, where a jobs deadline will be set to \(1/deadline\).
-
+It is becoming more common to have multiple resource intensive services running on Axis cameras. At the same time, the demands are increasing on reliable and consistent video frame rate and quality. This creates a problem where different services are competing for resources like CPU and RAM. This can result in poor performance of the camera under scenarios when it is under heavier load than usual, one example being when answering calls from the network. The solution that we will evaluate is based on some of the work carried out at the University of Lund \cite{gtrm}, called the Game Theoretic Resource Manager (GTRM) and a library that lets services implement the SL adaptation and communication with the RM. The goal is to see if it is possible to use this resource manager on an Axis camera running Linux with the streaming application competing with some test applications for resources. In this test the cameras image quality will be its SL and the inverse of its frame rate the measurement for the time a job takes to finish, where a jobs deadline will be set to \(1/desired framerate\).
 
 
 \section{Related Work}
@@ -78,11 +77,13 @@ Separating the service-level adjustment and the resource management has been pro
 
 \martina{End of rephrase}
 
-
-Regarding the resource management, similar approaches have been developed in the past, but the resource manager and SL adaptation being evaluated here is unique in that it lets the applications themselves determine their SL, as opposed to being set by a central unit.
-
 \section{Outline of the report}
-
+Chapter 2, Background, will give a detailed description on the software and hardware used during this project.
+Chapter 3, Implementation, is about how development went fourth, what decisions were made and how the resulting product is composed.
+Chapter 4, Use cases, this chapter describes the use cases that where presented during the project. These bring knowledge about what the product is supposed to do and not to do, and also what would be relevant to test in the finished prototype.
+Chapter 5, Testing, how and what was tested in the product.
+Chapter 6, Results, what results that could be extracted from this thesis.
+Chapter 7, Conclusions and Further Work, what could be concluded from the result and what could be improved given more time.
 \chapter{Background}
 
 \section{Game Theoretic Resource Manager}
@@ -182,7 +183,7 @@ where the processes may reside on the same computer or just on the same network.
 A call to the socket() api function creates a socket and returns an integer, a \emph{file descriptor},  which is unique for the socket and is used for referring to the sockets in future calls. A file descriptor \emph{(fd)} in Linux is associated with an open file, where the file can be anything that can be written to or read from. Having the fd gives access to read and write to/from the socket.
 A socket can be of the type \emph{stream} or \emph{datagram}, the latter is used by the gtrm socket.
 \subsection{epoll}
-Epoll is a linux system call that allows the user to listen to multiple sockets simultaneously. This is done by calling the api function epoll_wait(..) which returns a queue of event-objects containing information about what fd:s that has received datagrams together with other misc. information. By looking at this queue the user knows what fd:s to read with the read(...) function.  
+Epoll is a linux system call that allows the user to listen to multiple sockets simultaneously. This is done by calling the api function epoll\_wait(..) which returns a queue of event-objects containing information about what fd:s that has received datagrams together with other misc. information. By looking at this queue the user knows what fd:s to read with the read(...) function.  
 
 
 \section{Equipment} %Description of camera and such
@@ -364,7 +365,7 @@ The end result would also be presented as nice diagrams and graphs presenting va
 
 \chapter{Results}
 
-\chapter{Conclusion}
+\chapter{Conclusion and Further Work}
 
 
 %\printbibliography  %% Comment if you don't want to use bibtex
