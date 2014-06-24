@@ -370,6 +370,23 @@ The main loop of the system which continuously calls gtrm\_compute\_virtual\_pla
 \item Return value: Exit code of systemd.
 \end{itemize}
 
+\subsection{gtrm\_app\_lib.c/h}
+These files are used by the applications to get performance, send performance and setup IPC, for example.
+In the header file the following structs are defined:
+\subsubsection{struct \_job\_h}
+A struct used to represent a job. Applications can have different type of jobs with different deadlines. We only use one type however.
+\begin{itemize}
+\item id: Identifier to keep track of a job being executed.
+\item type: What type of job this is.
+\item start\_timestamp: When the job was started.
+\item end\_timestamp: When we were finished with job. The timestamps are used to calculate the total execution time of a job.
+\end{itemize}
+
+\subsubsection{struct \_application\_h}
+Each application stores the relevant information in terms of resource management and SL-adaptation in this struct.
+\begin{itemize}
+\item application\_id: Identifi
+\end{itemize}
 
 \chapter{Use cases}
 For implementation and testing reasons we came up with the following use-cases. In all the use cases we assume that the static slice is under heavy load so that no extra resources are given to the GTRM-slice. 
