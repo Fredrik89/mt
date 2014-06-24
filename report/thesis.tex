@@ -31,7 +31,7 @@
 
 \chapter*{Abstract}
 This master thesis report will depict the work carried out at Axis Communications in cooperation with the Department of Control at Lunds University. The problem of limited resources on an Axis camera is handled by a two
-part solution where a resource manager (RM) distributes the available re sources and where services adapt their service level (SL) in order to let the services finish their jobs on time. This is done in a game theoretic approach where the services are players, varying their SL in order to get a good match between given resources and their SL. This SL-adaptation scheme is then implemented on the streaming service on the camera and on some test services performing simple math operations. The resource manager is incorporated into systemd which uses CGroups ~\cite{cgroups} to implement the distribution of resources.
+part solution where a resource manager (RM) distributes the available resources and where services adapt their service level (SL) in order to let the services finish their jobs on time. This is done in a game theoretic approach where the services are players, varying their SL in order to get a good match between given resources and their SL. This SL-adaptation scheme is then partly implemented on the streaming service on the camera and on some test services performing simple math operations. The resource manager is incorporated into systemd which uses cgroups ~\cite{cgroups} to implement the distribution of resources.
 
 
 \chapter*{Acknowledgements}
@@ -98,7 +98,7 @@ The Service Level (SL) defines the quality of service of the application. In the
 This will make sure that the application is always presenting valid result in time but with quality as a trade-off. This adaptation is done by the application itself.
 
 \subsection{Resource Manager}
-The resource manager(RM) will also measure the performance of the applications. It will try to distribute the resource in the best possible way to the applications. The resources are modeled as “virtual platforms”, which is basically a percentage of the total available resources. For example the amount of time an application is allowed to use the CPU in proportion to the other applications. Here “resources” could refer to something other than CPU, such as memory or network-resources, depending on different aspects of the system. The main property of the performance is that if an application is given more/less resources it should be able to execute at a higher/lower SL or have a shorter/longer execution time.
+The resource manager (RM) will also measure the performance of the applications. It will try to distribute the resources in the best possible way to the applications. The resources are modeled as “virtual platforms”, which is basically a percentage of the total available resources. For example the amount of time an application is allowed to use the CPU in proportion to the other applications. Here “resources” could refer to something other than CPU, such as memory or network-resources, depending on different aspects of the system. The main property of the performance is that if an application is given more/less resources it should be able to execute at a higher/lower SL or have a shorter/longer execution time.
 
 The theory of decoupling the resource manager from the service level adaptation was developed at the Department of Automation at Lunds University. The resulting resource manager is referred to as Game Theoretic Resource Manager, GTRM. 
 
