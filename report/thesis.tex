@@ -304,7 +304,7 @@ Next the queue is peeked to get the next event in the queue to be dispatched by 
 	}
 \end{verbatim}
 
-Finally the \emph{source\_dispatch} function is called to call the callback function linked to the popped top \emph{sd\_event\_source*}.
+Finally the \emph{source\_dispatch} function is called to call the callback function linked to the popped top \emph{sd\_event\_source*} element.
 
 \begin{verbatim}
 	static int source_dispatch(sd_event_source *s) {
@@ -337,11 +337,28 @@ Finally the \emph{source\_dispatch} function is called to call the callback func
 	}
 \end{verbatim}  
 
+\subsection{Setting up the socket}
+The socket is created in the function manager\_setup\_notify(...) with a call to the socket() function. 
+
+
+\begin{verbatim}
+fd = socket(AF_UNIX, SOCK_DGRAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0);
+\end{verbatim}
+
+The socket is set to use the protocol family \emph{AF_UNIX}, which provides efficient communication on the same machine.  \emph{SOCK_DGRAM} sets the socket type to be datagram since there is no need to resend missed obsolete data and no messages are expected to be lost when sent over the same machine anyway. \emph{SOCK_NONBLOCK} prevents the socket from blocking during a read() call when there is no data to read which should not matter here since the polling makes sure that there is always something to read. A random address name is created and assigned to the socket by a call to bind(). Next the fd for the socket needs to be added to the epoll instance, and a epoll_event needs to be associated to the fd. The \emph{epoll\_event} contains a pointer to a  \emph{sd\_event\_source} that has been described earlier. This is all done in the call:  
+
+\begin{verbatim}
+r = sd_event_add_io(m->event, &m->gtrm_event_source, m->gtrm_fd, EPOLLIN,manager_dispatch_gtrm_fd, m);
+
+\end{verbatim}
+
+
+
+
+ 
+
+
 \subsection{asdfasdf}
-
-
-
-
 The callback function which is registered and linked to the events for the gtrm socket when the socket communication is established,  contains all the code that should execute when a message is received on the gtrm socket. The function extracts the data from the message, which is the PID of the sending application, its performance, whether it is satisfied or not and the weight attribute. The hashmap, which contains all the applications that are managed by GTRM, is then updated with this new data. The data is then used when the virtual platforms are calculated  and set the CPUShares in systemds “main-loop”.
 
 \section{Service Level}
