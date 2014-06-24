@@ -54,66 +54,24 @@ It is becoming more common to have multiple resource intensive services running 
 
 \martina{Rephrase this}
 
-The problem of resource management was addressed by a multitude
-of research groups in the past. Without pretending to have made an
-exhaustive comparison, in this section we propose our selection of the
-most notable related results.
+Resource management is a problem that can be solved in many different ways. Many resource managers has been developed in the past and also some with game theoretic behavior.  
 
-Several mechanisms for abstracting resources have been proposed in the
-past. Linux/RK~\cite{Oik99} provided reserves of different types of
-resources (CPU cycles, memory pages, disk bandwidth, network
-bandwidth, etc.). However, to the best of our knowledge, it is no longer
-maintained over current versions of the Linux kernel.
-LITMUS$^\mathrm{RT}$~\cite{Bra07} provides an experimental platform
-for testing and prototyping of multiprocessor real-time scheduling and
-synchronization algorithms. However, it does not aim to be included
-into the mainline Linux kernel. Hence, we decided to isolate the CPU
-resource by using the \texttt{SCHED\_DEADLINE} scheduling
-class~\cite{Faggioli-SCHEDDEADLINE-2009}, because it specifically
-targets the inclusion into the Linux kernel.  Supported by the
-positive comments received by the kernel
-maintainers~\cite{LinuxPeople} we believe that developing our
-framework on top of \texttt{SCHED\_DEADLINE} may ease the portability
-of our framework in the future.
+The problem of allocating resources to, assumed, fully parallelizable tasks was solved by Wei et al.~\cite{Wei10} using a game-theoretic method.
 
-Many resource managers were proposed in the past. Some of them also
-applied game theory.  Subrata et al.~\cite{Sub08} applied game theory
-to balance the load in grid computing, where job arrivals are modeled by
-Poisson processes and players are the machines that try to maximize
-their profit by accepting jobs.  Wei et al.~\cite{Wei10} proposed a
-game-theoretic method to allocate resources to incoming tasks, where tasks
-are assumed to be fully parallelizable.  Similarly, Grosu and
-Chronopoulos~\cite{Gro05} formulated the load balancing problem among
-different players as a non-cooperative game and then studied the existence of Nash
-equilibria.  However, none of these papers considered the adjustment
-of application parameters.
+Subrata et al.~\cite{Sub08} solved the problem of balancing the load in grid computing by applying game theory. Here the players are machines that wants to maximize their profit by finishing jobs that arrive according to a Poisson process.
 
-Much of the research on resource management is based on the concept of
-feedback. Initial usage of feedback loops to control the allocated
-resources were independently developed by Lu et al.~\cite{LuS99a},
-Steere et al.~\cite{Ste99}, Eker et al.~\cite{Eke00}. In these
-approaches quality adjustment was not considered.
+Grosu and
+Chronopoulos~\cite{Gro05} made similar work with load balancing. Here the load was distributed amongst different competing players which would hopefully reach a common state which would benefit all the players the most.
 
-Rajkumar et al.~\cite{Raj97a} proposed the QoS-based Resource
-Allocation Model (Q-RAM) to manage resources spanning over multiple
-dimensions. The resources are allocated so that the \emph{total 
-utility} is maximized with minimal QoS constraints.
-A similar approach was proposed by Sojka et al.~\cite{Soj11}.
+Many resource managers are feedback oriented and resource allocation using feedback loops was developed by Lu et al.~\cite{LuS99a},
+Steere et al.~\cite{Ste99}, Eker et al.~\cite{Eke00}. However they do not implement the concept of altering quality.
+
+The QoS-based Resource Allocation Model (Q-RAM) was proposed by Rajkumar et al.~\cite{Raj97a} for managing of multidimensional resources. Here it is desired to minimize the QoS constraints while maximizing the \emph{total utility}. 
  
-In the ACTORS project, applications provide a table to the
-$\mathsf{RM}$ describing the required amount of CPU resources and the
-achieved QoS at each supported service level~\cite{Bin11,Arz11}.  In the multicore case, the amount of
-resources must be given for each individual partition. Then, the
-$\mathsf{RM}$ decides the service level of all the applications and
-how the partitions should be mapped to physical cores using a
-combination of integer linear programming and first-fit bin-packing.
+A solution that both manages the resources and the service level of an application is proposed in the ACTORS project ~\cite{Bin11}, but just as the solutions proposed by \cite{Raj97a,Soj11,Arz11} this is done in a centralized way. 
 
-These approaches~\cite{Raj97a,Soj11,Bin11,Arz11} rely on the solution
-of an optimization problem that determines the amount of assigned
-resource and sets the service levels of all applications. The
-separation of the QoS-level assignment and the resource distribution
-was recently proposed~\cite{Sil11}, however in the context of network
-bandwidth allocation.
+Separating the service-level adjustment and the resource management has been proposed to solve network bandwith allocation, ~\cite{Sil11}.
+
 % Instead, we believe that the assignment of the service level can be
 % better performed by the application itself, rather than at a
 % centralized resource management level.
@@ -148,16 +106,7 @@ Systemd [sysd] is a system management daemon for Linux and it is the first proce
 
 Cgroups, abbreviated from control groups, can be used to set the amount of resources, such as CPU or memory, of a process or a group of processes via a virtual file system. This file system forms a tree where the resources of a parent folder are shared by its children. The division of the resources among the children are determined by the amount of "shares" the children has been given. 
 
-
-
-
-
-
-
-
-
-
- Each application can be run as a "service" by specifying a service file which defines many different parameters and options. In this file we can specify which application or applications should be associated with which service and for example how much CPU shall be given to this service. The service file can then be placed in a certain folder in the cgroup file hierarchy, see fig~\ref{ctree}. Different folders are used to represent different cgroup controllers or a different combination of controllers. Depending on which controllers are enabled different features are available, such as limiting CPU- and memory.   
+Each application can be run as a "service" by specifying a service file which defines many different parameters and options. In this file we can specify which application or applications should be associated with which service and for example how much CPU shall be given to this service. The service file can then be placed in a certain folder in the cgroup file hierarchy, see fig~\ref{ctree}. Different folders are used to represent different cgroup controllers or a different combination of controllers. Depending on which controllers are enabled different features are available, such as limiting CPU- and memory.   
  Services can be grouped into different slices and share properties depending on which slice they belong to.  
 One can for example set how much CPU-time that shall be given to the applications in the slice and decide how the applications will divide it amongst themselves.
 
