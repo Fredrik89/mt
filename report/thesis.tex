@@ -642,6 +642,78 @@ If the loop exits we have to deallocate the \emph{gtrm\_t} struct to avoid memor
 }
 \end{verbatim}
 
+\subsection{Applying the virtual platforms}
+The virtual platforms has to be distributed to the applications and that is done in the following function.
+\begin{verbatim}
+void gtrm_apply_virtual_platforms(Manager* m) {
+\end{verbatim}
+Three variables are defined for setting the shares, iterating through the hash-map and a struct for the application.
+\begin{verbatim}
+  int shares;
+  Iterator i;
+  rm_app_t* a;
+\end{verbatim}
+\emph{HASHMAP\_FOREACH} is a macro defined in \emph{hashmap.h} that is used to easily iterate through all the elements in the hash-map. The macro takes three parameters, a local variable to store the current element in the iteration, the hash-map which we want to iterate through and an Iterator. 
+\begin{verbatim}
+  HASHMAP_FOREACH(a, m->gtrm_apps, i) {
+\end{verbatim}
+Since the virtual platform is given as a percentage of the total amount of available resources, each applications virtual platform is multiplied by a constant, \emph{\_TOTAL\_SHARES}, to give the absolute amount of shares.
+\begin{verbatim}
+    shares = a->vp * _TOTAL_SHARES;
+\end{verbatim}
+Finally the CPUShares of the application is set, end then the loop repeats until we have updated all the applications in the system.
+
+\begin{framed}
+		\begin{flushleft}
+		
+			\textbf{\emph{{int manager\_set\_cpu\_shares(Manager *m, pid\_t pid, int shares)}}} \newline
+			Sets the CPUShares of an application.
+			\begin{itemize}
+			\item m: Reference to manager, used to get the applications.
+			\item pid: Process identifier of the application.
+			\item shares: Amount of shares we want to set.
+			\item Return value: Zero if successful, one otherwise.
+			\end{itemize}
+		\end{flushleft}	
+\end{framed}
+
+\begin{verbatim}
+    manager_set_cpu_shares(m, a->tid, shares);
+  }
+}
+\end{verbatim}
+\subsection{Setting CPUShares}
+From the command line one can manually set the amount of CPUShare of an application by running the command, \emph{systemctl set-property 'service name' CPUShares='shares'} followed by running \emph{systemctl daemon-reload}. These commands take a lot of time since they involve calls via DBus to systemd. But since the resource manager is located in systemd, these calls can be circumvented, by setting the CPUShares directly.
+\begin{verbatim}
+int manager_set_cpu_shares(Manager *m, pid_t pid, int shares){
+\end{verbatim}
+Two local variables are needed, a pointer to a \emph{Unit} and one to a \emph{CGroupContext}. From the PID of an application, the corresponding Unit pointer can be obtained.
+\begin{verbatim}
+  Unit* u;
+  CGroupContext* c;
+  u = manager_get_unit_by_pid(m, pid);
+\end{verbatim}
+In case the application does not exist, because the application has finished, the Unit pointer produced previously will be a NULL-pointer. The application is thus removed from the hash-map, which requires that we reset the virtual-platforms, and the function call is returned.
+\begin{verbatim}
+  if(u == NULL) {
+    hashmap_remove(m->gtrm_apps, pid);
+    reset_virtual_platforms(m->gtrm_apps);
+    return 1;
+  }
+\end{verbatim}
+If the Unit-pointer obtained was not NULL, a so called CGroupContext can now be acquired from the Unit-pointer.
+\begin{verbatim}
+  c = unit_get_cgroup_context(u);
+\end{verbatim}
+In this context the CPUShares can be set to what is desired and it is followed be a necessary call to apply the changes.
+\begin{verbatim}
+  c->cpu_shares = shares;
+  cgroup_context_apply(c, CGROUP_CPU, u->cgroup_path);
+  return 0;
+}
+\end{verbatim}
+
+
 \section{Service Level}
 There are two ways of implementing SL, one simpler and one more advanced. The first one simply multiplies the current SL with the matching funtion and multiplies the result with a constant scale factor. This will decrease the service level if the performance is negative and increase it if it is positive. The scaling factor (called epsilon) also makes sure that we don't get too much overshoot. 
 \[sl_i(t+1)= sl_i(t) + \epsilon*(f_i(t)*sl_i(t)) \]
