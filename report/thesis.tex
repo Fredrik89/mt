@@ -643,7 +643,7 @@ If the loop exits we have to deallocate the \emph{gtrm\_t} struct to avoid memor
 \end{verbatim}
 
 \section{Service Level}
-There are two ways of implementing SL, one simpler and one more advanced. The first one simply multiplies the current SL with the matching funtion and multiplies the result with a constant scale factor. This will decrease the service level if the performance i negative and increase it if it is positive. The scaling factor (called epsilon) also makes sure that we don't get too much overshoot. 
+There are two ways of implementing SL, one simpler and one more advanced. The first one simply multiplies the current SL with the matching funtion and multiplies the result with a constant scale factor. This will decrease the service level if the performance is negative and increase it if it is positive. The scaling factor (called epsilon) also makes sure that we don't get too much overshoot. 
 \[sl_i(t+1)= sl_i(t) + \epsilon*(f_i(t)*sl_i(t)) \]
 The way also includes how much the virtual platform of the application has changed. This is calculated as the performance multiplier, PM.
 \[PM_i = (1+f_i)*(vp_i(i+1)/vp(i))\]
@@ -798,6 +798,15 @@ The main loop of the system which continuously calls gtrm\_compute\_virtual\_pla
 \item Return value: Exit code of systemd.
 \end{itemize}
 
+\subsubsection{int manager\_set\_cpu\_shares(Manager *m, pid\_t pid, int shares)}
+Sets the CPUShares of an application.
+\begin{itemize}
+\item m: Reference to manager, used to get the applications.
+\item pid: Process identifier of the application.
+\item shares: Amount of shares we want to set.
+\item Return value: Zero if successful, one otherwise.
+\end{itemize}
+
 \subsection{gtrm\_app\_lib.c/h}
 These files are used by the applications to get performance, send performance and setup IPC, for example.
 In the header file the following structs are defined:
@@ -848,12 +857,14 @@ Initializes the application struct with job types and their expected response ti
 \item Return value: Exit status of function.
 \end{itemize}
 
-\subsubsection{double gtrm\_lib\_get\_performance\_number(\_application\_h* a, int job\_type)}\subsubsection{static int manager\_setup\_gtrm(Manager *m)}
+\subsubsection{static int manager\_setup\_gtrm(Manager *m)}
 Used to setup the socket, event source and file descriptor for the resource manager. Called from manager\_startup and manager\_reload.
 \begin{itemize}
 \item m: Reference to the manager.
 \item Return value: Zero if function ran correctly, otherwise it is set to the corresponding error number.
 \end{itemize}
+
+\subsubsection{double gtrm\_lib\_get\_performance\_number(\_application\_h* a, int job\_type)}
 Calculates the peformance (matching function) by averaging the performance of the last ten jobs of a specified type.
 \begin{itemize}
 \item a: Struct representing an application.
