@@ -213,12 +213,63 @@ The Axis P3367 is a fixed dome network camera capable of multiple H.264 streams 
 \chapter{Implementation}
 All code were written in C and cross-compiled using Axis' compiler for the corresponding platform e.g. camera. For the resource allocation different service files and slices were specified, and the resulting plots were generated with Octave.
 \section{Constraints} %What we decided to do and not to do
-Creating service levels for all the applications running on the system would not be a realistic approach. This is because there are many different applications, some of which may not even be developed at Axis, and developers cannot be expected to modify all of them to implement the performance measurements and service level features needed. Instead the service level part is only implemented in the video streaming application and on some test applications that does some random computations to stress the system. This thesis only focuses on the implementation of the already mentioned work at LTH and will not look into proofs of convergence for the algorithm, neither will it look into other types of SL functions than the simple linear case where the CPU requirement are a linear function of the SL. It can be argued that the CPU requirement/SL relationship can be linearized around a point and hence still be linear in a small intervall.
-
-\section{Resource Management} 
+Creating service levels for all the applications running on the system would not be a realistic approach. This is because there are many different applications, some of which may not even be developed at Axis, and developers cannot be expected to modify all of them to implement the performance measurements and service level features needed. Instead the service level part is only implemented in the video streaming application and on some test applications that does some random computations to stress the system. This thesis only focuses on the implementation of the already mentioned work at LTH and will not look into proofs of convergence for the algorithm, neither will it look into other types of SL functions than the simple linear case where the CPU requirement are a linear function of the SL. It can be argued that the CPU requirement/SL relationship can be linearized around a point and hence still be linear in a small interval. Only the time sensitive matching function $f_{i}=\frac{D{i}}{R_{i}}-1$ where $D_{i}$ is the soft deadline for the application and $R_{i}$ is the job response time.
 
 
-\subsection{IPC}
+
+
+
+
+
+\section{The update algorithms to implement}
+
+
+\subsection{Service Level update}
+There are two ways of implementing SL, one simpler and one more advanced. The first one simply multiplies the current SL with the matching function and multiplies the result with a constant scale factor. This will decrease the service level if the performance is negative and increase it if it is positive. The scaling factor (called epsilon) slows down the adaption rate to avoid instability. 
+\[sl_i(t+1)= sl_i(t) + \epsilon*(f_i(t)*sl_i(t)) \]
+The second way also includes how much the virtual platform of the application has changed. This is calculated as part or the performance multiplier, PM.
+\[PM_i = (1+f_i)*(vp_i(i+1)/vp(i))\]
+After calculating the performance multiplier the new service level can be calculated:
+\[sl_i(t+1)=sl_i(t) + (\epsilon*sl_i(t)*PM_i)\]
+
+\subsection{Performance/matching function update}
+The performance of a job will be based on how it can keep its deadline. The rule for calculating a indivdual jobs performance is:
+$f_{i}=\frac{D{i}}{R_{i}}-1$ where $D_{i}$ is the soft deadline for the application and $R_{i}$ is the job response time.
+The applications job will be updated as the average of the ten last jobs performance.
+
+\subsection{Virtual platform update}
+
+The update for the virtual platforms is done according to the algorithm described on page 4 in "A Game-Theoretic Resource Manager for RT Applications" \cite{gtrm}:
+
+
+\begin{quotation}
+\em
+	the RM assigns resources according to
+	the following rule:
+	\begin{enumerate}
+
+	\item it measures the performance\footnote{As stated in its definition, $f_i$ is a function of the service level $s_i$ and the virtual platform $v_i$. However, here we intentionally hide this dependency and report only the dependency on time $t$, since the RM only measures a value over time.} $f_i(t)$;  
+	\item it updates the virtual platform $\tilde{v}_{i}$ as follows:
+
+		\begin{multline}
+		  \tilde{v}_i(t+1) =\tilde{v}_i(t) + \epsilon_{ RM}(t)\Big(- \lambda_i f_i(t) + \sum_{j=1}^n \lambda_j f_j(t) \tilde{v}_i(t)\Big),
+		  \label{eq:RecursionForResources}
+		\end{multline}
+		  where $\epsilon_{ RM}(t)$ is a step-size sequence;
+	\item it computes the original value of bandwidth by $$v_i(t+1) = m \tilde{v}_i(t+1),$$
+	\item it updates the time $t\leftarrow t+1$ and repeats.
+	\end{enumerate}
+	
+	
+\end{quotation}
+
+Here $\tilde{v}$ is the normalized virtual platform, hence the conversion from normalized to actual in step3. In place of bandwidth CPUShares will be used in this paper.
+
+
+
+
+
+\section{IPC}
 The resource management is implemented as a part of systemd, with all of the resource management source code integrated into systemds. If an application has a poor matching function it sends information to systemd via UNIX-sockets. The interprocess communication (IPC) consists of one socket in systemd and one for each application that the RM is monitoring. The socket setup was implemented by more or less copying the “Notify” feature of systemd which is used by certain services that want to for example notify systemd that they have started or about other status changes [sysd-notify].
 Systemd uses epoll to find out which sockets has received new messages. The events returned from epoll\_wait() are then put in a prioritized queue. This prioritized queue is then popped and the callback function for top most event is called. This means that a message might not be read immediately after being read from the epoll buffer. Most of the functions used to manage epoll are located in “sd-event”. 
 
@@ -563,7 +614,7 @@ The first step is to update the number of running applications.
       gtrm_t->prev_apps = gtrm_t->num_apps;
       gtrm_t->num_apps = hashmap_size(m->gtrm_apps);
 \end{verbatim}
-\end{verbatim}
+
 \begin{framed}
 		\begin{flushleft}
 				\textbf{\emph{{int gtrm\_compute\_virtual\_platforms(Hashmap *apps, gtrm\_t *gtrm\_t)}}} \newline
@@ -641,13 +692,7 @@ If the loop exits we have to deallocate the \emph{gtrm\_t} struct to avoid memor
 }
 \end{verbatim}
 
-\section{Service Level}
-There are two ways of implementing SL, one simpler and one more advanced. The first one simply multiplies the current SL with the matching funtion and multiplies the result with a constant scale factor. This will decrease the service level if the performance is negative and increase it if it is positive. The scaling factor (called epsilon) also makes sure that we don't get too much overshoot. 
-\[sl_i(t+1)= sl_i(t) + \epsilon*(f_i(t)*sl_i(t)) \]
-The way also includes how much the virtual platform of the application has changed. This is calculated as the performance multiplier, PM.
-\[PM_i = (1+f_i)*(vp_i(i+1)/vp(i))\]
-After calculating the performance multiplier the new service level can be calculated like this
-\[sl_i(t+1)=sl_i(t) + (\epsilon*sl_i(t)*PM_i)\]
+
 \section{Resource Allocation}
 \begin{figure}
     \centering
