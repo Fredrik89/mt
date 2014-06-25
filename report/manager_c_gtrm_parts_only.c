@@ -33,7 +33,7 @@ static void manager_clean_environment(Manager *m) {
 	m->gtrm_apps = hashmap_new(trivial_hash_func, trivial_compare_func);
 	
 	
-	static int manager_setup_gtrm(Manager *m) {
+static int manager_setup_gtrm(Manager *m) {
         union {
                 struct sockaddr sa;
                 struct sockaddr_un un;

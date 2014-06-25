@@ -405,6 +405,46 @@ fromlen = 1024;
 \subsection{asdfasdf}
 The callback function which is registered and linked to the events for the gtrm socket when the socket communication is established,  contains all the code that should execute when a message is received on the gtrm socket. The function extracts the data from the message, which is the PID of the sending application, its performance, whether it is satisfied or not and the weight attribute. The hashmap, which contains all the applications that are managed by GTRM, is then updated with this new data. The data is then used when the virtual platforms are calculated  and set the CPUShares in systemds “main-loop”.
 
+\subsection{Resource management loop}
+The virtual platforms are re-calculated and applied for as long as the applications are not completely satisfied. This is run inside the \emph{manager\_loop}-function in \emph{manager.c}.
+
+\begin{verbatim}
+int manager_loop(Manager *m) {
+  gtrm_t *gtrm_t = calloc(1,sizeof(struct gtrm_t));
+  gtrm_t->num_apps = 0;
+  gtrm_t->prev_apps = 0;
+  gtrm_t->iterations = 0;
+  gtrm_t->all_happy = true;
+  gtrm_t->c1 = 0.1;
+  gtrm_t->c2 = 10;
+
+
+  while (m->exit_code == MANAGER_RUNNING) {
+    ...
+    if ((!(gtrm_t->all_happy) || m->update_gtrm) && 
+        !hashmap_isempty(m->gtrm_apps)) {
+      gtrm_t->prev_apps = gtrm_t->num_apps;
+      gtrm_t->num_apps = hashmap_size(m->gtrm_apps);
+      
+      gtrm_compute_virtual_platforms(m->gtrm_apps, gtrm_t);
+      gtrm_t->iterations++;
+
+      gtrm_apply_virtual_platforms(m); 
+      m->update_gtrm=false;																	
+
+      gtrm_update_performance_multipliers(m->gtrm_fd,m->gtrm_apps);
+      gtrm_write_log(m->gtrm_apps, gtrm_t->num_apps);
+
+    }
+
+  }
+  free(gtrm_t);
+  return m->exit_code;
+}
+\end{verbatim}
+
+Before the loop actually start to run, we create and initiate a struct that contain the necessary data for the resource manager, \emph{gtrm\_t}. Inside the loop, the if-statement makes sure we do not run the resource manager if it is not needed. The first step is to update the number of running applications. Then we compute the virtual platforms 
+
 \section{Service Level}
 There are two ways of implementing SL, one simpler and one more advanced. The first one simply multiplies the current SL with the matching funtion and multiplies the result with a constant scale factor. This will decrease the service level if the performance i negative and increase it if it is positive. The scaling factor (called epsilon) also makes sure that we don't get too much overshoot. 
 \[sl_i(t+1)= sl_i(t) + \epsilon*(f_i(t)*sl_i(t)) \]
