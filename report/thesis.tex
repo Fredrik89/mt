@@ -1,20 +1,18 @@
 \documentclass[nobiblatex]{LTHthesis}
-% !TeX spellcheck = en_GB
 \usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}  %% Comment if you are not using utf8
+\usepackage[utf8]{inputenc}
 \usepackage{mathptmx, helvet}
 \usepackage{xfrac}
-%\usepackage[swedish]{babel}  %% aktivera om rapporten är på svenska
 \usepackage[left=2.5cm,right=2.5cm,top=3cm,bottom=5cm]{geometry}
 \usepackage{graphicx}
 \usepackage{listings}
 \usepackage{url}
 \usepackage{verbatim}
-
 \usepackage{titlesec}
 \usepackage{todonotes}
 
-\newcommand{\martina}[1]{\todo[inline,color=red!30,caption={}]{\textbf{Martina:} #1}}
+\newcommand{\martina}[1]
+  {\todo[inline,color=red!30,caption={}]{\textbf{Martina:} #1}}
 
 \begin{document}
 \begin{titlepages}
@@ -30,11 +28,13 @@
 \pagenumbering{roman}
 
 \chapter*{Abstract}
+
 This master thesis tackles the problem of limited computing resources on a camera that is executing computing applications together with image acquisition and streaming. The thesis was carried out at Axis Communications in cooperation with the Department of Control at Lunds University. The problem of limited resources on an Axis camera is handled by a two part solution where a resource manager (RM) distributes the available resources and services can adapt their service level (SL) in order to finish their jobs on time. The solution is based on game theory, where services are players, varying their service levels in order to get a good match between given resources and their computing requirements. This service level adaptation scheme is partially implemented for the streaming service on the camera and for some test services, performing mathematical operations. The resource manager is incorporated into \texttt{systemd}, and uses \texttt{cgroups}~\cite{cgroups} to distribute the computing capacity.
 \martina{Add one sentence to summarize the results.}
 
 
 \chapter*{Acknowledgements}
+
 We want to thank our supervisors, Umut Tezduyar-Lindskog, Axis and Martina Maggio, LTH Department of Control. We would also like to thank engineering manager Pontus Bergendahl, Axis.
 
 \newpage
