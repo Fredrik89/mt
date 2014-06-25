@@ -8,8 +8,11 @@
 \usepackage{listings}
 \usepackage{url}
 \usepackage{verbatim}
+\usepackage[]{algorithm2e}
+\usepackage{lipsum}
 \usepackage{titlesec}
 \usepackage{todonotes}
+\usepackage{framed}
 
 \newcommand{\martina}[1]
   {\todo[inline,color=red!30,caption={}]{\textbf{Martina:} #1}}
@@ -311,7 +314,7 @@ Creating service levels for all the applications running on the system would not
 
 \subsection{IPC}
 The resource management is implemented as a part of systemd, with all of the resource management source code integrated into systemds. If an application has a poor matching function it sends information to systemd via UNIX-sockets. The interprocess communication (IPC) consists of one socket in systemd and one for each application that the RM is monitoring. The socket setup was implemented by more or less copying the “Notify” feature of systemd which is used by certain services that want to for example notify systemd that they have started or about other status changes [sysd-notify].
-Systemd uses epoll to find out which sockets has received new messages. The events returned from epoll\_wait() are then put in a prioritized queue. This prioritized queue is then popped and the callback function for top most event is called. This means that a message might not be read immediately after being read from the epoll buffer. Most of the functions used to manage epoll are located in  “sd-event”. 
+Systemd uses epoll to find out which sockets has received new messages. The events returned from epoll\_wait() are then put in a prioritized queue. This prioritized queue is then popped and the callback function for top most event is called. This means that a message might not be read immediately after being read from the epoll buffer. Most of the functions used to manage epoll are located in “sd-event”. 
 
 
 \subsubsection{Pseudo code}
@@ -431,31 +434,310 @@ Finally the \emph{source\_dispatch} function is called to call the callback func
 \end{verbatim}  
 
 \subsection{Setting up the socket}
-The socket is created in the function manager\_setup\_notify(...) with a call to the socket() function. 
+
+The socket is created and added to the epoll instance in \emph{manager\_setup\_gtrm(...)}, below is the instructive part of the code in \emph{manager\_setup\_gtrm(...)}:
 
 
+
+
+\begin{framed}
+		\begin{flushleft}
+		
+			\textbf{\emph{{static int manager\_setup\_gtrm(Manager *m)}}} \newline
+			Used to setup the socket, event source and file descriptor for the resource manager. Called from manager\_startup and manager\_reload.
+			\begin{itemize}
+			\item m: Reference to the manager.
+			\item Return value: Zero if function ran correctly, otherwise it is set to the corresponding error number.
+			\end{itemize}
+		\end{flushleft}	
+\end{framed}
+
+
+
+
+
+
+
+The socket is created in the function  with a call to the socket(..) function.
 \begin{verbatim}
 fd = socket(AF_UNIX, SOCK_DGRAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0);
 \end{verbatim}
 
-The socket is set to use the protocol family \emph{AF\_UNIX}, which provides efficient communication on the same machine.  \emph{SOCK\_DGRAM} sets the socket type to be datagram since there is no need to resend missed obsolete data and no messages are expected to be lost when sent over the same machine anyway. \emph{SOCK\_NONBLOCK} prevents the socket from blocking during a read() call when there is no data to read which should not matter here since the polling makes sure that there is always something to read. A random address name is created and assigned to the socket by a call to bind(). Next the fd for the socket needs to be added to the epoll instance, and a epoll\_event needs to be associated to the fd. The \emph{epoll\_event} contains a pointer to a  \emph{sd\_event\_source} that has been described earlier. This is all done in the call:  
+The socket is set to use the protocol family \emph{AF\_UNIX}, which provides efficient communication on the same machine. \emph{SOCK\_DGRAM} sets the socket type to be datagram since there is no need to resend missed obsolete data and no messages are expected to be lost when sent over the same machine anyway. \emph{SOCK\_NONBLOCK} prevents the socket from blocking during a read() call when there is no data to read which should not matter here since the polling makes sure that there is always something to read. A random address name is created and assigned to the socket by a call to bind(). Next the fd for the socket needs to be added to the epoll instance, and an epoll\_event needs to be associated to the fd. The \emph{epoll\_event} contains a pointer to a \emph{sd\_event\_source} that has been described earlier. This is all done in the call:  
 
 \begin{verbatim}
-r = sd_event_add_io(m->event, &m->gtrm_event_source, m->gtrm_fd, EPOLLIN,manager_dispatch_gtrm_fd, m);
+r = sd_event_add_io(m->event, &m->gtrm_event_source, m->gtrm_fd,
+ EPOLLIN, manager_dispatch_gtrm_fd, m);
+\end{verbatim}
 
+Now the gtrm socket has been added to the poll and a corresponding event will be returned if there is a message on the socket when calling \emph{epoll\_wait(...)}. 
+The last thing done in \emph{manager\_setup\_gtrm(...)} is to give the \emph{gtrm\_event\_source} a priority, this affects how the prioritized queue sorts messages from this source type and is set to the same as notify messages.
+
+
+
+\subsubsection{The callback function for gtrm socket:}
+Once an event has been popped from the prioritized queue the callback function \emph{static int manager\_dispatch\_gtrm\_fd(...)} is called. 
+The callback function contains all the code that should execute when a message is received on the gtrm socket. The function extracts the data from the message, which is the PID of the sending application, its performance, whether it is satisfied or not and the weight attribute. 
+The hashmap, which contains all the applications that are managed by GTRM, is then updated with this new data. 
+
+
+
+
+The instructive parts of the function are shown below:
+
+\begin{framed}
+		\begin{flushleft}
+			\textbf{\emph{static int manager\_dispatch\_gtrm\_fd(sd\_event\_source *source, int fd, unit32\_t revents, void *userdata)}}\newline
+				Called when we receive the performance of an application.
+				\begin{itemize}
+				\item source: source of the event.
+				\item fd: file descriptor to the event source.
+				\item revents: Set by the kernel to indicate what event on the file descriptor that triggered the call to this function. In our case it is always the incoming event.
+				\item userdata: In this case it contains a reference to the manager.
+				\item Return value: Not used, always zero.
+				\end{itemize}
+		\end{flushleft}	
+\end{framed}
+
+
+
+
+
+First some declarations and initializations
+
+\begin{verbatim}
+static int manager_dispatch_gtrm_fd(sd_event_source *source, int fd,
+uint32_t revents, void *userdata) {
+
+Manager *m = userdata;    		    
+//will contain the read message
+char buf[1024];
+//will be set to the byte size of the read message
+int n;
+//will contain the senders adress
+struct sockaddr_un *from;
+socklen_t fromlen;
+//stores RM data about the applications being managed
+rm_app_t *app;
+rm_app_t *app2;	
+
+fromlen = 1024;
+\end{verbatim}
+
+Here the \emph{rm\_app\_t} structure is used:
+
+\begin{framed}
+		\begin{flushleft}
+			\textbf{\emph{struct rm\_app\_t}}
+			Represents an application being managed and consists of the following fields.
+			\begin{itemize}
+			\item tid: Applications PID.
+			\item vp: Virtual platform.
+			\item vp\_old: Previous virtual platform.
+			\item performance: Performance, or matching function of the application.
+			\item weight: The current "weight" of the application.
+			\item happy: Indicates if the application is happy with its current performance.
+			\item sa: Socket Address, used to send back the performance multiplier.
+			\end{itemize}
+		\end{flushleft}	
+\end{framed}
+
+
+
+
+
+
+Now a while loop reads the socket one message each iteration until there are no more unread messages. 
+
+\begin{verbatim}
+do{		
+
+	memset(buf,'\0',1023);
+	from = calloc(1,sizeof(struct sockaddr_un));
+	app = calloc(1,sizeof(rm_app_t));	
+	n = recvfrom(fd,buf,1024,0,(struct sockaddr *) from,&fromlen);
+
+	//n is negative if there was no message if socket is non blocking
+	n = recvfrom(fd,buf,1024,0,(struct sockaddr *) from,&fromlen);
+	if(n<0)
+		break;
+	if(n>1024){//2do avoid magic numbers
+		log_error("manager_dispatch_gtrm_fd:received too big message");
+	}	
+
+	gtrm_char2gtrmstruct(buf, app);
+	pid_t pid = app->tid;
+	app->sa = from;
+
+	if(hashmap_get(m->gtrm_apps, pid) == NULL) {
+		hashmap_put(m->gtrm_apps, pid, app);
+	} else {
+		app2 = hashmap_get(m->gtrm_apps, pid);
+		gtrm_update_rm_struct(app,app2);
+	}															
+
+}while(n>0);
+The callback function which is registered and linked to the events for the gtrm socket when the socket communication is established, contains all the code that should execute when a message is received on the gtrm socket. The function extracts the data from the message, which is the PID of the sending application, its performance, whether it is satisfied or not and the weight attribute. 
+The hashmap, which contains all the applications that are managed by GTRM, is then updated with this new data. 
+m->update_gtrm = true;
+
+return 0;
+}
+\end{verbatim}
+
+The data from a message is used to create a \emph{rm\_app\_t} struct. If the hashmap already contains a \emph{rm\_app\_t} struct for the application, the \emph{rm\_app\_t} in the hashmap is updated by calling the function 
+\emph{gtrm\_update\_rm\_struct(app,app2)}, otherwise it is added to the hashmap with the application pid as the key.
+
+\emph{gtrm\_lib} functions used above:
+
+
+\begin{framed}
+		\begin{flushleft}
+			\textbf{\emph{void gtrm\_char2gtrmstruct(char* str, rm\_app\_t *re)}}
+			Extracts data from a received string and store it as a struct instead. The data sent from an application consists of the PID, performance, weight and if the application is satisfied or not.
+			\begin{itemize} 
+			\item str: String to extract data from.
+			\item re: Struct to hold the extracted data.
+			\item Return value: None, the result is stored in re.
+			\end{itemize}
+		\end{flushleft}	
+\end{framed}
+
+
+
+\begin{verbatim}
+void gtrm_update_rm_struct(rm_app_t *src,rm_app_t *dest){
+	dest->performance = src->performance;			
+}
 \end{verbatim}
 
 
 
+\subsection{Resource management loop}
+The virtual platforms are re-calculated and applied for as long as the applications are not completely satisfied. This is run inside the \emph{manager\_loop}-function in \emph{manager.c}.
 
- 
+\begin{verbatim}
+int manager_loop(Manager *m) {
+\end{verbatim}
+Before the loop actually start to run, a struct that contains the necessary data for the resource manager, \emph{gtrm\_t}, is created and initiated.
+
+\begin{framed}
+		\begin{flushleft}
+		
+				\textbf{\emph{{struct gtrm\_t}}} \newline
+				Stores various parameters used by the GTRM.
+				\begin{itemize}
+				\item c1: Constant used for computing epsilon, determines how much we will change the virtual platform.
+				\item c2: Another constant used for computing epsilon similar as c1.
+				\item iterations: Keeps track of how many iterations the GTRM has run.
+				\item all\_happy: Used to indicate if we have to make any adjustments to the resource allocations.
+				\item num\_apps: Total amount of applications that we are managing.
+				\item prev\_apps: The amount of applications in the previous iteration.
+				\end{itemize}
+		\end{flushleft}	
+\end{framed}
+
+\begin{verbatim}
+  gtrm_t *gtrm_t = calloc(1,sizeof(struct gtrm_t));
+  gtrm_t->num_apps = 0;
+  gtrm_t->prev_apps = 0;
+  gtrm_t->iterations = 0;
+  gtrm_t->all_happy = true;
+  gtrm_t->c1 = 0.1;
+  gtrm_t->c2 = 10;
+  while (m->exit_code == MANAGER_RUNNING) {
+    ...
+\end{verbatim}
+Inside the loop, an if-statement makes sure that the resource manager is not run if it is not needed. 
+\begin{verbatim}
+    if ((!(gtrm_t->all_happy) || m->update_gtrm) && 
+        !hashmap_isempty(m->gtrm_apps)) {
+\end{verbatim}
+The first step is to update the number of running applications.
+\begin{verbatim}
+      gtrm_t->prev_apps = gtrm_t->num_apps;
+      gtrm_t->num_apps = hashmap_size(m->gtrm_apps);
+\end{verbatim}
+Second the virtual platforms are computed and the number of iterations is updated.
+\begin{framed}
+		\begin{flushleft}
+				\textbf{\emph{{int gtrm\_compute\_virtual\_platforms(Hashmap *apps, gtrm\_t *gtrm\_t)}}} \newline
+				Calculates the amount of resources (virtual platform) for an application.
+				\begin{itemize}
+				\item apps: The hash-map containing information about the applications being managed.
+				\item gtrm\_t: Struct with parameters used when calculating the virtual platforms.
+				\item Return value: Not used, always zero.
+				\end{itemize}
+		\end{flushleft}	
+\end{framed}
+
+\begin{verbatim}
+
+      gtrm_compute_virtual_platforms(m->gtrm_apps, gtrm_t);
+      gtrm_t->iterations++;
+\end{verbatim}
+The virtual platforms are then applied to the applications and a variable set by the dispatch is reset to false.
+\begin{framed}
+		\begin{flushleft}
+				\textbf{\emph{{void gtrm\_apply\_virtual\_platforms(Manager* m)}}} \newline
+				Computes and applies the amount of CPUShares that each application shall be given.
+				\begin{itemize}
+				\item m: Reference to manager, used to get the applications
+				\item Return value: None.
+				\end{itemize}
+		\end{flushleft}	
+\end{framed}
+\begin{verbatim}
+      gtrm_apply_virtual_platforms(m); 
+      m->update_gtrm=false;																	
+\end{verbatim}
+The final step inside the loop is to update the performance multiplier and do the logging.
+\begin{framed}
+		\begin{flushleft}
+				\textbf{\emph{{void gtrm\_update\_performance\_multipliers(int gtrm\_fd, Hashmap *gtrm\_apps)}}} \newline
+				Calculates, updates and sends the performance multiplier to each application, using the performance, virtual platform and the previous virtual platform for each application.
+				\begin{itemize} 
+				\item gtrm\_fd: File descriptor used to send the performance multiplier.
+				\item gtrm\_apps: Hash-map containing rm\_app\_t structs for each application.
+				\item Return value: None.
+				\end{itemize}
+
+		\end{flushleft}	
+\end{framed}
+
+\begin{framed}
+		\begin{flushleft}
+				\textbf{\emph{{void gtrm\_write\_log(Hashmap *gtrm\_apps, unsigned int num\_applications)}}} \newline
+				Writes information about the resource management to a log file, which can then be used to generate some nice graphs.
+				\begin{itemize} 
+				\item gtrm\_apps: Hash-map containing rm\_app\_t structs for each application.
+				\item num\_applications: Used to make sure we don't try to print an empty hash-map.
+				\item Return value: None.
+		\end{itemize}
+
+		\end{flushleft}	
+\end{framed}
 
 
-\subsection{asdfasdf}
-The callback function which is registered and linked to the events for the gtrm socket when the socket communication is established,  contains all the code that should execute when a message is received on the gtrm socket. The function extracts the data from the message, which is the PID of the sending application, its performance, whether it is satisfied or not and the weight attribute. The hashmap, which contains all the applications that are managed by GTRM, is then updated with this new data. The data is then used when the virtual platforms are calculated  and set the CPUShares in systemds “main-loop”.
+
+
+\begin{verbatim}
+      gtrm_update_performance_multipliers(m->gtrm_fd,m->gtrm_apps);
+      gtrm_write_log(m->gtrm_apps, gtrm_t->num_apps);
+
+    }
+
+  }
+\end{verbatim}
+If the loop exits we have to deallocate the \emph{gtrm\_t} struct to avoid memory leakage.
+\begin{verbatim}
+  free(gtrm_t);
+  return m->exit_code;
+}
+\end{verbatim}
 
 \section{Service Level}
-There are two ways of implementing SL, one simpler and one more advanced. The first one simply multiplies the current SL with the matching funtion and multiplies the result with a constant scale factor. This will decrease the service level if the performance i negative and increase it if it is positive. The scaling factor (called epsilon) also makes sure that we don't get too much overshoot. 
+There are two ways of implementing SL, one simpler and one more advanced. The first one simply multiplies the current SL with the matching funtion and multiplies the result with a constant scale factor. This will decrease the service level if the performance is negative and increase it if it is positive. The scaling factor (called epsilon) also makes sure that we don't get too much overshoot. 
 \[sl_i(t+1)= sl_i(t) + \epsilon*(f_i(t)*sl_i(t)) \]
 The way also includes how much the virtual platform of the application has changed. This is calculated as the performance multiplier, PM.
 \[PM_i = (1+f_i)*(vp_i(i+1)/vp(i))\]
@@ -476,7 +758,7 @@ In the Pie chart above the static slice would be guaranteed a minimum of \sfrac{
 
 The resources of the applications running in the GTRM-slice will be managed by our GTRM. Some of the applications will have SL capabilities implemented and some will not. The reason for this is mainly because of the scope of our project. We are mainly concerned about using the SL to maintain a steady framerate but ideally all applications running in the GTRM-slice should, if it makes sense to the application, have a SL implemented to put the theory into practice. An extension of the project would be to have the entire system managed by the GTRM and have all applications manage their SL. The weight is the parameter that sets how big part of the adaptation that is made by changing the service level contra changing the amount of resources. By using the weight parameter we can make up for the fact that we can’t change SL of some applications and the GTRM will only manage their resources instead. 
 
-\section{Source Code}
+\section{Sequence diagram}
 \begin{figure}
     \centering
     \includegraphics[width=\textwidth]{diag.png}
@@ -489,9 +771,10 @@ The first important part in the application is the calculation of its performanc
 
 The resource manager part basically consists of two parts that sort of runs in parallel. Upon receiving the performance of an application, the handler or dispatch function corresponding to such an event is executed. In the diagram it is labled as \emph{gtrm\_dispatch}, and its main responsibilities is to read and parse the received message and then update the hash-map which contains the relevant data about the applications being managed. Meanwhile the resource management runs as a part of the main-loop, and it uses the information in the hash-map previously mentioned to calculate the virtual platforms, \emph{calculate\_virtual\_platforms}. These virtual platforms are then used to set the amount of CPUShares which will be given to each application in the call to \emph{apply\_virtual\_platforms}. To get a better service level adaptation, the performance number which depends on how much the virtual platform has been changed is sent to the application \emph{send\_performance\_number}.
 
-The system is implemented by the functions described in the following source and header files. Note that some of these files originate from the source of systemd and have only been edited and not created by the authors.
+\section{Source Code}
+In this section follows an overview of the header and source files used in the system and their attributes.
 \subsection{gtrm\_lib.c/h}
-Used as a library for the resource management.
+A library which contains various functions used by the resource manager to make various computations and inter process communication.
 
 \subsubsection{struct rm\_app\_t}
 Represents an application being managed and consists of the following fields.
@@ -508,7 +791,7 @@ Represents an application being managed and consists of the following fields.
 \subsubsection{struct gtrm\_t}
 Stores various parameters used by the GTRM.
 \begin{itemize}
-\item c1: Constant used for computing epsilon, determines how much we will change the virtual platform. Set arbitrary.
+\item c1: Constant used for computing epsilon, determines how much we will change the virtual platform.
 \item c2: Another constant used for computing epsilon similar as c1.
 \item iterations: Keeps track of how many iterations the GTRM has run.
 \item all\_happy: Used to indicate if we have to make any adjustments to the resource allocations.
@@ -521,7 +804,7 @@ Extracts data from a received string and store it as a struct instead. The data 
 \begin{itemize} 
 \item str: String to extract data from.
 \item re: Struct to hold the extracted data.
-\item Return value: None, the result is stored in re.
+\item Return value: None, the result is stored in \emph{re}.
 \end{itemize}
 
 \subsubsection{int gtrm\_send\_performance\_multiplier(double pm, int fd, struct sockaddr *sa)}
@@ -560,7 +843,7 @@ Writes information about the resource management to a log file, which can then b
 \end{itemize}
 
 \subsection{manager.c/h}
-One of the main files in systemd and is for example responsible for inter process communication. The following field are added to the Manager struct in manager.h:
+One of the main files in systemd and is for example responsible for inter process communication. The following fields are added to the \emph{Manager} struct in manager.h:
 \begin{itemize}
 \item gtrm\_socket: String that represent the socket used by GTRM.
 \item gtrm\_fd: A file descriptor, which is an integer, for communicating with GTRM.
@@ -568,12 +851,14 @@ One of the main files in systemd and is for example responsible for inter proces
 \item gtrm\_apps: Hash-map containing all the applications being managed by the GTRM.
 \end{itemize}
 
+
+
 \subsubsection{static int manager\_dispatch\_gtrm\_fd(sd\_event\_source *source, int fd, unit32\_t revents, void *userdata)}
 Called when we receive the performance of an application.
 \begin{itemize}
 \item source: source of the event.
 \item fd: file descriptor to the event source.
-\item revents: ???
+\item revents: Set by the kernel to indicate what event on the file descriptor that triggered the call to this function. In our case it is always the incoming event.
 \item userdata: In this case it contains a reference to the manager.
 \item Return value: Not used, always zero.
 \end{itemize}
@@ -607,6 +892,15 @@ The main loop of the system which continuously calls gtrm\_compute\_virtual\_pla
 \item Return value: Exit code of systemd.
 \end{itemize}
 
+\subsubsection{int manager\_set\_cpu\_shares(Manager *m, pid\_t pid, int shares)}
+Sets the CPUShares of an application.
+\begin{itemize}
+\item m: Reference to manager, used to get the applications.
+\item pid: Process identifier of the application.
+\item shares: Amount of shares we want to set.
+\item Return value: Zero if successful, one otherwise.
+\end{itemize}
+
 \subsection{gtrm\_app\_lib.c/h}
 These files are used by the applications to get performance, send performance and setup IPC, for example.
 In the header file the following structs are defined:
@@ -615,14 +909,84 @@ A struct used to represent a job. Applications can have different type of jobs w
 \begin{itemize}
 \item id: Identifier to keep track of a job being executed.
 \item type: What type of job this is.
-\item start\_timestamp: When the job was started.
-\item end\_timestamp: When we were finished with job. The timestamps are used to calculate the total execution time of a job.
+\item start\_timestamp: Time when the job was started.
+\item end\_timestamp: Time when we were finished with job. The timestamps are used to calculate the total execution time of a job.
 \end{itemize}
 
 \subsubsection{struct \_application\_h}
 Each application stores the relevant information in terms of resource management and SL-adaptation in this struct.
 \begin{itemize}
-\item application\_id: Identifi
+\item application\_id: Identifier for an application.
+\item jobs: Number of possible job types
+\item weight: Determines how to divide the adaptation between the resource manager and service level adaptation.
+\item performance\_multiplier: Depends on how the virtual platform has changed and is used for better service level adaptation.
+\item total\_jobs: How many jobs that has been launched in total.
+\item progress\_jobs: Jobs in progress.
+\item completed\_jobs: Total amount of completed jobs.
+\item expected\_response\_times: Array of the expected response time for each job type.
+\item happy: Indicates if the application is satisfied with its performance or not.
+\end{itemize}
+
+\subsubsection{int gtrm\_lib\_setup\_socket(char* filename)}
+Sets up a socket to communicate with the resource manager.
+\begin{itemize}
+\item filename: The socket needs a file to work, the parameter specifies its path.
+\item Return value: Zero, not used.
+\end{itemize}
+
+\subsubsection{void gtrm\_lib\_send\_performance(\_application\_h *h, double performance)}
+Sends the performance of an application to the GTRM.
+\begin{itemize}
+\item h: Struct representing an application.
+\item performance: Performance or matching function to send to the GTRM.
+\item Return value: None.
+\end{itemize}
+
+\subsubsection{int gtrm\_lib\_set(\_application\_h* a, uint types, uint64\_t* ert)}
+Initializes the application struct with job types and their expected response times.
+\begin{itemize}
+\item a: Struct representing an application.
+\item types: Number of different job types.
+\item ert: Array of expected response time for each job type.
+\item Return value: Exit status of function.
+\end{itemize}
+
+\subsubsection{static int manager\_setup\_gtrm(Manager *m)}
+Used to setup the socket, event source and file descriptor for the resource manager. Called from manager\_startup and manager\_reload.
+\begin{itemize}
+\item m: Reference to the manager.
+\item Return value: Zero if function ran correctly, otherwise it is set to the corresponding error number.
+\end{itemize}
+
+\subsubsection{double gtrm\_lib\_get\_performance\_number(\_application\_h* a, int job\_type)}
+Calculates the peformance (matching function) by averaging the performance of the last ten jobs of a specified type.
+\begin{itemize}
+\item a: Struct representing an application.
+\item type: Which job type for which we want to calculate the performance.
+\item Return value: Applications performance.
+\end{itemize}
+
+\subsubsection{int gtrm\_lib\_update\_performance\_multiplier(\_application\_h *a)}
+Receives the performance multiplier computed by the RM.
+\begin{itemize}
+\item a: Struct for representing the application, and storing the performance multiplier.
+\item Return value: Zero, never used.
+\end{itemize}
+
+\subsubsection{int gtrm\_lib\_signalstart(\_application\_h* a, uint type)}
+Indicates the start of a job.
+\begin{itemize}
+\item a: Struct for representing the application.
+\item type: Type of the job that is started.
+\item Return value: Identifier of the started job.
+\end{itemize}
+
+\subsubsection{int gtrm\_lib\_signalend(\_application\_h* a, uint id)}
+Indicates the end of a job.
+\begin{itemize}
+\item a: Struct for representing the application.
+\item id: Identifier of the job that has completed.
+\item Return value: Exit status.
 \end{itemize}
 
 \chapter{Use cases}
@@ -685,26 +1049,23 @@ In this case the static slice starts out not being under full load.
 \label{chp:test}
 
 The end result will be a working prototype that can demonstrate that the system works and what results that can be expected. These are the main aspects that we want to test.
+To provide results and to prove that the thesis is valid, thorough testing is required. The main focus of the test is to see if the following can be achieved.
 \begin{itemize}
 \item Can we keep the FPS we want even during high load of the system.
 \item Can we adapt so that other applications can perform well during high loads as well. 
 \end{itemize}
 
-The tests output will consist of logs showing CPU-time for applications along with their service levels, performance and virtual platforms. The CPU-time can differ between how much resources are assigned and how much is actually used and it is of interest to see how much they vary if any. The FPS and video/sound quality are other outputs we can use.
-There are different things we can do and combine to stress the system in a realistic perspective. These things could be seen as testing the use cases and can be combined with each other. 
+The test output consist of logs showing CPU-time for applications along with their service levels, performance and virtual platforms. The CPU-time differ between how much resources are assigned to each application and how much is actually used and it is of interest to see how much they vary if any. The FPS and video quality are other outputs that has to be taken into the result.
+
+It is also desirable to test if the system can fulfill the previously described use cases.
 
 \begin{itemize}
 
-\item The first and simplest case is a camera that is still and filming a scenery with minor changes. Here we would like maximal quality of the images since the scene itself does not require a lot of resources 
-\item We want to test more complex scenery, for example scenery with a lot of different things going on at the same time. This will stress the video streaming and we want to make sure that if necessary the quality will be reduced in favor for a steady FPS.
+\item The first and simplest case is a camera that is still and filming a scenery which does not change notably. Here it is expected maximal quality of the images since the scene itself does not require a lot of resources. 
+\item Next step is to test more complex scenery, for example scenery with a lot of different things going on at the same time. This will stress the video streaming and we want to make sure that if necessary the quality will be reduced in favor for a steady FPS.
 \item A moving PTZ-camera will cause a high load when it is moving around. This will cause the whole picture to be redrawn and not partly as when the image is still, and will be the ultimate stress test for the streaming part.
-\item We will also stress the CPU and memory by creating different test applications that will be pointless but demanding in terms of resources. Just for the sake of seeing how things turn out during intense loads. Some of the applications will have a linear relationship between computational time and the SL while others will have a non linear one. This matters since the SL adaptation assumes a linear relationship between the SL and the computational time. If the steps in SL are small enough the linear relationship could still be assumed even for non linear ones.
+\item By running different test applications that are resource demanding the camera can be tested during intense CPU-loads. Some of the applications will have a linear relationship between computational time and the SL while others will have a non linear one. This matters since the SL adaptation assumes a linear relationship between the SL and the computational time. If the steps in SL are small enough the linear relationship could still be assumed even for non linear ones.
 \end{itemize}
-To demonstrate how cleverly we can manage our resources, we could compare the old system with our version. We have thought of two realistic and demonstratively ways. The first would be to show how the FPS is decreased when we introduce a high load to the old system, and how we can maintain it in the new system. The high load could as an example be a SSL- key generation.
-
-In the second example we could show a scene with both video and audio recording while stressing the camera. In the old system we would have great video quality but very poor sound performance, e.g. impossible to hear anything. But with our version the video quality would be reduced but instead one could hear what is going on as well. To use this as a conclusive experiment, we would also have to make quantitative measures of the audio, for example signal to noise ratio to see how much audio quality would improve.
-
-The end result would also be presented as nice diagrams and graphs presenting various data that we are interested in, such as resources, bitrate and FPS.
 
 \chapter{Results}
 \label{chp:results}
