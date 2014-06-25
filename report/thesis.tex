@@ -21,7 +21,7 @@
 \year{2014}
 \month{June}
 \TFRT{9999}  %%  You will get the number from the department.
-\printer{Media-Tryck}  %% Probably. You may get other information from the department.
+\printer{Media-Tryck} %% Probably. You may get other information from the department.
 
 \end{titlepages}
 \setcounter{page}{1}
@@ -29,31 +29,81 @@
 
 \chapter*{Abstract}
 
-This master thesis tackles the problem of limited computing resources on a camera that is executing computing applications together with image acquisition and streaming. The thesis was carried out at Axis Communications in cooperation with the Department of Control at Lunds University. The problem of limited resources on an Axis camera is handled by a two part solution where a resource manager (RM) distributes the available resources and services can adapt their service level (SL) in order to finish their jobs on time. The solution is based on game theory, where services are players, varying their service levels in order to get a good match between given resources and their computing requirements. This service level adaptation scheme is partially implemented for the streaming service on the camera and for some test services, performing mathematical operations. The resource manager is incorporated into \texttt{systemd}, and uses \texttt{cgroups}~\cite{cgroups} to distribute the computing capacity.
+This master thesis tackles the problem of limited computing resources on a
+camera that is executing computing applications together with image
+acquisition and streaming. The thesis was carried out at Axis Communications
+in cooperation with the Department of Control at Lunds University. The
+problem of limited resources on an Axis camera is handled by a two part
+solution where a resource manager (RM) distributes the available resources
+and services can adapt their service level (SL) in order to finish their
+jobs on time. The solution is based on game theory, where services are
+players, varying their service levels in order to get a good match between
+given resources and their computing requirements. This service level
+adaptation scheme is partially implemented for the streaming service on the
+camera and for some test services, performing mathematical operations. The
+resource manager is incorporated into \texttt{systemd}, and uses 
+\texttt{cgroups}~\cite{cgroups} to distribute the computing capacity.
 \martina{Add one sentence to summarize the results.}
 
 
 \chapter*{Acknowledgements}
 
-We want to thank our supervisors, Umut Tezduyar-Lindskog, Axis and Martina Maggio, LTH Department of Control. We would also like to thank engineering manager Pontus Bergendahl, Axis.
+We want to thank our supervisors, Umut Tezduyar-Lindskog, Axis and Martina 
+Maggio, LTH Department of Control. We would also like to thank engineering 
+manager Pontus Bergendahl, Axis.
 
 \newpage
+
 \tableofcontents
 \newpage
 
 \setcounter{page}{1}
 \pagenumbering{arabic}
 
-\chapter{Introduction} %This is a description of my work.
-\section{Axis}
-Axis is a company founded and based in Lund that manufactures network relayed surveillance cameras and video encoders.
-\section{Problem formulation}
-It is becoming more common to have multiple resource intensive services running on Axis cameras. At the same time, the demands are increasing on reliable and consistent video frame rate and quality. This creates a problem where different services are competing for resources like CPU and RAM. This can result in poor performance of the camera under scenarios when it is under heavier load than usual, one example being when answering calls from the network. The solution that we will evaluate is based on some of the work carried out at the University of Lund \cite{gtrm}, called the Game Theoretic Resource Manager (GTRM) and a library that lets services implement the SL adaptation and communication with the RM. The goal is to see if it is possible to use this resource manager on an Axis camera running Linux with the streaming application competing with some test applications for resources. In this test the cameras image quality will be its SL and the inverse of its frame rate the measurement for the time a job takes to finish, where a jobs deadline will be set to \(1/desired framerate\).
+\chapter{Introduction}
 
+This master thesis treats the problem of assigning limited resources to
+embedded cameras. Axis cameras are used for the study. Axis is a company
+founded and based in Lund that manufactures network relayed surveillance
+cameras and video encoders.
+
+\section{Problem formulation}
+
+To save energy and make better use of the available hardware, there is a
+trend to have multiple resource intensive applications running on Axis
+cameras. These applications are \emph{services}, that should execute within
+a certain time and with variable precision requirements. At the same time,
+reliable and consistent video frame rate and quality is a necessary
+condition to be fulfilled, which calls for running video streaming
+services in isolation, without being subject to the interference of
+other services. The two conflicting requirements make different services 
+compete for resources like CPU and RAM. This may result in poor performance 
+of the camera, when the execution scenarios bring the camera under a load
+that is heavier than the usual design one. For example, when answering calls
+from the network, the camera is subject to a heavier demand. 
+
+In this scenarios it would be advisable to have a technique to diminish
+the load produced by services that are not necessary, ideally without
+affecting their timing properties. The quality of service reduction is
+often addressed via the introduction of service levels, where services can
+decrease the load generated on the hardware by lowering their service level,
+therefore producing results that have a lower quality. When the load
+conditions are back to optimal, the service can increase the service level,
+to provide the best available quality without harming the execution of the
+most important applications.
+
+This work implements a game theoretic mechanism based on the Game Theoretic 
+Resource Manager (GTRM), developed at Lund University~\cite{gtrm} and a
+library that lets services implement the service level adaptation and the
+communication with a global resource manager. The goal is to demonstrate
+that it is possible to use GTRM on an Axis cameras running Linux and to use
+it to manage applications competing for resources. The evaluation features
+the streaming application, competing with load generators. The image quality
+is taken as the service level and the cameras are assumed to have a desired
+frame rate, therefore introducing for each frame a deadline of 
+\(1/desired framerate\).
 
 \section{Related Work}
-
-\martina{Rephrase this}
 
 Resource management is a problem that can be solved in many different ways. Many resource managers has been developed in the past and also some with game theoretic behavior.  
 
@@ -76,8 +126,6 @@ Separating the service-level adjustment and the resource management has been pro
 % Instead, we believe that the assignment of the service level can be
 % better performed by the application itself, rather than at a
 % centralized resource management level.
-
-\martina{End of rephrase}
 
 \section{Outline of the report}
 Chapter 2, will give a detailed description on the software and hardware used during this project.
