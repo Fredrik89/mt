@@ -203,20 +203,73 @@ resource is assigned, indicating that the application has missed or will miss
 its deadline.
 
 The framework consists of two parts: the service level adaptation and the
-resource management.
+resource management. These two parts are independent and decoupled.
 
 \subsection{Service Level adaptation}
 
-The Service Level (SL) defines the quality of service of the application. In the case of the streaming application this is the quality of the image, but it can mean different things to different applications. The main property of the SL is that an increase in SL gives an increase in the required resources for the application. The idea is to change the SL to optimize the utilization of the amount of resources available. A high/low performance will be responded to by an increase/decrease in SL.
-This will make sure that the application is always presenting valid result in time but with quality as a trade-off. This adaptation is done by the application itself.
+The Service Level (SL) defines the quality of the service provided by the 
+application. In the case of the streaming application, the service level
+is defined as the quality of the image to be streamed, but for a different
+application, the service level can mean something else. The main property of
+the SL is monotonicity. An increase in SL gives an increase in the required
+resource on the application's side. The idea is to change the SL to optimize
+the utilization of the amount of resources available. 
 
-\subsection{Resource Manager}
+When the performance is too low, the application is supposed to decrease its
+service level, while when the performance is too high, the application will
+increase the quality of the performed computation. This will make sure that
+the application is always presenting valid result in time but with varying
+quality, as a trade-off. This adaptation is done by the application itself,
+without the resource management policy interfering with it.
 
-The resource manager (RM) will also measure the performance of the applications. It will try to distribute the resources in the best possible way to the applications. The resources are modeled as “virtual platforms”, which is basically a percentage of the total available resources. For example the amount of time an application is allowed to use the CPU in proportion to the other applications. Here “resources” could refer to something other than CPU, such as memory or network-resources, depending on different aspects of the system. The main property of the performance is that if an application is given more/less resources it should be able to execute at a higher/lower SL or have a shorter/longer execution time.
+\martina{You should write a paragraph with an example on how the service
+  level is adjusted. For example, when you take the \emph{test application}
+  what is the service level? Is it the same as the test application of
+  the original GTRM? If so, write it and write \textbf{how} the adaptation
+  is performed: for example, every 10-th jobs? What is a job? What is the
+  equation behind the adaptation. You should also clarify that it uses
+  the matching function as well (if it does it) --- in the original GTRM
+  contribution it was using the performance multiplier, which is a variation
+  with respect to the original performance measurement.}
 
-The theory of decoupling the resource manager from the service level adaptation was developed at the Department of Automation at Lunds University. The resulting resource manager is referred to as Game Theoretic Resource Manager, GTRM. 
+\subsection{Resource Management}
 
-The idea behind this way of using a resource manager (RM) and service level (SL) adaptation, separating it from the norm, is to let each application adapt its own SL continuously independent from the RM loop. One of the main benefits of this decoupling is that the task of adjusting SL is given to the applications that have the most knowledge of how to tune their parameters in order to adjust their needed resources, and at what cost in quality.
+The Resource Manager (RM) measures the performance of the applications. It
+tries to distribute the resources in the best possible way to the running
+applications, for them to meet their performance requirements. The resources
+are modeled as ``virtual platforms''. A virtual platform represents a
+percentage of the total available resources; for example, the amount of time
+an application is allowed to use the CPU with respect to the other 
+applications. Here ``resources'' could refer to something rather than CPU,
+such as memory or network bandwidth, depending on what is allocated in the
+system.
+
+\martina{Write the equations for the resource adaptation. Take them from the
+  ECRTS paper. Describe when the resouce manager acts. Is it every second?
+  Are there events that triggers it? For example, when a new application is
+  introduced, what happens?}
+
+\begin{equation}
+adaptation
+\label{eq:resourceadaptation}
+\end{equation}
+
+\subsection{Decoupling}
+
+The theory behind the decoupling of the resource allocation and the service
+level assignment was developed at the Department of Automatic Control at
+the Lund University. The resulting resource manager is referred to as Game 
+Theoretic Resource Manager (GTRM).
+
+Decoupling the two adaptations makes it possible to obtain a linear time
+complexity for the resource adaptation algorithm. In fact, the amount of
+operations that are necessary to perform the adaptation defined by
+Equation~\eqref{eq:resourceadaptation} depends only on the number of
+running applications. Also, one of the main benefits of this decoupling is
+that the task of adjusting the SL is given to the applications that have
+knowledge of how to tune their parameters in order to adjust them to their
+needs, to the amount of resource received and to the quality of the 
+computation.
 
 \section{Systemd and Cgroups}
 Systemd [sysd] is a system management daemon for Linux and it is the first process that starts during boot and thus it is given the PID number 1. Systemd implements a lot of features for increased performance and system management over previous start up processes for example initd. It also has different features for management of resources, using cgroups \cite{cgroups}, which makes it interesting for our project. 
