@@ -272,20 +272,30 @@ needs, to the amount of resource received and to the quality of the
 computation.
 
 \section{Systemd and Cgroups}
-Systemd [sysd] is a system management daemon for Linux and it is the first process that starts during boot and thus it is given the PID number 1. Systemd implements a lot of features for increased performance and system management over previous start up processes for example initd. It also has different features for management of resources, using cgroups \cite{cgroups}, which makes it interesting for our project. 
 
-Cgroups, abbreviated from control groups, can be used to set the amount of resources, such as CPU or memory, of a process or a group of processes via a virtual file system. This file system forms a tree where the resources of a parent folder are shared by its children. The division of the resources among the children are determined by the amount of "shares" the children has been given. 
+Systemd [sysd] is a daemon for Linux, that executes system management
+operations. It is the first process that starts during boot, and thus it is
+given the PID 1. Systemd implements a lot of features for increased
+performance and system management over previous start up processes, like
+initd. It also has different features for management of resources, using
+cgroups~\cite{cgroups}, which makes it interesting for a resource manager
+implementation. 
 
-Each application can be run as a "service" by specifying a service file which defines many different parameters and options. In this file we can specify which application or applications should be associated with which service and for example how much CPU shall be given to this service. The service file can then be placed in a certain folder in the cgroup file hierarchy, see fig~\ref{ctree}. Different folders are used to represent different cgroup controllers or a different combination of controllers. Depending on which controllers are enabled different features are available, such as limiting CPU- and memory.   
- Services can be grouped into different slices and share properties depending on which slice they belong to.  
-One can for example set how much CPU-time that shall be given to the applications in the slice and decide how the applications will divide it amongst themselves.
+Cgroups~\cite{cgroups}, abbreviated from control groups, can be used to set
+the amount of resources, such as CPU or memory, of a process or a group of
+processes via a virtual file system. This file system forms a tree where the
+resources of a parent folder are shared by its children. The division of the
+resources among the children are determined by the amount of ``shares'' the
+children has been given. 
 
-\subsection{CPUShares and the cgroups tree}
-In this implementation of the \emph{GTRM}, the resources are divided using the CPUShares property of the \emph{slices} or \emph{services}, both special cases of the base type \emph{units}. Every slice is represented by a folder in the cgroup tree and has a CPUShares property that decides how much of the available resources of the parent slice it will get. A slice contains services and services contains applications. 
-All the resources of a parent slice will be divided to the units under it according to how much shares they each have. A unit that has a third of the total shares of all units  on the same level under its parent slice will receive a third of the parents available resources and so on. An example of this is shown in fig \ref{fig:ctree} and fig \ref{fig:ctable}. Note that the top level folder in this example,the controller named CPU, is alone on its level meaning that the CPUShares for this slice don't matter since there is no competition.
+Each application can be run as a ``service'' by specifying a service file
+which defines many different parameters and options. In this file, it is
+possible to specify which application or applications should be associated
+with which service and for example how much CPU shall be given to this 
+service. The service file can then be placed in a certain folder in the cgroup
+file hierarchy, see Figure~\ref{fig:ctree}.
 
-
-\begin{figure}
+\begin{figure}[t]
 \centering
 \begin{picture}(200,200)
 \put(95,130){\framebox(40,30){CPU}}
@@ -297,16 +307,47 @@ All the resources of a parent slice will be divided to the units under it accord
 \put(75,80){\line(2,-1){40}}
 \put(15,30){\framebox(40,30){Service 1}}
 \put(95,30){\framebox(40,30){Service 2}}
-
 \end{picture}
 \caption{The slices and services in the cgroup tree.}
 \label{fig:ctree}
 \end{figure}
 
+Different folders are used to represent different cgroup controllers or a
+combination of controllers. Depending on which controllers are enabled,
+some features are available, such as limiting CPU and memory.
+Services can be grouped into different slices and share properties depending
+on which slice they belong to. One can for example set how much CPU-time 
+shall be given to the applications in the slice and decide how the
+applications will divide it amongst themselves.
 
+In this implementation of the \emph{GTRM}, the resources are divided using
+the CPUShares property of the \emph{slices} or \emph{services}, both special
+cases of the base type \emph{units}. Every slice is represented by a folder
+in the cgroup tree and has a CPUShares property that decides how much of the
+available resources of the parent slice it will get. A slice contains 
+services and services contains applications. 
+
+All the resources of a parent slice will be hierarchically divided to the
+units that are classified under this slice according to how much shares
+each of them has. A unit that has a third of the total shares of all units
+on the same level under its parent slice will receive a third of the
+resources available for the parent. An example of this is shown in 
+Figure~\ref{fig:ctree} and Figure~\ref{fig:ctable}. Note that the top 
+level folder in this example, the controller named CPU, is alone on its
+level meaning that the CPUShares for this slice do not matter since there
+is no competition.
+
+\martina{Describe a little bit better the example that you are giving.
+  Maybe complete the numerical example -- since you already have part of
+  if in Figure~\ref{fig:ctable} and the ``third'' in the text -- of what 
+  you would give to each of the slices and to each of the services inside
+  the slices and how would the CPU behave. What do the number in the 
+  table mean? And, if you are in a multicore environment, what happens
+  when you setup a slice? On which core is the slice allocated? Is there
+  any enforcement that the slice would effectively be respected? Can it
+  be split among multiple cores?}
 
 \begin{figure}
-
 \centering
 \begin{tabular}{|c|c|c|} \hline
 \emph{Name} & \emph{CPUShares} &  \emph{\% of CPU} \\ \hline
@@ -318,8 +359,8 @@ Service 2 & 100 & $1/3 * 80 = 27$\\ \hline
 \end{tabular}
 \label{fig:ctable}
 \caption{Table over assigned CPU for the different units.}
-
 \end{figure}
+
 
 \section{Video Streaming}
 The video streaming is based upon the GStreamer multimedia framework. This is a modular system where a chain is built by linking elements together in a pipeline to form a process chain. Data flows downstream from a source element, through filter elements to finally end up in a sink element, see fig\ref{fig:pipeline}. The data is contained in buffers, which can contain one or more frames, flowing downstream. On the Axis camera the source element will receive the images already compressed by external hardware through another application which reads a file descriptor in order to get the frames from the encoding device. The data is then sent through a number of filters and is finally sent onto the network by the sink element. This chain is dynamically created depending on different settings like codecs used \emph{(jpeg,h264,...)}, or network connection \emph{(http or udp)}.
