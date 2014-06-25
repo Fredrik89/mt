@@ -321,13 +321,13 @@ Creating service levels for all the applications running on the system would not
 \subsection{Service Level update}
 There are two ways of implementing SL, one simpler and one more advanced. The first one simply multiplies the current SL with the matching function and multiplies the result with a constant scale factor. This will decrease the service level if the performance is negative and increase it if it is positive. The scaling factor (called epsilon) slows down the adaption rate to avoid instability. 
 \[sl_i(t+1)= sl_i(t) + \epsilon*(f_i(t)*sl_i(t)) \]
-The second way also includes how much the virtual platform of the application has changed. This is calculated as part or the performance multiplier, PM.
+The second way also includes how much the virtual platform of the application has changed. This is calculated as the performance multiplier, PM.
 \[PM_i = (1+f_i)*(vp_i(i+1)/vp(i))\]
 After calculating the performance multiplier the new service level can be calculated:
 \[sl_i(t+1)=sl_i(t) + (\epsilon*sl_i(t)*PM_i)\]
 
 \subsection{Performance/matching function update}
-The performance of a job will be based on how it can keep its deadline. The rule for calculating a indivdual jobs performance is:
+The performance of a job will be based on how it can keep its deadline. The rule for calculating an individual jobs performance is:
 $f_{i}=\frac{D{i}}{R_{i}}-1$ where $D_{i}$ is the soft deadline for the application and $R_{i}$ is the job response time.
 The applications job will be updated as the average of the ten last jobs performance.
 
@@ -885,6 +885,98 @@ The first important part in the application is the calculation of its performanc
 
 The resource manager part basically consists of two parts that sort of runs in parallel. Upon receiving the performance of an application, the handler or dispatch function corresponding to such an event is executed. In the diagram it is labled as \emph{gtrm\_dispatch}, and its main responsibilities is to read and parse the received message and then update the hash-map which contains the relevant data about the applications being managed. Meanwhile the resource management runs as a part of the main-loop, and it uses the information in the hash-map previously mentioned to calculate the virtual platforms, \emph{calculate\_virtual\_platforms}. These virtual platforms are then used to set the amount of CPUShares which will be given to each application in the call to \emph{apply\_virtual\_platforms}. To get a better service level adaptation, the performance number which depends on how much the virtual platform has been changed is sent to the application \emph{send\_performance\_number}.
 
+
+
+\chapter{Use cases}
+\label{chp:usecases}
+
+For implementation and testing reasons we came up with the following use-cases. In all the use cases we assume that the static slice is under heavy load so that no extra resources are given to the GTRM-slice. 
+\section{Normal mode}
+\begin{enumerate}
+\item The system runs under good conditions, meaning we have enough resources for all applications and the GTRM-slice can run at maximum SL without any problems.
+\item The GTRM and SL adaptation will not drag down performance compared to the old system.
+\end{enumerate}
+\section{Balancing a high load caused by video streaming}
+The applications mentioned here are all on the GTRM-slice.
+
+\begin{enumerate}
+\item The camera will film something that causes a high load, for example, a PTZ-camera is moving around or an intense scenery is being filmed.
+\item The applications with the worst performance  will adapt and lower their SL (e.g. quality) assuming they have weights setup to do so.
+\item The GTRM will increase the resources given to the applications with the worst performance. These resources are taken from other, better performing,  processes on the slice that in turn will lower their SL to accommodate for the change in CPU.
+\item When the scenery is “calmer” we will have an overall increase on the SL and the virtual platform will be redistributed.
+\item The frame rate will be about the same during the entire procedure.
+\end{enumerate}
+\section{Balancing a high load caused by other applications}
+In this case the static slice starts out not being under full load.
+\begin{enumerate}
+\item The static slice is giving extra resources to the GTRM-slice, making the applications on the GTRM-slice have a higher SL than they normally would.
+\item The resource demand of the applications on the static slice starts to grow. 
+\item The SL of the applications on the GTRM-slice will adapt and lower their SL:s (e.g. quality).
+\item The static slice is done with the more demanding tasks and starts giving extra resources to the GTRM-slice again. Now we will see an increase in the SL and a redistribution of CPU resources to the applications on the GTRM-slice.
+\item The frame rate will be about the same during the entire procedure.
+\item The applications in the static slice will run without any issues.
+\end{enumerate}
+\section{GTRM-slice not running}
+\begin{enumerate}
+\item No applications are running in the GTRM-slice.
+\item The static slice is allowed to use the entire amount of resources if necessary.
+\item Some applications on the GTRM-slice starts to run.
+\item The GTRM-slice will adjust its SL and virtual platforms as in ‘use case 3’ .
+\end{enumerate}
+
+\section{Applications with different weights}
+\begin{enumerate}
+\item Applications with different weights are running in the GTRM-slice. All applications have a good enough performance which means that no adaptation or resource management is running. 
+\item One of the applications performance goes bad.
+\item Resource management and SL adaptation for all applications starts.
+\item The applications with the higher weights adapts mainly by increasing their cpu, which typically goes faster than adjusting the SL, making them reach a good performance faster. At the same time the applications with lower weights changes more slowly toward a better performance and adapts mainly by lowering their SL.
+\item The system reaches a stable point.
+\end{enumerate}
+
+\section{System reaches stable point with some bad performances}
+\begin{enumerate}
+\item A number of applications are running with good performances and no adaptation or resource management is being made.
+\item A new application is started with a default SL.
+\item Resource manager and SL adaptation is started.
+\item The system reaches a stable point where not all applications have a good performance. 
+\item The applications that supports SL adaptation will have lowered this as much as possible.
+\item The GTRM loop will continue to run. The SL adaptation in the applications will not run if the SL is at minimum and the performance is below the defined boundary or if the SL is at maximum and the performance is above the boundary.
+\end{enumerate}
+
+\chapter{Testing}
+\label{chp:test}
+
+The end result will be a working prototype that can demonstrate that the system works and what results that can be expected. These are the main aspects that we want to test.
+To provide results and to prove that the thesis is valid, thorough testing is required. The main focus of the test is to see if the following can be achieved.
+\begin{itemize}
+\item Can we keep the FPS we want even during high load of the system.
+\item Can we adapt so that other applications can perform well during high loads as well. 
+\end{itemize}
+
+The test output consist of logs showing CPU-time for applications along with their service levels, performance and virtual platforms. The CPU-time differ between how much resources are assigned to each application and how much is actually used and it is of interest to see how much they vary if any. The FPS and video quality are other outputs that has to be taken into the result.
+
+It is also desirable to test if the system can fulfill the previously described use cases.
+
+\begin{itemize}
+
+\item The first and simplest case is a camera that is still and filming a scenery which does not change notably. Here it is expected maximal quality of the images since the scene itself does not require a lot of resources. 
+\item Next step is to test more complex scenery, for example scenery with a lot of different things going on at the same time. This will stress the video streaming and we want to make sure that if necessary the quality will be reduced in favor for a steady FPS.
+\item A moving PTZ-camera will cause a high load when it is moving around. This will cause the whole picture to be redrawn and not partly as when the image is still, and will be the ultimate stress test for the streaming part.
+\item By running different test applications that are resource demanding the camera can be tested during intense CPU-loads. Some of the applications will have a linear relationship between computational time and the SL while others will have a non linear one. This matters since the SL adaptation assumes a linear relationship between the SL and the computational time. If the steps in SL are small enough the linear relationship could still be assumed even for non linear ones.
+\end{itemize}
+
+\chapter{Results}
+\label{chp:results}
+
+\chapter{Conclusion and Further Work}
+\label{chp:conclusion}
+
+
+%\printbibliography  %% Comment if you don't want to use bibtex
+
+\bibliographystyle{plain}
+\bibliography{mybib}
+\chapter{Appendix}
 \section{Source Code}
 In this section follows an overview of the header and source files used in the system and their attributes.
 \subsection{gtrm\_lib.c/h}
@@ -1102,97 +1194,6 @@ Indicates the end of a job.
 \item id: Identifier of the job that has completed.
 \item Return value: Exit status.
 \end{itemize}
-
-\chapter{Use cases}
-\label{chp:usecases}
-
-For implementation and testing reasons we came up with the following use-cases. In all the use cases we assume that the static slice is under heavy load so that no extra resources are given to the GTRM-slice. 
-\section{Normal mode}
-\begin{enumerate}
-\item The system runs under good conditions, meaning we have enough resources for all applications and the GTRM-slice can run at maximum SL without any problems.
-\item The GTRM and SL adaptation will not drag down performance compared to the old system.
-\end{enumerate}
-\section{Balancing a high load caused by video streaming}
-The applications mentioned here are all on the GTRM-slice.
-
-\begin{enumerate}
-\item The camera will film something that causes a high load, for example, a PTZ-camera is moving around or an intense scenery is being filmed.
-\item The applications with the worst performance  will adapt and lower their SL (e.g. quality) assuming they have weights setup to do so.
-\item The GTRM will increase the resources given to the applications with the worst performance. These resources are taken from other, better performing,  processes on the slice that in turn will lower their SL to accommodate for the change in CPU.
-\item When the scenery is “calmer” we will have an overall increase on the SL and the virtual platform will be redistributed.
-\item The frame rate will be about the same during the entire procedure.
-\end{enumerate}
-\section{Balancing a high load caused by other applications}
-In this case the static slice starts out not being under full load.
-\begin{enumerate}
-\item The static slice is giving extra resources to the GTRM-slice, making the applications on the GTRM-slice have a higher SL than they normally would.
-\item The resource demand of the applications on the static slice starts to grow. 
-\item The SL of the applications on the GTRM-slice will adapt and lower their SL:s (e.g. quality).
-\item The static slice is done with the more demanding tasks and starts giving extra resources to the GTRM-slice again. Now we will see an increase in the SL and a redistribution of CPU resources to the applications on the GTRM-slice.
-\item The frame rate will be about the same during the entire procedure.
-\item The applications in the static slice will run without any issues.
-\end{enumerate}
-\section{GTRM-slice not running}
-\begin{enumerate}
-\item No applications are running in the GTRM-slice.
-\item The static slice is allowed to use the entire amount of resources if necessary.
-\item Some applications on the GTRM-slice starts to run.
-\item The GTRM-slice will adjust its SL and virtual platforms as in ‘use case 3’ .
-\end{enumerate}
-
-\section{Applications with different weights}
-\begin{enumerate}
-\item Applications with different weights are running in the GTRM-slice. All applications have a good enough performance which means that no adaptation or resource management is running. 
-\item One of the applications performance goes bad.
-\item Resource management and SL adaptation for all applications starts.
-\item The applications with the higher weights adapts mainly by increasing their cpu, which typically goes faster than adjusting the SL, making them reach a good performance faster. At the same time the applications with lower weights changes more slowly toward a better performance and adapts mainly by lowering their SL.
-\item The system reaches a stable point.
-\end{enumerate}
-
-\section{System reaches stable point with some bad performances}
-\begin{enumerate}
-\item A number of applications are running with good performances and no adaptation or resource management is being made.
-\item A new application is started with a default SL.
-\item Resource manager and SL adaptation is started.
-\item The system reaches a stable point where not all applications have a good performance. 
-\item The applications that supports SL adaptation will have lowered this as much as possible.
-\item The GTRM loop will continue to run. The SL adaptation in the applications will not run if the SL is at minimum and the performance is below the defined boundary or if the SL is at maximum and the performance is above the boundary.
-\end{enumerate}
-
-\chapter{Testing}
-\label{chp:test}
-
-The end result will be a working prototype that can demonstrate that the system works and what results that can be expected. These are the main aspects that we want to test.
-To provide results and to prove that the thesis is valid, thorough testing is required. The main focus of the test is to see if the following can be achieved.
-\begin{itemize}
-\item Can we keep the FPS we want even during high load of the system.
-\item Can we adapt so that other applications can perform well during high loads as well. 
-\end{itemize}
-
-The test output consist of logs showing CPU-time for applications along with their service levels, performance and virtual platforms. The CPU-time differ between how much resources are assigned to each application and how much is actually used and it is of interest to see how much they vary if any. The FPS and video quality are other outputs that has to be taken into the result.
-
-It is also desirable to test if the system can fulfill the previously described use cases.
-
-\begin{itemize}
-
-\item The first and simplest case is a camera that is still and filming a scenery which does not change notably. Here it is expected maximal quality of the images since the scene itself does not require a lot of resources. 
-\item Next step is to test more complex scenery, for example scenery with a lot of different things going on at the same time. This will stress the video streaming and we want to make sure that if necessary the quality will be reduced in favor for a steady FPS.
-\item A moving PTZ-camera will cause a high load when it is moving around. This will cause the whole picture to be redrawn and not partly as when the image is still, and will be the ultimate stress test for the streaming part.
-\item By running different test applications that are resource demanding the camera can be tested during intense CPU-loads. Some of the applications will have a linear relationship between computational time and the SL while others will have a non linear one. This matters since the SL adaptation assumes a linear relationship between the SL and the computational time. If the steps in SL are small enough the linear relationship could still be assumed even for non linear ones.
-\end{itemize}
-
-\chapter{Results}
-\label{chp:results}
-
-\chapter{Conclusion and Further Work}
-\label{chp:conclusion}
-
-
-%\printbibliography  %% Comment if you don't want to use bibtex
-
-\bibliographystyle{plain}
-\bibliography{mybib}
-
 
 
 \end{document}
