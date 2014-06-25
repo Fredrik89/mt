@@ -937,7 +937,7 @@ In this context the CPUShares can be set to what is desired and it is followed b
 The applications using the GTRM will have similar structure with the main difference in how they implement the SL/cpu-requirement relationship. 
 The SL will affect some parameters that affect the cpu requirement and this is different from application to application. 
 The SL adaptation will need to be run periodically and a socket needs to be established and read during the SL adaptation. 
-The test-application is shown below to give an idea about how an application can implement the SL adaptation and what functions that are provided by \emph{gtrm_app_lib.c}.
+The test-application is shown below to give an idea about how an application can implement the SL adaptation and what functions that are provided by \emph{gtrm\_app\_lib.c}.
 The test application and library are altered versions of the test application and library \emph{jobsignaler.c} created at the Department of Control at Lunds University.
 Most modifications are made in order to allow the use of  sockets instead of the initial shared memory approach.
 
