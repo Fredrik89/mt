@@ -11,9 +11,10 @@
 \usepackage{url}
 \usepackage{verbatim}
 \usepackage[]{algorithm2e}
-
+\usepackage{lipsum}
 \usepackage{titlesec}
 \usepackage{todonotes}
+\usepackage{framed}
 
 \newcommand{\martina}[1]{\todo[inline,color=red!30,caption={}]{\textbf{Martina:} #1}}
 
@@ -347,6 +348,27 @@ Finally the \emph{source\_dispatch} function is called to call the callback func
 
 The socket is created and added to the epoll instance in \emph{manager\_setup\_gtrm(...)}, below is the instructive part of the code in \emph{manager\_setup\_gtrm(...)}:
 
+
+
+
+\begin{framed}
+		\begin{flushleft}
+		
+			\textbf{\emph{{static int manager\_setup\_gtrm(Manager *m)}}} \newline
+			Used to setup the socket, event source and file descriptor for the resource manager. Called from manager\_startup and manager\_reload.
+			\begin{itemize}
+			\item m: Reference to the manager.
+			\item Return value: Zero if function ran correctly, otherwise it is set to the corresponding error number.
+			\end{itemize}
+		\end{flushleft}	
+\end{framed}
+
+
+
+
+
+
+
 The socket is created in the function  with a call to the socket(..) function.
 \begin{verbatim}
 fd = socket(AF_UNIX, SOCK_DGRAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0);
@@ -594,7 +616,12 @@ Initializes the application struct with job types and their expected response ti
 \item Return value: Exit status of function.
 \end{itemize}
 
-\subsubsection{double gtrm\_lib\_get\_performance\_number(\_application\_h* a, int job\_type)}
+\subsubsection{double gtrm\_lib\_get\_performance\_number(\_application\_h* a, int job\_type)}\subsubsection{static int manager\_setup\_gtrm(Manager *m)}
+Used to setup the socket, event source and file descriptor for the resource manager. Called from manager\_startup and manager\_reload.
+\begin{itemize}
+\item m: Reference to the manager.
+\item Return value: Zero if function ran correctly, otherwise it is set to the corresponding error number.
+\end{itemize}
 Calculates the peformance (matching function) by averaging the performance of the last ten jobs of a specified type.
 \begin{itemize}
 \item a: Struct representing an application.
