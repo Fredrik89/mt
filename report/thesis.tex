@@ -158,7 +158,7 @@ used for Axis cameras. Moreover, Axis cameras are already exploiting the
 resource allocation capabilities offered by \texttt{systemd}. In this
 work, a GTRM-like approach is implemented to be applicable to Axis cameras.
 
-\section{Outline of the report}
+\section{Outline}
 
 The remaining of this report is organized as follows.
 
@@ -183,14 +183,35 @@ The remaining of this report is organized as follows.
 \label{chp:background}
 
 \section{Game Theoretic Resource Manager}
-The resource management is based on the performance of the applications that are running. The performance, also called matching function, is calculated as the difference between the applications deadline and the execution time of the application. Ideally the matching function should be zero. When zero, the  application has just enough resources to meet its deadline running with some SL. When positive, too much resources are assigned to the application, indicating that the job is done before deadline, and when negative, too little resources are assigned indicating that the application has missed its deadline.
 
-The resource managing consists of two parts:
+The aim of the resource manager is to make sure that the running applications
+have acceptable performance levels. The decision about how much resource to
+allocate to each application is based on its performance. The applications
+performance are measured in terms of \emph{matching functions}, that is how
+good is the match between the resource given to the application and the
+corresponding deadline. The assumption behind this is that the resource
+distribution determines the execution time to complete a job. The applications
+are supposed to be made of jobs. 
+
+The matching function, is calculated as the difference between the
+applications deadline and the execution time of the jobs. Ideally the matching
+function should be zero. When zero, the application has just enough resources
+to meet its deadline running with some service level. When positive, the
+resources are abundant to execute the jobs timely, indicating that the job
+is done before deadline. A negative matching function means that too little
+resource is assigned, indicating that the application has missed or will miss
+its deadline.
+
+The framework consists of two parts: the service level adaptation and the
+resource management.
+
 \subsection{Service Level adaptation}
+
 The Service Level (SL) defines the quality of service of the application. In the case of the streaming application this is the quality of the image, but it can mean different things to different applications. The main property of the SL is that an increase in SL gives an increase in the required resources for the application. The idea is to change the SL to optimize the utilization of the amount of resources available. A high/low performance will be responded to by an increase/decrease in SL.
 This will make sure that the application is always presenting valid result in time but with quality as a trade-off. This adaptation is done by the application itself.
 
 \subsection{Resource Manager}
+
 The resource manager (RM) will also measure the performance of the applications. It will try to distribute the resources in the best possible way to the applications. The resources are modeled as “virtual platforms”, which is basically a percentage of the total available resources. For example the amount of time an application is allowed to use the CPU in proportion to the other applications. Here “resources” could refer to something other than CPU, such as memory or network-resources, depending on different aspects of the system. The main property of the performance is that if an application is given more/less resources it should be able to execute at a higher/lower SL or have a shorter/longer execution time.
 
 The theory of decoupling the resource manager from the service level adaptation was developed at the Department of Automation at Lunds University. The resulting resource manager is referred to as Game Theoretic Resource Manager, GTRM. 
