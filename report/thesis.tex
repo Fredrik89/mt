@@ -1085,7 +1085,7 @@ Most modifications are made in order to allow the use of  sockets instead of the
     \label{fig:Piechart}
 \end{figure}
 
-Using slices one can set a minimum amount of available resources for the applications in the slice. If the applications under a slice/service don’t use all of the resources given to them, the unused resources are free to be used by other slices. Under each slice there can be sub-slices or services dividing the resources further, building a hierarchy in the cgroups folder. The slices in the pie chart above, represent two different sets of applications. The static yellow slice consists of applications that won’t be managed by GTRM and simply will share the resources under this slice according to a predefined setting. Good choices of applications to put here would be ones that doesn’t vary much in their resource requirements or ones that have very strict hard deadlines. The second slice, the red GTRM slice, consists of applications that will be managed by the GTRM and that might implement SL adaptation. Good choices of applications to put here would be ones that do vary much in their resource requirements and/or can vary it’s quality in some acceptable way to adapt to it’s available resources.
+Using slices one can set a minimum amount of available resources for the applications in the slice. If the applications under a slice/service don’t use all of the resources given to them, the unused resources are free to be used by other slices. Under each slice there can be sub-slices or services dividing the resources further, building a hierarchy in the cgroups folder. The slices in the pie chart above, represent two different sets of applications. The static yellow slice consists of applications that won’t be managed by GTRM and simply will share the resources under this slice according to a predefined setting. Good choices of applications to put here would be some that doesn’t vary much in their resource requirements or some that have very strict hard deadlines. The second slice, the red GTRM slice, consists of applications that will be managed by the GTRM and that might implement SL adaptation. Good choices of applications to put here would be ones that do vary much in their resource requirements and/or can vary its quality in some acceptable way to adapt to its available resources.
 
 All applications that are managed by the GTRM are run as services under the GTRM-slice. A service can, just as a slice, reserve a minimum percentage of allocated resources from it’s parent slice.
 
@@ -1240,7 +1240,8 @@ It is also desirable to test if the system can fulfill the previously described 
 
 \bibliographystyle{plain}
 \bibliography{mybib}
-\chapter{Appendix}
+\appendix
+\chapter{Appendix A}
 \section{Source Code}
 In this section follows an overview of the header and source files used in the system and their attributes.
 \subsection{gtrm\_lib.c/h}
