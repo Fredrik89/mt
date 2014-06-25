@@ -410,6 +410,26 @@ The virtual platforms are re-calculated and applied for as long as the applicati
 
 \begin{verbatim}
 int manager_loop(Manager *m) {
+\end{verbatim}
+Before the loop actually start to run, we create and initiate a struct that contain the necessary data for the resource manager, \emph{gtrm\_t}.
+
+\begin{framed}
+		\begin{flushleft}
+		
+				\textbf{\emph{{struct gtrm\_t}}} \newline
+				Stores various parameters used by the GTRM.
+				\begin{itemize}
+				\item c1: Constant used for computing epsilon, determines how much we will change the virtual platform.
+				\item c2: Another constant used for computing epsilon similar as c1.
+				\item iterations: Keeps track of how many iterations the GTRM has run.
+				\item all\_happy: Used to indicate if we have to make any adjustments to the resource allocations.
+				\item num\_apps: Total amount of applications that we are managing.
+				\item prev\_apps: The amount of applications in the previous iteration.
+				\end{itemize}
+		\end{flushleft}	
+\end{framed}
+
+\begin{verbatim}
   gtrm_t *gtrm_t = calloc(1,sizeof(struct gtrm_t));
   gtrm_t->num_apps = 0;
   gtrm_t->prev_apps = 0;
@@ -417,33 +437,96 @@ int manager_loop(Manager *m) {
   gtrm_t->all_happy = true;
   gtrm_t->c1 = 0.1;
   gtrm_t->c2 = 10;
-
-
   while (m->exit_code == MANAGER_RUNNING) {
     ...
+\end{verbatim}
+Inside the loop, an if-statement makes sure we do not run the resource manager if it is not needed. 
+\begin{verbatim}
     if ((!(gtrm_t->all_happy) || m->update_gtrm) && 
         !hashmap_isempty(m->gtrm_apps)) {
+\end{verbatim}
+The first step is to update the number of running applications.
+\begin{verbatim}
       gtrm_t->prev_apps = gtrm_t->num_apps;
       gtrm_t->num_apps = hashmap_size(m->gtrm_apps);
-      
+\end{verbatim}
+Seconod we compute the virtual platforms and update the number of iterations.
+\begin{framed}
+		\begin{flushleft}
+				\textbf{\emph{{int gtrm\_compute\_virtual\_platforms(Hashmap *apps, gtrm\_t *gtrm\_t)}}} \newline
+				Calculates the amount of resources (virtual platform) for an application.
+				\begin{itemize}
+				\item apps: The hash-map containing information about the applications being managed.
+				\item gtrm\_t: Struct with parameters used when calculating the virtual platforms.
+				\item Return value: Not used, always zero.
+				\end{itemize}
+		\end{flushleft}	
+\end{framed}
+
+\begin{verbatim}
+
       gtrm_compute_virtual_platforms(m->gtrm_apps, gtrm_t);
       gtrm_t->iterations++;
-
+\end{verbatim}
+The virtual platforms are then applied to the applications and a variable set by the dispatch is reset to false.
+\begin{framed}
+		\begin{flushleft}
+				\textbf{\emph{{void gtrm\_apply\_virtual\_platforms(Manager* m)}}} \newline
+				Computes and applies the amount of CPUShares that each application shall be given.
+				\begin{itemize}
+				\item m: Reference to manager, used to get the applications
+				\item Return value: None.
+				\end{itemize}
+		\end{flushleft}	
+\end{framed}
+\begin{verbatim}
       gtrm_apply_virtual_platforms(m); 
       m->update_gtrm=false;																	
+\end{verbatim}
+The final step inside the loop is to update the performance multiplier and do the logging.
+\begin{framed}
+		\begin{flushleft}
+				\textbf{\emph{{void gtrm\_update\_performance\_multipliers(int gtrm\_fd, Hashmap *gtrm\_apps)}}} \newline
+				Calculates, updates and sends the performance multiplier to each application, using the performance, virtual platform and the previous virtual platform for each application.
+				\begin{itemize} 
+				\item gtrm\_fd: File descriptor used to send the performance multiplier.
+				\item gtrm\_apps: Hash-map containing rm\_app\_t structs for each application.
+				\item Return value: None.
+				\end{itemize}
 
+		\end{flushleft}	
+\end{framed}
+
+\begin{framed}
+		\begin{flushleft}
+				\textbf{\emph{{void gtrm\_write\_log(Hashmap *gtrm\_apps, unsigned int num\_applications)}}} \newline
+				Writes information about the resource management to a log file, which can then be used to generate some nice graphs.
+				\begin{itemize} 
+				\item gtrm\_apps: Hash-map containing rm\_app\_t structs for each application.
+				\item num\_applications: Used to make sure we don't try to print an empty hash-map.
+				\item Return value: None.
+		\end{itemize}
+
+		\end{flushleft}	
+\end{framed}
+
+
+
+
+\begin{verbatim}
       gtrm_update_performance_multipliers(m->gtrm_fd,m->gtrm_apps);
       gtrm_write_log(m->gtrm_apps, gtrm_t->num_apps);
 
     }
 
   }
+\end{verbatim}
+If we exit the loop we have to deallocate the \emph{gtrm\_t} struct to avoid memory leakage.
+\begin{verbatim}
   free(gtrm_t);
   return m->exit_code;
 }
 \end{verbatim}
-
-Before the loop actually start to run, we create and initiate a struct that contain the necessary data for the resource manager, \emph{gtrm\_t}. Inside the loop, the if-statement makes sure we do not run the resource manager if it is not needed. The first step is to update the number of running applications. Then we compute the virtual platforms 
 
 \section{Service Level}
 There are two ways of implementing SL, one simpler and one more advanced. The first one simply multiplies the current SL with the matching funtion and multiplies the result with a constant scale factor. This will decrease the service level if the performance i negative and increase it if it is positive. The scaling factor (called epsilon) also makes sure that we don't get too much overshoot. 
@@ -500,7 +583,7 @@ Represents an application being managed and consists of the following fields.
 \subsubsection{struct gtrm\_t}
 Stores various parameters used by the GTRM.
 \begin{itemize}
-\item c1: Constant used for computing epsilon, determines how much we will change the virtual platform. Set arbitrary.
+\item c1: Constant used for computing epsilon, determines how much we will change the virtual platform.
 \item c2: Another constant used for computing epsilon similar as c1.
 \item iterations: Keeps track of how many iterations the GTRM has run.
 \item all\_happy: Used to indicate if we have to make any adjustments to the resource allocations.
@@ -513,7 +596,7 @@ Extracts data from a received string and store it as a struct instead. The data 
 \begin{itemize} 
 \item str: String to extract data from.
 \item re: Struct to hold the extracted data.
-\item Return value: None, the result is stored in re.
+\item Return value: None, the result is stored in \emph{re}.
 \end{itemize}
 
 \subsubsection{int gtrm\_send\_performance\_multiplier(double pm, int fd, struct sockaddr *sa)}
