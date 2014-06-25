@@ -597,6 +597,7 @@ r = sd_event_add_io(m->event, &m->gtrm_event_source, m->gtrm_fd,
 Now the gtrm socket has been added to the poll and a corresponding event will be returned if there is a message on the socket when calling \emph{epoll\_wait(...)}. 
 The last thing done in \emph{manager\_setup\_gtrm(...)} is to give the \emph{gtrm\_event\_source} a priority, this affects how the prioritized queue sorts messages from this source type and is set to the same as notify messages.
 
+Once the socket is setup and ready a environmental variable is set in Linux containing the address to the gtrm-socket. This is how applications will know where to send their messages to.
 
 
 \subsubsection{The callback function for gtrm socket:}
@@ -931,6 +932,32 @@ In this context the CPUShares can be set to what is desired and it is followed b
 }
 \end{verbatim}
 
+
+\section{SL update in the application}
+The applications using the GTRM will have similar structure with the main difference in how they implement the SL/cpu-requirement relationship. 
+The SL will affect some parameters that affect the cpu requirement and this is different from application to application. 
+The SL adaptation will need to be run periodically and a socket needs to be established and read during the SL adaptation. 
+The test-application is shown below to give an idea about how an application can implement the SL adaptation and what functions that are provided by \emph{gtrm_app_lib.c}.
+The test application and library are altered versions of the test application and library \emph{jobsignaler.c} created at the Department of Control at Lunds University.
+Most modifications are made in order to allow the use of  sockets instead of the initial shared memory approach.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 \section{Resource Allocation}
 \begin{figure}
     \centering
@@ -946,6 +973,49 @@ All applications that are managed by the GTRM are run as services under the GTRM
 In the Pie chart above the static slice would be guaranteed a minimum of \sfrac{1}{3} of the total resources while Service1 and Service2 would be given half of the \sfrac{2}{3} reserved by its parent slice, guaranteeing  them a minimum of \sfrac{1}{3} of the total available resources each.
 
 The resources of the applications running in the GTRM-slice will be managed by the GTRM. Some of the applications will have SL capabilities implemented and some will not. Ideally all applications running in the GTRM-slice should, if it makes sense to the application, have a SL implemented to put the theory into practice. An extension of the project would be to have the entire system managed by the GTRM and have all applications manage their SL. The weight is the parameter that sets how big part of the adaptation that is made by changing the service level contra changing the amount of resources. By using the weight parameter an application can be set to only use resource adaption. However all applications in the gtrm slice must implement calculation of the performance and communication with the RM.
+
+
+\subsection{.service and .slice files}
+The resource split shown in \ref{fig:Piechart} is made my creating a gtrm.slice file in the folder \emph{/etc/systemd/system}:
+\begin{quotation}
+gtrm.slice
+\em
+[Unit]
+
+[Slice]
+CPUShares=1024
+\end{quotation}
+
+
+Create the same service files in the same folder:
+\begin{quotation}
+gtrm-test.service
+\em
+[Unit]
+
+[Service]
+ExecStart=/mnt/flash/test-gtrm-app 50 10 0 0 0 0.1 0.5 0.04\newline
+CPUShares=100
+Slice=gtrm.slice
+\end{quotation}
+
+\begin{quotation}
+gtrm-test2.service
+\em
+[Unit]
+
+[Service]
+ExecStart=/mnt/flash/test-gtrm-app 50 10 0 0 0 0.1 0.5 0.04\newline
+CPUShares=100
+Slice=gtrm.slice
+\end{quotation}
+
+Any application that wants to use the GTRM needs to create such a service file in this folder.
+Systemd creates by default a slice that all services will run under unless otherwise specified. Any service file in the \emph{/etc/systemd/system} folder overrides a service file for the 
+same application declared somewhere else.
+
+
+
 
 \section{Sequence diagram}
 \begin{figure}
