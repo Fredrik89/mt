@@ -223,7 +223,6 @@ The resource management is implemented as a part of systemd, with all of the res
 Systemd uses epoll to find out which sockets has received new messages. The events returned from epoll\_wait() are then put in a prioritized queue. This prioritized queue is then popped and the callback function for top most event is called. This means that a message might not be read immediately after being read from the epoll buffer. Most of the functions used to manage epoll are located in “sd-event”. 
 
 
-\subsubsection{Pseudo code}
 The epoll\_wait function is shown below
 \begin{verbatim}
 
@@ -564,7 +563,7 @@ The first step is to update the number of running applications.
       gtrm_t->prev_apps = gtrm_t->num_apps;
       gtrm_t->num_apps = hashmap_size(m->gtrm_apps);
 \end{verbatim}
-Seconod we compute the virtual platforms and update the number of iterations.
+Second we compute the virtual platforms and update the number of iterations.
 \begin{framed}
 		\begin{flushleft}
 				\textbf{\emph{{int gtrm\_compute\_virtual\_platforms(Hashmap *apps, gtrm\_t *gtrm\_t)}}} \newline
