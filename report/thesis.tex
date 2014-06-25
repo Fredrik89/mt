@@ -523,6 +523,7 @@ r = sd_event_add_io(m->event, &m->gtrm_event_source, m->gtrm_fd,
 Now the gtrm socket has been added to the poll and a corresponding event will be returned if there is a message on the socket when calling \emph{epoll\_wait(...)}. 
 The last thing done in \emph{manager\_setup\_gtrm(...)} is to give the \emph{gtrm\_event\_source} a priority, this affects how the prioritized queue sorts messages from this source type and is set to the same as notify messages.
 
+Once the socket is setup and ready a environmental variable is set in Linux containing the address to the gtrm-socket. This is how applications will know where to send their messages to.
 
 
 \subsubsection{The callback function for gtrm socket:}
@@ -856,6 +857,32 @@ In this context the CPUShares can be set to what is desired and it is followed b
   return 0;
 }
 \end{verbatim}
+
+
+\section{SL update in the application}
+The applications using the GTRM will have similar structure with the main difference in how they implement the SL/cpu-requirement relationship. 
+The SL will affect some parameters that affect the cpu requirement and this is different from application to application. 
+The SL adaptation will need to be run periodically and a socket needs to be established and read during the SL adaptation. 
+The test-application is shown below to give an idea about how an application can implement the SL adaptation and what functions that are provided by \emph{gtrm_app_lib.c}.
+The test application and library are altered versions of the test application and library \emph{jobsignaler.c} created at the Department of Control at Lunds University.
+Most modifications are made in order to allow the use of  sockets instead of the initial shared memory approach.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 \section{Resource Allocation}
 \begin{figure}
