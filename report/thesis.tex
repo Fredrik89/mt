@@ -525,7 +525,7 @@ The virtual platforms are re-calculated and applied for as long as the applicati
 \begin{verbatim}
 int manager_loop(Manager *m) {
 \end{verbatim}
-Before the loop actually start to run, we create and initiate a struct that contain the necessary data for the resource manager, \emph{gtrm\_t}.
+Before the loop actually start to run, a struct that contains the necessary data for the resource manager, \emph{gtrm\_t}, is created and initiated.
 
 \begin{framed}
 		\begin{flushleft}
@@ -554,7 +554,7 @@ Before the loop actually start to run, we create and initiate a struct that cont
   while (m->exit_code == MANAGER_RUNNING) {
     ...
 \end{verbatim}
-Inside the loop, an if-statement makes sure we do not run the resource manager if it is not needed. 
+Inside the loop, an if-statement makes sure that the resource manager is not run if it is not needed. 
 \begin{verbatim}
     if ((!(gtrm_t->all_happy) || m->update_gtrm) && 
         !hashmap_isempty(m->gtrm_apps)) {
@@ -564,7 +564,7 @@ The first step is to update the number of running applications.
       gtrm_t->prev_apps = gtrm_t->num_apps;
       gtrm_t->num_apps = hashmap_size(m->gtrm_apps);
 \end{verbatim}
-Seconod we compute the virtual platforms and update the number of iterations.
+Second the virtual platforms are computed and the number of iterations is updated.
 \begin{framed}
 		\begin{flushleft}
 				\textbf{\emph{{int gtrm\_compute\_virtual\_platforms(Hashmap *apps, gtrm\_t *gtrm\_t)}}} \newline
@@ -635,7 +635,7 @@ The final step inside the loop is to update the performance multiplier and do th
 
   }
 \end{verbatim}
-If we exit the loop we have to deallocate the \emph{gtrm\_t} struct to avoid memory leakage.
+If the loop exits we have to deallocate the \emph{gtrm\_t} struct to avoid memory leakage.
 \begin{verbatim}
   free(gtrm_t);
   return m->exit_code;
