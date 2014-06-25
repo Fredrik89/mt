@@ -400,36 +400,99 @@ network connection (\emph{http or udp}).
 
 
 \section{Sockets and epoll}
+
+This section introduces ...
+\martina{Add a short introductory sentence above. This sentence should
+  state why you are introducing sockets and the epoll function.}
+
 \subsection{Sockets}
-The communication between services and systemd is done with sockets and since the RM will run in the systemd main loop this is the communication that will be used to send data between the applications and the RM.
-Sockets are the endpoints for IPC \emph{(inter-process communication)} flows over a network,
-where the processes may reside on the same computer or just on the same network. These sockets are provided by the socket() system routine in linux which can be interacted with through calling functions in api header files. An analogy for sockets are physical ports on a computer and a printer where the wire in between is the channel.
-A call to the socket() api function creates a socket and returns an integer, a \emph{file descriptor},  which is unique for the socket and is used for referring to the sockets in future calls. A file descriptor \emph{(fd)} in Linux is associated with an open file, where the file can be anything that can be written to or read from. Having the fd gives access to read and write to/from the socket.
-A socket can be of the type \emph{stream} or \emph{datagram}, the latter is used by the gtrm socket.
-\subsection{epoll}
-Epoll is a linux system call that allows the user to listen to multiple sockets simultaneously. This is done by calling the api function epoll\_wait(...) which returns a queue of event-objects containing information about what fd:s that has received datagrams together with other misc. information. By looking at this queue the user knows what fd:s to read with the read(...) function.  
+The communication between applications and \texttt{systemd} is obtained
+through sockets. The RM runs in the \texttt{systemd} main loop, therefore
+sockets are used to send data between the RM and the applications.
+
+Sockets are the endpoints for \emph{inter-process communication} (IPC) 
+flows over a network, where the entities communicating may reside on the
+same physical device or are simply nodes on the same network. These sockets
+are provided by the \texttt{socket()} system routine in Linux, therefore
+their usage is regulated by the normal operating system APIs.
+
+A call to the \texttt{socket()} API function creates a socket and returns 
+an integer, a unique \emph{file descriptor} representing the socket for
+future usage. A file descriptor in Linux is associated with an open file,
+where the file can be anything that can be written to or read from. 
+Knowing the descriptor gives read and write access to the socket. 
+A socket has a type, being it either \emph{stream} or \emph{datagram}, 
+the latter is the one used by the GTRM socket.
 
 
-\section{Equipment} %Description of camera and such
-During the project we used two different cameras, the M1033 and the P3367, both manufactured by Axis. We first started using the M1033 because it came with systemd but we later switched to the P3367 because it ran a later version of systemd.
+\subsection{Epoll}
+Epoll is a Linux system call, allowing the user to listen to multiple 
+sockets simultaneously. The API function \texttt{epoll\_wait(...)} returns 
+a queue of event-objects containing information about what file descriptors
+have received datagrams together with other information. By looking at this 
+queue the user knows what file descriptor to read with to obtain the newly
+arrived data.  
+
+\section{Equipment}
+The project involves experiments with two different cameras: the M1033 and 
+the P3367, both manufactured by Axis. Both the cameras have \texttt{systemd}
+installed, although the P3367 runs a more updated version of it.
 
 \subsection{Axis M1033}
-\begin{figure}
+
+This is a small camera, connected to the network either wired or wireless. 
+It supports multiple H.264 streams and Motion JPEG running at a maximum
+resolution of 800x600 at 30 frames per second. It has two audio streaming
+channels, which means that it can both record and play audio clips. 
+
+\begin{figure}[h]
     \centering
-    \includegraphics[width=\textwidth]{m1033}
-    \caption{Axis M1033}
+    \includegraphics[width=0.5\textwidth]{m1033}
+    \caption{The Axis M1033 camera}
     \label{fig:M1033}
 \end{figure}
-This is a small camera, connected to the network either wired or wireless. It supports multiple H.264 streams and Motion JPEG running at a maximum resolution of 800x600 at 30 FPS. It has two way audio streaming, which means it can both record and play audio clips.
+
+It is very likely, due to its capabilities, that multiple applications run
+simultaneously on the hardware, especially due to the ability of recording 
+and playing audio clips simultaneously. In fact, while the video is recorded
+and sent over the network, it is also possible to run other applications
+using the collected data, for example some motion detection application.
 
 \subsection{Axis P3367}
-\begin{figure}
+
+The Axis P3367 is a fixed dome network camera capable of multiple H.264
+streams as well as Motion JPEG streams. It supports various frame rates and
+resolutions up to 5 Megapixel at 12 frames per second, it also supports 
+HDTV 1080p at 30 frames per second and has two way audio streaming 
+capabilities.
+\martina{dome? home?}
+
+\begin{figure}[h]
     \centering
-    \includegraphics[width=\textwidth]{p3367}
-    \caption{Axis P3367, without its casing}
+    \includegraphics[width=0.5\textwidth]{p3367}
+    \caption{The Axis P3367 camera, without its case}
     \label{fig:P3367}
 \end{figure}
-The Axis P3367 is a fixed dome network camera capable of multiple H.264 streams as well as Motion JPEG streams. It supports various frame rates and resolutions up to 5 MP at 12 FPS, it also supports HDTV 1080p at 30 FPS and has two way audio streaming capabilities. The power is supplied using Power over Ethernet, meaning it does not need a separate power supply, but is instead powered directly from the network cable. It features an ARTPEC-4 system-on-chip, developed by Axis, which contains a single-core CPU running at 400 MHz and a co-processor dedicated to video analytics.
+
+The power is supplied using Power over Ethernet, therefore the camera does 
+not need a separate power supply and is powered directly through the network
+cable. It features an ARTPEC-4 system-on-chip, developed by Axis, which
+contains a single-core CPU running at 400 MHz and a co-processor dedicated
+to video analytics.
+
+It is clearly more advanced than the M1033 but it shares the same
+characteristics of being extremely flexible to execute multiple applications
+at the same time, especially due to the video analytics co-processor.
+
+\martina{Will you present test with both the cameras or only with one of
+  them? Will you present the same tests on both the cameras? In this case,
+  explain why one camera is better than another for testing some specific
+  feature of your approach. Is there something special beside ``they have
+  systemd'' why you chose these two models? How are those positioned
+  among the Axis products? Are they in the middle, are they the top of the
+  Axis production? What other applications are likely to be run on the
+  same hardware? If you have some of the answers to this questions, try
+  to insert them in the text.}
 
 
 \chapter{Implementation}
