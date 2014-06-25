@@ -382,28 +382,142 @@ The last thing done in \emph{manager\_setup\_gtrm(...)} is to give the \emph{gtr
 
 
 \subsubsection{The callback function for gtrm socket:}
-Once an event has been popped from the prioritized queue the callback function \emph{static int manager\_dispatch\_gtrm\_fd(...)} is called. The instructive parts of the function are shown below.
+Once an event has been popped from the prioritized queue the callback function \emph{static int manager\_dispatch\_gtrm\_fd(...)} is called. 
+The callback function contains all the code that should execute when a message is received on the gtrm socket. The function extracts the data from the message, which is the PID of the sending application, its performance, whether it is satisfied or not and the weight attribute. 
+The hashmap, which contains all the applications that are managed by GTRM, is then updated with this new data. 
 
+
+
+
+The instructive parts of the function are shown below:
+
+\begin{framed}
+		\begin{flushleft}
+			\textbf{\emph{static int manager\_dispatch\_gtrm\_fd(sd\_event\_source *source, int fd, unit32\_t revents, void *userdata)}}\newline
+				Called when we receive the performance of an application.
+				\begin{itemize}
+				\item source: source of the event.
+				\item fd: file descriptor to the event source.
+				\item revents: Set by the kernel to indicate what event on the file descriptor that triggered the call to this function. In our case it is always the incoming event.
+				\item userdata: In this case it contains a reference to the manager.
+				\item Return value: Not used, always zero.
+				\end{itemize}
+		\end{flushleft}	
+\end{framed}
+
+
+
+
+
+First some declarations and initializations
 
 \begin{verbatim}
+static int manager_dispatch_gtrm_fd(sd_event_source *source, int fd,
+uint32_t revents, void *userdata) {
 
-
+Manager *m = userdata;    		    
+//will contain the read message
 char buf[1024];
+//will be set to the byte size of the read message
 int n;
+//will contain the senders adress
 struct sockaddr_un *from;
-
 socklen_t fromlen;
+//stores RM data about the applications being managed
 rm_app_t *app;
-rm_app_t *app2;
-	
+rm_app_t *app2;	
+
 fromlen = 1024;
 \end{verbatim}
 
- 
+Here the \emph{rm\_app\_t} structure is used:
+
+\begin{framed}
+		\begin{flushleft}
+			\textbf{\emph{struct rm\_app\_t}}
+			Represents an application being managed and consists of the following fields.
+			\begin{itemize}
+			\item tid: Applications PID.
+			\item vp: Virtual platform.
+			\item vp\_old: Previous virtual platform.
+			\item performance: Performance, or matching function of the application.
+			\item weight: The current "weight" of the application.
+			\item happy: Indicates if the application is happy with its current performance.
+			\item sa: Socket Address, used to send back the performance multiplier.
+			\end{itemize}
+		\end{flushleft}	
+\end{framed}
 
 
-\subsection{asdfasdf}
-The callback function which is registered and linked to the events for the gtrm socket when the socket communication is established,  contains all the code that should execute when a message is received on the gtrm socket. The function extracts the data from the message, which is the PID of the sending application, its performance, whether it is satisfied or not and the weight attribute. The hashmap, which contains all the applications that are managed by GTRM, is then updated with this new data. The data is then used when the virtual platforms are calculated  and set the CPUShares in systemds “main-loop”.
+
+
+
+
+Now a while loop reads the socket one message each iteration until there are no more unread messages. 
+
+\begin{verbatim}
+do{		
+
+	memset(buf,'\0',1023);
+	from = calloc(1,sizeof(struct sockaddr_un));
+	app = calloc(1,sizeof(rm_app_t));	
+	n = recvfrom(fd,buf,1024,0,(struct sockaddr *) from,&fromlen);
+
+	//n is negative if there was no message if socket is non blocking
+	n = recvfrom(fd,buf,1024,0,(struct sockaddr *) from,&fromlen);
+	if(n<0)
+		break;
+	if(n>1024){//2do avoid magic numbers
+		log_error("manager_dispatch_gtrm_fd:received too big message");
+	}	
+
+	gtrm_char2gtrmstruct(buf, app);
+	pid_t pid = app->tid;
+	app->sa = from;
+
+	if(hashmap_get(m->gtrm_apps, pid) == NULL) {
+		hashmap_put(m->gtrm_apps, pid, app);
+	} else {
+		app2 = hashmap_get(m->gtrm_apps, pid);
+		gtrm_update_rm_struct(app,app2);
+	}															
+
+}while(n>0);
+The callback function which is registered and linked to the events for the gtrm socket when the socket communication is established, contains all the code that should execute when a message is received on the gtrm socket. The function extracts the data from the message, which is the PID of the sending application, its performance, whether it is satisfied or not and the weight attribute. 
+The hashmap, which contains all the applications that are managed by GTRM, is then updated with this new data. 
+m->update_gtrm = true;
+
+return 0;
+}
+\end{verbatim}
+
+The data from a message is used to create a \emph{rm\_app\_t} struct. If the hashmap already contains a \emph{rm\_app\_t} struct for the application, the \emph{rm\_app\_t} in the hashmap is updated by calling the function 
+\emph{gtrm\_update\_rm\_struct(app,app2)}, otherwise it is added to the hashmap with the application pid as the key.
+
+\emph{gtrm\_lib} functions used above:
+
+
+\begin{framed}
+		\begin{flushleft}
+			\textbf{\emph{void gtrm\_char2gtrmstruct(char* str, rm\_app\_t *re)}}
+			Extracts data from a received string and store it as a struct instead. The data sent from an application consists of the PID, performance, weight and if the application is satisfied or not.
+			\begin{itemize} 
+			\item str: String to extract data from.
+			\item re: Struct to hold the extracted data.
+			\item Return value: None, the result is stored in re.
+			\end{itemize}
+		\end{flushleft}	
+\end{framed}
+
+
+
+\begin{verbatim}
+void gtrm_update_rm_struct(rm_app_t *src,rm_app_t *dest){
+	dest->performance = src->performance;			
+}
+\end{verbatim}
+
+
 
 \subsection{Resource management loop}
 The virtual platforms are re-calculated and applied for as long as the applications are not completely satisfied. This is run inside the \emph{manager\_loop}-function in \emph{manager.c}.
