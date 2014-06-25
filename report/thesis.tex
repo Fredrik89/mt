@@ -378,14 +378,77 @@ A struct used to represent a job. Applications can have different type of jobs w
 \begin{itemize}
 \item id: Identifier to keep track of a job being executed.
 \item type: What type of job this is.
-\item start\_timestamp: When the job was started.
-\item end\_timestamp: When we were finished with job. The timestamps are used to calculate the total execution time of a job.
+\item start\_timestamp: Time when the job was started.
+\item end\_timestamp: Time when we were finished with job. The timestamps are used to calculate the total execution time of a job.
 \end{itemize}
 
 \subsubsection{struct \_application\_h}
 Each application stores the relevant information in terms of resource management and SL-adaptation in this struct.
 \begin{itemize}
-\item application\_id: Identifi
+\item application\_id: Identifier for an application.
+\item jobs: Number of possible job types
+\item weight: Determines how to divide the adaptation between the resource manager and service level adaptation.
+\item performance\_multiplier: Depends on how the virtual platform has changed and is used for better service level adaptation.
+\item total\_jobs: How many jobs that has been launched in total.
+\item progress\_jobs: Jobs in progress.
+\item completed\_jobs: Total amount of completed jobs.
+\item expected\_response\_times: Array of the expected response time for each job type.
+\item happy: Indicates if the application is satisfied with its performance or not.
+\end{itemize}
+
+\subsubsection{int gtrm\_lib\_setup\_socket(char* filename)}
+Sets up a socket to communicate with the resource manager.
+\begin{itemize}
+\item filename: The socket needs a file to work, the parameter specifies its path.
+\item Return value: Zero, not used.
+\end{itemize}
+
+\subsubsection{void gtrm\_lib\_send\_performance(\_application\_h *h, double performance)}
+Sends the performance of an application to the GTRM.
+\begin{itemize}
+\item h: Struct representing an application.
+\item performance: Performance or matching function to send to the GTRM.
+\item Return value: None.
+\end{itemize}
+
+\subsubsection{int gtrm\_lib\_set(\_application\_h* a, uint types, uint64\_t* ert)}
+Initializes the application struct with job types and their expected response times.
+\begin{itemize}
+\item a: Struct representing an application.
+\item types: Number of different job types.
+\item ert: Array of expected response time for each job type.
+\item Return value: Exit status of function.
+\end{itemize}
+
+\subsubsection{double gtrm\_lib\_get\_performance\_number(\_application\_h* a, int job\_type)}
+Calculates the peformance (matching function) by averaging the performance of the last ten jobs of a specified type.
+\begin{itemize}
+\item a: Struct representing an application.
+\item type: Which job type for which we want to calculate the performance.
+\item Return value: Applications performance.
+\end{itemize}
+
+\subsubsection{int gtrm\_lib\_update\_performance\_multiplier(\_application\_h *a)}
+Receives the performance multiplier computed by the RM.
+\begin{itemize}
+\item a: Struct for representing the application, and storing the performance multiplier.
+\item Return value: Zero, never used.
+\end{itemize}
+
+\subsubsection{int gtrm\_lib\_signalstart(\_application\_h* a, uint type)}
+Indicates the start of a job.
+\begin{itemize}
+\item a: Struct for representing the application.
+\item type: Type of the job that is started.
+\item Return value: Identifier of the started job.
+\end{itemize}
+
+\subsubsection{int gtrm\_lib\_signalend(\_application\_h* a, uint id)}
+Indicates the end of a job.
+\begin{itemize}
+\item a: Struct for representing the application.
+\item id: Identifier of the job that has completed.
+\item Return value: Exit status.
 \end{itemize}
 
 \chapter{Use cases}
