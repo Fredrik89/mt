@@ -202,6 +202,7 @@ This is a small camera, connected to the network either wired or wireless. It su
 
 \subsection{Axis P3367}
 \begin{figure}
+
     \centering
     \includegraphics[width=\textwidth]{p3367}
     \caption{Axis P3367, without its casing}
@@ -345,10 +346,11 @@ The socket is created in the function manager\_setup\_notify(...) with a call to
 fd = socket(AF_UNIX, SOCK_DGRAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0);
 \end{verbatim}
 
-The socket is set to use the protocol family \emph{AF_UNIX}, which provides efficient communication on the same machine.  \emph{SOCK_DGRAM} sets the socket type to be datagram since there is no need to resend missed obsolete data and no messages are expected to be lost when sent over the same machine anyway. \emph{SOCK_NONBLOCK} prevents the socket from blocking during a read() call when there is no data to read which should not matter here since the polling makes sure that there is always something to read. A random address name is created and assigned to the socket by a call to bind(). Next the fd for the socket needs to be added to the epoll instance, and a epoll_event needs to be associated to the fd. The \emph{epoll\_event} contains a pointer to a  \emph{sd\_event\_source} that has been described earlier. This is all done in the call:  
+The socket is set to use the protocol family \emph{AF\_UNIX}, which provides efficient communication on the same machine. \emph{SOCK\_DGRAM} sets the socket type to be datagram since there is no need to resend missed obsolete data and no messages are expected to be lost when sent over the same machine anyway. \emph{SOCK\_NONBLOCK} prevents the socket from blocking during a read() call when there is no data to read which should not matter here since the polling makes sure that there is always something to read. A random address name is created and assigned to the socket by a call to bind(). Next the fd for the socket needs to be added to the epoll instance, and an epoll\_event needs to be associated to the fd. The \emph{epoll\_event} contains a pointer to a \emph{sd\_event\_source} that has been described earlier. This is all done in the call:  
 
 \begin{verbatim}
-r = sd_event_add_io(m->event, &m->gtrm_event_source, m->gtrm_fd, EPOLLIN,manager_dispatch_gtrm_fd, m);
+r = sd_event_add_io(m->event, &m->gtrm_event_source, m->gtrm_fd,
+ EPOLLIN, manager_dispatch_gtrm_fd, m);
 
 \end{verbatim}
 
@@ -383,7 +385,7 @@ In the Pie chart above the static slice would be guaranteed a minimum of \sfrac{
 
 The resources of the applications running in the GTRM-slice will be managed by our GTRM. Some of the applications will have SL capabilities implemented and some will not. The reason for this is mainly because of the scope of our project. We are mainly concerned about using the SL to maintain a steady framerate but ideally all applications running in the GTRM-slice should, if it makes sense to the application, have a SL implemented to put the theory into practice. An extension of the project would be to have the entire system managed by the GTRM and have all applications manage their SL. The weight is the parameter that sets how big part of the adaptation that is made by changing the service level contra changing the amount of resources. By using the weight parameter we can make up for the fact that we can’t change SL of some applications and the GTRM will only manage their resources instead. 
 
-\section{Source Code}
+\section{Sequence diagram}
 \begin{figure}
     \centering
     \includegraphics[width=\textwidth]{diag.png}
@@ -396,9 +398,10 @@ The first important part in the application is the calculation of its performanc
 
 The resource manager part basically consists of two parts that sort of runs in parallel. Upon receiving the performance of an application, the handler or dispatch function corresponding to such an event is executed. In the diagram it is labled as \emph{gtrm\_dispatch}, and its main responsibilities is to read and parse the received message and then update the hash-map which contains the relevant data about the applications being managed. Meanwhile the resource management runs as a part of the main-loop, and it uses the information in the hash-map previously mentioned to calculate the virtual platforms, \emph{calculate\_virtual\_platforms}. These virtual platforms are then used to set the amount of CPUShares which will be given to each application in the call to \emph{apply\_virtual\_platforms}. To get a better service level adaptation, the performance number which depends on how much the virtual platform has been changed is sent to the application \emph{send\_performance\_number}.
 
-The system is implemented by the functions described in the following source and header files. Note that some of these files originate from the source of systemd and have only been edited and not created by the authors.
+\section{Source Code}
+In this section follows an overview of the header and source files used in the system and their attributes.
 \subsection{gtrm\_lib.c/h}
-Used as a library for the resource management.
+A library which contains various functions used by the resource manager to make various computations and inter process communication.
 
 \subsubsection{struct rm\_app\_t}
 Represents an application being managed and consists of the following fields.
@@ -467,7 +470,7 @@ Writes information about the resource management to a log file, which can then b
 \end{itemize}
 
 \subsection{manager.c/h}
-One of the main files in systemd and is for example responsible for inter process communication. The following field are added to the Manager struct in manager.h:
+One of the main files in systemd and is for example responsible for inter process communication. The following fields are added to the \emph{Manager} struct in manager.h:
 \begin{itemize}
 \item gtrm\_socket: String that represent the socket used by GTRM.
 \item gtrm\_fd: A file descriptor, which is an integer, for communicating with GTRM.
@@ -480,7 +483,7 @@ Called when we receive the performance of an application.
 \begin{itemize}
 \item source: source of the event.
 \item fd: file descriptor to the event source.
-\item revents: ???
+\item revents: Set by the kernel to indicate the returned event, not used here.
 \item userdata: In this case it contains a reference to the manager.
 \item Return value: Not used, always zero.
 \end{itemize}
@@ -650,14 +653,15 @@ In this case the static slice starts out not being under full load.
 \end{enumerate}
 
 \chapter{Testing}
-The end result will be a working prototype that can demonstrate that the system works and what results that can be expected. These are the main aspects that we want to test.
+To provide results and to prove that the thesis is valid, thorough testing is required. The main focus of the test is to see if the following can be achieved.
 \begin{itemize}
 \item Can we keep the FPS we want even during high load of the system.
 \item Can we adapt so that other applications can perform well during high loads as well. 
 \end{itemize}
 
-The tests output will consist of logs showing CPU-time for applications along with their service levels, performance and virtual platforms. The CPU-time can differ between how much resources are assigned and how much is actually used and it is of interest to see how much they vary if any. The FPS and video/sound quality are other outputs we can use.
-There are different things we can do and combine to stress the system in a realistic perspective. These things could be seen as testing the use cases and can be combined with each other. 
+The tests output consist of logs showing CPU-time for applications along with their service levels, performance and virtual platforms. The CPU-time differ between how much resources are assigned to each application and how much is actually used and it is of interest to see how much they vary if any. The FPS and video quality are other outputs that has to be taken into the result.
+
+It is also desirable to test if the system can fulfill the previously described use cases.
 
 \begin{itemize}
 
@@ -666,11 +670,7 @@ There are different things we can do and combine to stress the system in a reali
 \item A moving PTZ-camera will cause a high load when it is moving around. This will cause the whole picture to be redrawn and not partly as when the image is still, and will be the ultimate stress test for the streaming part.
 \item We will also stress the CPU and memory by creating different test applications that will be pointless but demanding in terms of resources. Just for the sake of seeing how things turn out during intense loads. Some of the applications will have a linear relationship between computational time and the SL while others will have a non linear one. This matters since the SL adaptation assumes a linear relationship between the SL and the computational time. If the steps in SL are small enough the linear relationship could still be assumed even for non linear ones.
 \end{itemize}
-To demonstrate how cleverly we can manage our resources, we could compare the old system with our version. We have thought of two realistic and demonstratively ways. The first would be to show how the FPS is decreased when we introduce a high load to the old system, and how we can maintain it in the new system. The high load could as an example be a SSL- key generation.
-
-In the second example we could show a scene with both video and audio recording while stressing the camera. In the old system we would have great video quality but very poor sound performance, e.g. impossible to hear anything. But with our version the video quality would be reduced but instead one could hear what is going on as well. To use this as a conclusive experiment, we would also have to make quantitative measures of the audio, for example signal to noise ratio to see how much audio quality would improve.
-
-The end result would also be presented as nice diagrams and graphs presenting various data that we are interested in, such as resources, bitrate and FPS.
+To demonstrate how cleverly we can manage our resources, we could compare the old system with our version. We have thought of two realistic and demonstratively ways. The first would be to show how the FPS is decreased when we introduce a high load to the old system, and how we can maintain it in the new system. The high load could as an example be a SSL-key generation.
 
 \chapter{Results}
 
