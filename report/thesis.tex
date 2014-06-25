@@ -350,7 +350,7 @@ is no competition.
 \begin{figure}
 \centering
 \begin{tabular}{|c|c|c|} \hline
-\emph{Name} & \emph{CPUShares} &  \emph{\% of CPU} \\ \hline
+\textbf{Name} & \textbf{CPUShares} &  \textbf{\% of CPU} \\ \hline \hline
 CPU & 1 & 100 \\ \hline
 Slice 1 & 400 & 80 \\ \hline
 Slice 2 & 100 & 20 \\ \hline
@@ -363,15 +363,19 @@ Service 2 & 100 & $1/3 * 80 = 27$\\ \hline
 
 
 \section{Video Streaming}
-The video streaming is based upon the GStreamer multimedia framework. This is a modular system where a chain is built by linking elements together in a pipeline to form a process chain. Data flows downstream from a source element, through filter elements to finally end up in a sink element, see fig\ref{fig:pipeline}. The data is contained in buffers, which can contain one or more frames, flowing downstream. On the Axis camera the source element will receive the images already compressed by external hardware through another application which reads a file descriptor in order to get the frames from the encoding device. The data is then sent through a number of filters and is finally sent onto the network by the sink element. This chain is dynamically created depending on different settings like codecs used \emph{(jpeg,h264,...)}, or network connection \emph{(http or udp)}.
-	
+
+The video streaming application is based upon the GStreamer multimedia
+framework. The framework is a modular system, where a chain is built by
+linking elements together in a pipeline to form a process chain. 
+The data flows downstream from a source element, through filter elements 
+and end up in a sink element, see Figure~\ref{fig:pipeline} for a graphical
+representation of the pipeline. 
 
 \begin{figure}
 \begin{framed}
 \label{fig:pipeline}
 \begin{picture}(100,60)
 \put(0,60){Pipeline}
-
 \put(0,4){\framebox(50,50){Source}}
 \put(50,29){\vector(1,0){50}}
 \put(100,4){\framebox(50,50){filter}}
@@ -379,9 +383,22 @@ The video streaming is based upon the GStreamer multimedia framework. This is a 
 \put(200,4){\framebox(50,50){Sink}}
 \end{picture}
 \end{framed}
-
 \caption{The GStreamer pipeline.}
 \end{figure}
+
+The data is contained into buffers. Buffers can contain one or more frames,
+flowing downstream. On Axis cameras, the source elements receive the images
+already compressed by external hardware through another application which
+reads a file descriptor in order to get the frames from the encoding device.
+The data is then sent through a number of filters and finally is released to
+the network by the sink element. This chain is dynamically created depending
+on different settings like codecs used (\emph{jpeg, h264 and more}) or 
+network connection (\emph{http or udp}).
+
+\martina{Can you add a couple of information about the processing? How are
+  the images being processed? What are those ``filters''? At least in one
+  example that is reasonable (choose a codec and a network connection type
+  and describe the pipeline in that case).}
 
 
 \section{Sockets and epoll}
