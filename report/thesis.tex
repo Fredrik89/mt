@@ -10,6 +10,7 @@
 \usepackage{listings}
 \usepackage{url}
 \usepackage{verbatim}
+\usepackage[]{algorithm2e}
 
 \usepackage{titlesec}
 \usepackage{todonotes}
@@ -202,6 +203,7 @@ This is a small camera, connected to the network either wired or wireless. It su
 
 \subsection{Axis P3367}
 \begin{figure}
+
     \centering
     \includegraphics[width=\textwidth]{p3367}
     \caption{Axis P3367, without its casing}
@@ -218,7 +220,7 @@ Creating service levels for all the applications running on the system would not
 
 \subsection{IPC}
 The resource management is implemented as a part of systemd, with all of the resource management source code integrated into systemds. If an application has a poor matching function it sends information to systemd via UNIX-sockets. The interprocess communication (IPC) consists of one socket in systemd and one for each application that the RM is monitoring. The socket setup was implemented by more or less copying the “Notify” feature of systemd which is used by certain services that want to for example notify systemd that they have started or about other status changes [sysd-notify].
-Systemd uses epoll to find out which sockets has received new messages. The events returned from epoll\_wait() are then put in a prioritized queue. This prioritized queue is then popped and the callback function for top most event is called. This means that a message might not be read immediately after being read from the epoll buffer. Most of the functions used to manage epoll are located in  “sd-event”. 
+Systemd uses epoll to find out which sockets has received new messages. The events returned from epoll\_wait() are then put in a prioritized queue. This prioritized queue is then popped and the callback function for top most event is called. This means that a message might not be read immediately after being read from the epoll buffer. Most of the functions used to manage epoll are located in “sd-event”. 
 
 
 \subsubsection{Pseudo code}
@@ -338,22 +340,43 @@ Finally the \emph{source\_dispatch} function is called to call the callback func
 \end{verbatim}  
 
 \subsection{Setting up the socket}
-The socket is created in the function manager\_setup\_notify(...) with a call to the socket() function. 
 
+The socket is created and added to the epoll instance in \emph{manager\_setup\_gtrm(...)}, below is the instructive part of the code in \emph{manager\_setup\_gtrm(...)}:
 
+The socket is created in the function  with a call to the socket(..) function.
 \begin{verbatim}
 fd = socket(AF_UNIX, SOCK_DGRAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0);
 \end{verbatim}
 
-The socket is set to use the protocol family \emph{AF\_UNIX}, which provides efficient communication on the same machine.  \emph{SOCK\_DGRAM} sets the socket type to be datagram since there is no need to resend missed obsolete data and no messages are expected to be lost when sent over the same machine anyway. \emph{SOCK\_NONBLOCK} prevents the socket from blocking during a read() call when there is no data to read which should not matter here since the polling makes sure that there is always something to read. A random address name is created and assigned to the socket by a call to bind(). Next the fd for the socket needs to be added to the epoll instance, and a epoll\_event needs to be associated to the fd. The \emph{epoll\_event} contains a pointer to a  \emph{sd\_event\_source} that has been described earlier. This is all done in the call:  
+The socket is set to use the protocol family \emph{AF\_UNIX}, which provides efficient communication on the same machine.  \emph{SOCK\_DGRAM} sets the socket type to be datagram since there is no need to resend missed obsolete data and no messages are expected to be lost when sent over the same machine anyway. \emph{SOCK\_NONBLOCK} prevents the socket from blocking during a read() call when there is no data to read which should not matter here since the polling makes sure that there is always something to read. A random address name is created and assigned to the socket by a call to bind(). Next the fd for the socket needs to be added to the epoll instance, and an epoll\_event needs to be associated to the fd. The \emph{epoll\_event} contains a pointer to a  \emph{sd\_event\_source} that has been described earlier. This is all done in the call:  
 
 \begin{verbatim}
-r = sd_event_add_io(m->event, &m->gtrm_event_source, m->gtrm_fd, EPOLLIN,manager_dispatch_gtrm_fd, m);
-
+r = sd_event_add_io(m->event, &m->gtrm_event_source,
+m->gtrm_fd, EPOLLIN,manager_dispatch_gtrm_fd, m);
 \end{verbatim}
 
+Now the gtrm socket has been added to the poll and a corresponding event will be returned if there is a message on the socket when calling \emph{epoll\_wait(...)}. 
+The last thing done in \emph{manager\_setup\_gtrm(...)} is to give the \emph{gtrm\_event\_source} a priority, this affects how the prioritized queue sorts messages from this source type and is set to the same as notify messages.
 
 
+
+\subsubsection{The callback function for gtrm socket:}
+Once an event has been popped from the prioritized queue the callback function \emph{static int manager\_dispatch\_gtrm\_fd(...)} is called. The instructive parts of the function are shown below.
+
+
+\begin{verbatim}
+
+
+char buf[1024];
+int n;
+struct sockaddr_un *from;
+
+socklen_t fromlen;
+rm_app_t *app;
+rm_app_t *app2;
+	
+fromlen = 1024;
+\end{verbatim}
 
  
 
@@ -474,6 +497,8 @@ One of the main files in systemd and is for example responsible for inter proces
 \item gtrm\_event\_source: Used to determine the source of an event and how this event is supposed to be handled.
 \item gtrm\_apps: Hash-map containing all the applications being managed by the GTRM.
 \end{itemize}
+
+
 
 \subsubsection{static int manager\_dispatch\_gtrm\_fd(sd\_event\_source *source, int fd, unit32\_t revents, void *userdata)}
 Called when we receive the performance of an application.
