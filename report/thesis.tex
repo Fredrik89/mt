@@ -873,6 +873,49 @@ In the Pie chart above the static slice would be guaranteed a minimum of \sfrac{
 
 The resources of the applications running in the GTRM-slice will be managed by the GTRM. Some of the applications will have SL capabilities implemented and some will not. Ideally all applications running in the GTRM-slice should, if it makes sense to the application, have a SL implemented to put the theory into practice. An extension of the project would be to have the entire system managed by the GTRM and have all applications manage their SL. The weight is the parameter that sets how big part of the adaptation that is made by changing the service level contra changing the amount of resources. By using the weight parameter an application can be set to only use resource adaption. However all applications in the gtrm slice must implement calculation of the performance and communication with the RM.
 
+
+\subsection{.service and .slice files}
+The resource split shown in \ref{fig:Piechart} is made my creating a gtrm.slice file in the folder \emph{/etc/systemd/system}:
+\begin{quotation}
+gtrm.slice
+\em
+[Unit]
+
+[Slice]
+CPUShares=1024
+\end{quotation}
+
+
+Create the same service files in the same folder:
+\begin{quotation}
+gtrm-test.service
+\em
+[Unit]
+
+[Service]
+ExecStart=/mnt/flash/test-gtrm-app 50 10 0 0 0 0.1 0.5 0.04\newline
+CPUShares=100
+Slice=gtrm.slice
+\end{quotation}
+
+\begin{quotation}
+gtrm-test2.service
+\em
+[Unit]
+
+[Service]
+ExecStart=/mnt/flash/test-gtrm-app 50 10 0 0 0 0.1 0.5 0.04\newline
+CPUShares=100
+Slice=gtrm.slice
+\end{quotation}
+
+Any application that wants to use the GTRM needs to create such a service file in this folder.
+Systemd creates by default a slice that all services will run under unless otherwise specified. Any service file in the \emph{/etc/systemd/system} folder overrides a service file for the 
+same application declared somewhere else.
+
+
+
+
 \section{Sequence diagram}
 \begin{figure}
     \centering
