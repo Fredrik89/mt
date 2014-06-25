@@ -1,10 +1,8 @@
 \documentclass[nobiblatex]{LTHthesis}
-% !TeX spellcheck = en_GB
 \usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}  %% Comment if you are not using utf8
+\usepackage[utf8]{inputenc}
 \usepackage{mathptmx, helvet}
 \usepackage{xfrac}
-%\usepackage[swedish]{babel}  %% aktivera om rapporten är på svenska
 \usepackage[left=2.5cm,right=2.5cm,top=3cm,bottom=5cm]{geometry}
 \usepackage{graphicx}
 \usepackage{listings}
@@ -16,8 +14,8 @@
 \usepackage{todonotes}
 \usepackage{framed}
 
-\newcommand{\martina}[1]{\todo[inline,color=red!30,caption={}]{\textbf{Martina:} #1}}
-
+\newcommand{\martina}[1]
+  {\todo[inline,color=red!30,caption={}]{\textbf{Martina:} #1}}
 
 \begin{document}
 \begin{titlepages}
@@ -26,71 +24,163 @@
 \year{2014}
 \month{June}
 \TFRT{9999}  %%  You will get the number from the department.
-\printer{Media-Tryck}  %% Probably. You may get other information from the department.
+\printer{Media-Tryck} %% You may get other information from the department.
 
 \end{titlepages}
 \setcounter{page}{1}
 \pagenumbering{roman}
 
 \chapter*{Abstract}
-This master thesis report will depict the work carried out at Axis Communications in cooperation with the Department of Control at Lunds University. The problem of limited resources on an Axis camera is handled by a two
-part solution where a resource manager (RM) distributes the available resources and where services adapt their service level (SL) in order to let the services finish their jobs on time. This is done in a game theoretic approach where the services are players, varying their SL in order to get a good match between given resources and their SL. This SL-adaptation scheme is then partly implemented on the streaming service on the camera and on some test services performing simple math operations. The resource manager is incorporated into systemd which uses cgroups ~\cite{cgroups} to implement the distribution of resources.
+
+This master thesis tackles the problem of limited computing resources on a
+camera that is executing computing applications together with image
+acquisition and streaming. The thesis was carried out at Axis Communications
+in cooperation with the Department of Control at Lunds University. The
+problem of limited resources on an Axis camera is handled by a two part
+solution where a resource manager (RM) distributes the available resources
+and services can adapt their service level (SL) in order to finish their
+jobs on time. The solution is based on game theory, where services are
+players, varying their service levels in order to get a good match between
+given resources and their computing requirements. This service level
+adaptation scheme is partially implemented for the streaming service on the
+camera and for some test services, performing mathematical operations. The
+resource manager is incorporated into \texttt{systemd}, and uses 
+\texttt{cgroups}~\cite{cgroups} to distribute the computing capacity.
+\martina{Add one sentence to summarize the results.}
 
 
 \chapter*{Acknowledgements}
-We want to thank our supervisors, Umut Tezduyar-Lindskog, Axis and Martina Maggio, LTH Department of Control. We would also like to thank engineering manager Pontus Bergendahl, Axis.
+
+We want to thank our supervisors, Umut Tezduyar-Lindskog, Axis and Martina 
+Maggio, LTH Department of Control. We would also like to thank engineering 
+manager Pontus Bergendahl, Axis.
 
 \newpage
+
 \tableofcontents
 \newpage
 
 \setcounter{page}{1}
 \pagenumbering{arabic}
 
-\chapter{Introduction} %This is a description of my work.
-\section{Axis}
-Axis is a company founded and based in Lund that manufactures network relayed surveillance cameras and video encoders.
-\section{Problem formulation}
-It is becoming more common to have multiple resource intensive services running on Axis cameras. At the same time, the demands are increasing on reliable and consistent video frame rate and quality. This creates a problem where different services are competing for resources like CPU and RAM. This can result in poor performance of the camera under scenarios when it is under heavier load than usual, one example being when answering calls from the network. The solution that we will evaluate is based on some of the work carried out at the University of Lund \cite{gtrm}, called the Game Theoretic Resource Manager (GTRM) and a library that lets services implement the SL adaptation and communication with the RM. The goal is to see if it is possible to use this resource manager on an Axis camera running Linux with the streaming application competing with some test applications for resources. In this test the cameras image quality will be its SL and the inverse of its frame rate the measurement for the time a job takes to finish, where a jobs deadline will be set to \(1/desired framerate\).
+\chapter{Introduction}
 
+This master thesis treats the problem of assigning limited resources to
+embedded cameras. Axis cameras are used for the study. Axis is a company
+founded and based in Lund that manufactures network relayed surveillance
+cameras and video encoders.
+
+\section{Problem formulation}
+
+To save energy and make better use of the available hardware, there is a
+trend to have multiple resource intensive applications running on Axis
+cameras. These applications are \emph{services}, that should execute within
+a certain time and with variable precision requirements. At the same time,
+reliable and consistent video frame rate and quality is a necessary
+condition to be fulfilled, which calls for running video streaming
+services in isolation, without being subject to the interference of
+other services. The two conflicting requirements make different services 
+compete for resources like CPU and RAM. This may result in poor performance 
+of the camera, when the execution scenarios bring the camera under a load
+that is heavier than the usual design one. For example, when answering calls
+from the network, the camera is subject to a heavier demand. 
+
+In this scenarios it would be advisable to have a technique to diminish
+the load produced by services that are not necessary, ideally without
+affecting their timing properties. The quality of service reduction is
+often addressed via the introduction of service levels, where services can
+decrease the load generated on the hardware by lowering their service level,
+therefore producing results that have a lower quality. When the load
+conditions are back to optimal, the service can increase the service level,
+to provide the best available quality without harming the execution of the
+most important applications.
+
+This work implements a game theoretic mechanism based on the Game Theoretic 
+Resource Manager (GTRM), developed at Lund University~\cite{gtrm} and a
+library that lets services implement the service level adaptation and the
+communication with a global resource manager. The goal is to demonstrate
+that it is possible to use GTRM on an Axis cameras running Linux and to use
+it to manage applications competing for resources. The evaluation features
+the streaming application, competing with load generators. The image quality
+is taken as the service level and the cameras are assumed to have a desired
+frame rate, therefore introducing for each frame a deadline of 
+\(1/desired framerate\).
 
 \section{Related Work}
 
-\martina{Rephrase this}
+The problem of allocating resources to running applications and at the same
+time varying the quality of the computation of these applications to avoid
+overload conditions has been addressed in many different ways, sometimes
+also using game theory.  
 
-Resource management is a problem that can be solved in many different ways. Many resource managers has been developed in the past and also some with game theoretic behavior.  
+For example, Wei et al.~\cite{Wei10} have used game theory to assign
+resources to fully parallelizable tasks. Contrary to their approach, in our
+case applications are not fully parallelizable and could execute sequential
+sections. In some of these sections, assigning more resources would not
+speed up the application, while in others the benefits will be significant.
+The resource manager developed in this thesis, therefore, needs to act based
+on actual measurements.
 
-The problem of allocating resources to, assumed, fully parallelizable tasks was solved by Wei et al.~\cite{Wei10} using a game-theoretic method.
+Subrata et al.~\cite{Sub08} solved the problem of balancing the load in grid 
+computing by applying game theory. Here the players are machines that wants 
+to maximize their profit by finishing jobs that arrive according to a 
+Poisson process. Grosu and Chronopoulos~\cite{Gro05} made similar work with 
+load balancing strategies. The load is distributed amongst different 
+competing players which would hopefully reach a common state which would 
+benefit all the players the most. However, the is no cooperation on the
+application side to reach a consensus.
 
-Subrata et al.~\cite{Sub08} solved the problem of balancing the load in grid computing by applying game theory. Here the players are machines that wants to maximize their profit by finishing jobs that arrive according to a Poisson process.
+Many resource managers are feedback oriented. The first resource managers
+that make explicit use of control theory and feedback loops was developed 
+by Lu et al.~\cite{LuS99a}, Steere et al.~\cite{Ste99} and Eker et 
+al.~\cite{Eke00}. However they do not implement the concept of varying the
+computation quality, or service level.
 
-Grosu and
-Chronopoulos~\cite{Gro05} made similar work with load balancing. Here the load was distributed amongst different competing players which would hopefully reach a common state which would benefit all the players the most.
-
-Many resource managers are feedback oriented and resource allocation using feedback loops was developed by Lu et al.~\cite{LuS99a},
-Steere et al.~\cite{Ste99}, Eker et al.~\cite{Eke00}. However they do not implement the concept of altering quality.
-
-The QoS-based Resource Allocation Model (Q-RAM) was proposed by Rajkumar et al.~\cite{Raj97a} for managing of multidimensional resources. Here it is desired to minimize the QoS constraints while maximizing the \emph{total utility}. 
+The QoS-based Resource Allocation Model (Q-RAM) was proposed by Rajkumar et 
+al.~\cite{Raj97a} for managing of multidimensional resources. Here it is 
+desired to minimize the QoS constraints while maximizing the total 
+utility. The solution is centralized and every application receives a
+certain quality to be used for the computation and cooperate with the
+architecture by enforcing that quality. However, the amount of communication
+needed to achieve this goal is non-negligible and therefore it is not
+advisable for a video surveillance and streaming systems where the network
+bandwidth is used to stream the surveillance videos.
  
-A solution that both manages the resources and the service level of an application is proposed in the ACTORS project ~\cite{Bin11}, but just as the solutions proposed by \cite{Raj97a,Soj11,Arz11} this is done in a centralized way. 
+A solution that both manages the resources and the service level of an 
+application is proposed in the ACTORS project~\cite{Bin11}, but just as the 
+solutions proposed by \cite{Raj97a,Soj11,Arz11} the solution is centralized. 
+Separating the service-level adjustment and the resource management has been proposed in the context of network bandwidth allocation~\cite{Sil11}.
 
-Separating the service-level adjustment and the resource management has been proposed to solve network bandwith allocation, ~\cite{Sil11}.
-
-% Instead, we believe that the assignment of the service level can be
-% better performed by the application itself, rather than at a
-% centralized resource management level.
-
-\martina{End of rephrase}
+GTRM~\cite{gtrm}, that is used here as a reference point, decouples the
+resource assignment and the service level selection, but it is implemented
+with \texttt{SCHED\_DEADLINE}, which is not included in the Linux kernel
+used for Axis cameras. Moreover, Axis cameras are already exploiting the
+resource allocation capabilities offered by \texttt{systemd}. In this
+work, a GTRM-like approach is implemented to be applicable to Axis cameras.
 
 \section{Outline of the report}
-Chapter 2, will give a detailed description on the software and hardware used during this project.
-Chapter 3, is about how development went fourth, what decisions were made and how the resulting product is composed.
-Chapter 4, this chapter describes the use cases that where presented during the project. These bring knowledge about what the product is supposed to do and not to do, and also what would be relevant to test in the finished prototype.
-Chapter 5, how and what was tested in the product.
-Chapter 6, what results that could be extracted from this thesis.
-Chapter 7, what could be concluded from the result, what we would have done differently and what we would like to improve given more time.
+
+The remaining of this report is organized as follows.
+
+\begin{itemize}
+\item Chapter~\ref{chp:background} gives a detailed description of
+  the software and hardware used during this project.
+\item Chapter~\ref{chp:development} details the implementation and design
+  decisions, defining therefore how the resulting camera acts.
+\item Chapter~\ref{chp:usecases} discusses the use cases that where
+  taken as a reference for the project. These describe the product
+  functionality and are relevant to test the resulting prototype.
+\item Chapter~\ref{chp:test} outlines how the product was tested.
+\item Chapter~\ref{chp:results} shows the results obtained with the
+  tests and discusses the findings of the thesis.
+\item Chapter~\ref{chp:conclusion} finally concludes the report and
+  highlights future works.
+\end{itemize}
+
+
 
 \chapter{Background}
+\label{chp:background}
 
 \section{Game Theoretic Resource Manager}
 The resource management is based on the performance of the applications that are running. The performance, also called matching function, is calculated as the difference between the applications deadline and the execution time of the application. Ideally the matching function should be zero. When zero, the  application has just enough resources to meet its deadline running with some SL. When positive, too much resources are assigned to the application, indicating that the job is done before deadline, and when negative, too little resources are assigned indicating that the application has missed its deadline.
@@ -210,7 +300,11 @@ This is a small camera, connected to the network either wired or wireless. It su
     \label{fig:P3367}
 \end{figure}
 The Axis P3367 is a fixed dome network camera capable of multiple H.264 streams as well as Motion JPEG streams. It supports various frame rates and resolutions up to 5 MP at 12 FPS, it also supports HDTV 1080p at 30 FPS and has two way audio streaming capabilities. The power is supplied using Power over Ethernet, meaning it does not need a separate power supply, but is instead powered directly from the network cable. It features an ARTPEC-4 system-on-chip, developed by Axis, which contains a single-core CPU running at 400 MHz and a co-processor dedicated to video analytics.
+
+
 \chapter{Implementation}
+\label{chp:development}
+
 All code were written in C and cross-compiled using Axis' compiler for the corresponding platform e.g. camera. For the resource allocation different service files and slices were specified, and the resulting plots were generated with Octave.
 \section{Constraints} %What we decided to do and not to do
 Creating service levels for all the applications running on the system would not be a realistic approach. This is because there are many different applications, some of which may not even be developed at Axis, and developers cannot be expected to modify all of them to implement the performance measurements and service level features needed. Instead the service level part is only implemented in the video streaming application and on some test applications that does some random computations to stress the system. This thesis only focuses on the implementation of the already mentioned work at LTH and will not look into proofs of convergence for the algorithm, neither will it look into other types of SL functions than the simple linear case where the CPU requirement are a linear function of the SL. It can be argued that the CPU requirement/SL relationship can be linearized around a point and hence still be linear in a small intervall.
@@ -968,6 +1062,8 @@ Indicates the end of a job.
 \end{itemize}
 
 \chapter{Use cases}
+\label{chp:usecases}
+
 For implementation and testing reasons we came up with the following use-cases. In all the use cases we assume that the static slice is under heavy load so that no extra resources are given to the GTRM-slice. 
 \section{Normal mode}
 \begin{enumerate}
@@ -1022,6 +1118,9 @@ In this case the static slice starts out not being under full load.
 \end{enumerate}
 
 \chapter{Testing}
+\label{chp:test}
+
+The end result will be a working prototype that can demonstrate that the system works and what results that can be expected. These are the main aspects that we want to test.
 To provide results and to prove that the thesis is valid, thorough testing is required. The main focus of the test is to see if the following can be achieved.
 \begin{itemize}
 \item Can we keep the FPS we want even during high load of the system.
@@ -1041,8 +1140,10 @@ It is also desirable to test if the system can fulfill the previously described 
 \end{itemize}
 
 \chapter{Results}
+\label{chp:results}
 
 \chapter{Conclusion and Further Work}
+\label{chp:conclusion}
 
 
 %\printbibliography  %% Comment if you don't want to use bibtex
