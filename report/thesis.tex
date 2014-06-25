@@ -105,37 +105,79 @@ frame rate, therefore introducing for each frame a deadline of
 
 \section{Related Work}
 
-Resource management is a problem that can be solved in many different ways. Many resource managers has been developed in the past and also some with game theoretic behavior.  
+The problem of allocating resources to running applications and at the same
+time varying the quality of the computation of these applications to avoid
+overload conditions has been addressed in many different ways, sometimes
+also using game theory.  
 
-The problem of allocating resources to, assumed, fully parallelizable tasks was solved by Wei et al.~\cite{Wei10} using a game-theoretic method.
+For example, Wei et al.~\cite{Wei10} have used game theory to assign
+resources to fully parallelizable tasks. Contrary to their approach, in our
+case applications are not fully parallelizable and could execute sequential
+sections. In some of these sections, assigning more resources would not
+speed up the application, while in others the benefits will be significant.
+The resource manager developed in this thesis, therefore, needs to act based
+on actual measurements.
 
-Subrata et al.~\cite{Sub08} solved the problem of balancing the load in grid computing by applying game theory. Here the players are machines that wants to maximize their profit by finishing jobs that arrive according to a Poisson process.
+Subrata et al.~\cite{Sub08} solved the problem of balancing the load in grid 
+computing by applying game theory. Here the players are machines that wants 
+to maximize their profit by finishing jobs that arrive according to a 
+Poisson process. Grosu and Chronopoulos~\cite{Gro05} made similar work with 
+load balancing strategies. The load is distributed amongst different 
+competing players which would hopefully reach a common state which would 
+benefit all the players the most. However, the is no cooperation on the
+application side to reach a consensus.
 
-Grosu and
-Chronopoulos~\cite{Gro05} made similar work with load balancing. Here the load was distributed amongst different competing players which would hopefully reach a common state which would benefit all the players the most.
+Many resource managers are feedback oriented. The first resource managers
+that make explicit use of control theory and feedback loops was developed 
+by Lu et al.~\cite{LuS99a}, Steere et al.~\cite{Ste99} and Eker et 
+al.~\cite{Eke00}. However they do not implement the concept of varying the
+computation quality, or service level.
 
-Many resource managers are feedback oriented and resource allocation using feedback loops was developed by Lu et al.~\cite{LuS99a},
-Steere et al.~\cite{Ste99}, Eker et al.~\cite{Eke00}. However they do not implement the concept of altering quality.
-
-The QoS-based Resource Allocation Model (Q-RAM) was proposed by Rajkumar et al.~\cite{Raj97a} for managing of multidimensional resources. Here it is desired to minimize the QoS constraints while maximizing the \emph{total utility}. 
+The QoS-based Resource Allocation Model (Q-RAM) was proposed by Rajkumar et 
+al.~\cite{Raj97a} for managing of multidimensional resources. Here it is 
+desired to minimize the QoS constraints while maximizing the total 
+utility. The solution is centralized and every application receives a
+certain quality to be used for the computation and cooperate with the
+architecture by enforcing that quality. However, the amount of communication
+needed to achieve this goal is non-negligible and therefore it is not
+advisable for a video surveillance and streaming systems where the network
+bandwidth is used to stream the surveillance videos.
  
-A solution that both manages the resources and the service level of an application is proposed in the ACTORS project ~\cite{Bin11}, but just as the solutions proposed by \cite{Raj97a,Soj11,Arz11} this is done in a centralized way. 
+A solution that both manages the resources and the service level of an 
+application is proposed in the ACTORS project~\cite{Bin11}, but just as the 
+solutions proposed by \cite{Raj97a,Soj11,Arz11} the solution is centralized. 
+Separating the service-level adjustment and the resource management has been proposed in the context of network bandwidth allocation~\cite{Sil11}.
 
-Separating the service-level adjustment and the resource management has been proposed to solve network bandwith allocation, ~\cite{Sil11}.
-
-% Instead, we believe that the assignment of the service level can be
-% better performed by the application itself, rather than at a
-% centralized resource management level.
+GTRM~\cite{gtrm}, that is used here as a reference point, decouples the
+resource assignment and the service level selection, but it is implemented
+with \texttt{SCHED\_DEADLINE}, which is not included in the Linux kernel
+used for Axis cameras. Moreover, Axis cameras are already exploiting the
+resource allocation capabilities offered by \texttt{systemd}. In this
+work, a GTRM-like approach is implemented to be applicable to Axis cameras.
 
 \section{Outline of the report}
-Chapter 2, will give a detailed description on the software and hardware used during this project.
-Chapter 3, is about how development went fourth, what decisions were made and how the resulting product is composed.
-Chapter 4, this chapter describes the use cases that where presented during the project. These bring knowledge about what the product is supposed to do and not to do, and also what would be relevant to test in the finished prototype.
-Chapter 5, how and what was tested in the product.
-Chapter 6, what results that could be extracted from this thesis.
-Chapter 7, what could be concluded from the result, what we would have done differently and what we would like to improve given more time.
+
+The remaining of this report is organized as follows.
+
+\begin{itemize}
+\item Chapter~\ref{chp:background} gives a detailed description of
+  the software and hardware used during this project.
+\item Chapter~\ref{chp:development} details the implementation and design
+  decisions, defining therefore how the resulting camera acts.
+\item Chapter~\ref{chp:usecases} discusses the use cases that where
+  taken as a reference for the project. These describe the product
+  functionality and are relevant to test the resulting prototype.
+\item Chapter~\ref{chp:test} outlines how the product was tested.
+\item Chapter~\ref{chp:results} shows the results obtained with the
+  tests and discusses the findings of the thesis.
+\item Chapter~\ref{chp:conclusion} finally concludes the report and
+  highlights future works.
+\end{itemize}
+
+
 
 \chapter{Background}
+\label{chp:background}
 
 \section{Game Theoretic Resource Manager}
 The resource management is based on the performance of the applications that are running. The performance, also called matching function, is calculated as the difference between the applications deadline and the execution time of the application. Ideally the matching function should be zero. When zero, the  application has just enough resources to meet its deadline running with some SL. When positive, too much resources are assigned to the application, indicating that the job is done before deadline, and when negative, too little resources are assigned indicating that the application has missed its deadline.
@@ -255,7 +297,11 @@ This is a small camera, connected to the network either wired or wireless. It su
     \label{fig:P3367}
 \end{figure}
 The Axis P3367 is a fixed dome network camera capable of multiple H.264 streams as well as Motion JPEG streams. It supports various frame rates and resolutions up to 5 MP at 12 FPS, it also supports HDTV 1080p at 30 FPS and has two way audio streaming capabilities. The power is supplied using Power over Ethernet, meaning it does not need a separate power supply, but is instead powered directly from the network cable. It features an ARTPEC-4 system-on-chip, developed by Axis, which contains a single-core CPU running at 400 MHz and a co-processor dedicated to video analytics.
+
+
 \chapter{Implementation}
+\label{chp:development}
+
 All code were written in C and cross-compiled using Axis' compiler for the corresponding platform e.g. camera. For the resource allocation different service files and slices were specified, and the resulting plots were generated with Octave.
 \section{Constraints} %What we decided to do and not to do
 Creating service levels for all the applications running on the system would not be a realistic approach. This is because there are many different applications, some of which may not even be developed at Axis, and developers cannot be expected to modify all of them to implement the performance measurements and service level features needed. Instead the service level part is only implemented in the video streaming application and on some test applications that does some random computations to stress the system. This thesis only focuses on the implementation of the already mentioned work at LTH and will not look into proofs of convergence for the algorithm, neither will it look into other types of SL functions than the simple linear case where the CPU requirement are a linear function of the SL. It can be argued that the CPU requirement/SL relationship can be linearized around a point and hence still be linear in a small intervall.
@@ -580,6 +626,8 @@ Each application stores the relevant information in terms of resource management
 \end{itemize}
 
 \chapter{Use cases}
+\label{chp:usecases}
+
 For implementation and testing reasons we came up with the following use-cases. In all the use cases we assume that the static slice is under heavy load so that no extra resources are given to the GTRM-slice. 
 \section{Normal mode}
 \begin{enumerate}
@@ -634,6 +682,8 @@ In this case the static slice starts out not being under full load.
 \end{enumerate}
 
 \chapter{Testing}
+\label{chp:test}
+
 The end result will be a working prototype that can demonstrate that the system works and what results that can be expected. These are the main aspects that we want to test.
 \begin{itemize}
 \item Can we keep the FPS we want even during high load of the system.
@@ -657,8 +707,10 @@ In the second example we could show a scene with both video and audio recording 
 The end result would also be presented as nice diagrams and graphs presenting various data that we are interested in, such as resources, bitrate and FPS.
 
 \chapter{Results}
+\label{chp:results}
 
 \chapter{Conclusion and Further Work}
+\label{chp:conclusion}
 
 
 %\printbibliography  %% Comment if you don't want to use bibtex
