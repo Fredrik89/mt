@@ -6,6 +6,7 @@
 \usepackage[left=2.5cm,right=2.5cm,top=3cm,bottom=5cm]{geometry}
 \usepackage{graphicx}
 \usepackage{listings}
+\usepackage{color}
 \usepackage{url}
 \usepackage{verbatim}
 \usepackage[]{algorithm2e}
@@ -18,6 +19,31 @@
   {\todo[inline,color=red!30,caption={}]{\textbf{Martina:} #1}}
 
 \begin{document}
+
+\lstset{
+  language=C,
+  basicstyle=\footnotesize,
+  numbers=left,
+  numberstyle=\footnotesize,
+  stepnumber=1,
+  numbersep=5pt,
+  backgroundcolor=\color{white},
+  showspaces=false,
+  showstringspaces=false,
+  showtabs=false,
+  frame=leftline,
+  tabsize=2,
+  captionpos=b,
+  breaklines=true,
+  breakatwhitespace=false,
+  escapeinside={\%*}{*)},
+  xleftmargin=2\parindent,
+  keywordstyle=\bfseries\color{green!40!black},
+  commentstyle=\itshape\color{purple!90!black},
+  identifierstyle=\color{black},
+  stringstyle=\color{orange},
+}
+
 \begin{titlepages}
 \author{Fredrik Johnsson and Olle Svensson}
 \title{Resource management and prioritization in an embedded Linux system}
@@ -617,332 +643,374 @@ algorithm. CPUShares are used here in place of bandwidth.
   and bandwidth? From what I understand, it makes a difference in the
   multicore case.}
 
-\section{IPC}
-The resource management is implemented as a part of systemd, with all of the resource management source code integrated into systemds. If an application has a poor matching function it sends information to systemd via UNIX-sockets. The interprocess communication (IPC) consists of one socket in systemd and one for each application that the RM is monitoring. The socket setup was implemented by more or less copying the “Notify” feature of systemd which is used by certain services that want to for example notify systemd that they have started or about other status changes [sysd-notify].
-Systemd uses epoll to find out which sockets has received new messages. The events returned from epoll\_wait() are then put in a prioritized queue. This prioritized queue is then popped and the callback function for top most event is called. This means that a message might not be read immediately after being read from the epoll buffer. Most of the functions used to manage epoll are located in “sd-event”. 
+\section{Inter-Process Communication}
 
+The resource manager is implemented within \texttt{systemd} and its code
+is therefore integrated into the \texttt{systemd} code. If an application
+has a poor matching function it should send information to \texttt{systemd}
+via UNIX-sockets. The Inter-Process Communication (IPC) consists of one 
+socket declared within the \texttt{systemd} code and one for each application
+that the resource manager should monitor. 
+The socket setup is inspired by the ``Notify'' feature of \texttt{systemd}
+which is used by services that want to notify \texttt{systemd} that they 
+have started or about status changes [sysd-notify].
 
-The epoll\_wait function is shown below
+\subsection{Retrieving new events}
+
+The system uses \texttt{epoll} to find out which sockets has received new 
+messages. The events returned from \texttt{epoll\_wait()} are then put in 
+a prioritized queue. This first element in the prioritized queue is then 
+dequeued, calling its callback function. This means that a message might 
+not be read immediately after being retreived from the buffer. Most of the
+functions used to manage \texttt{epoll} are located in \texttt{sd-event}.
+
+\martina{What is sd-event?}
+
+The \texttt{epoll\_wait} prototype is
 \begin{verbatim}
-
-
 int epoll_wait(int epfd, struct epoll_event *events,
-                      int maxevents, int timeout);	 
+               int maxevents, int timeout);	 
 \end{verbatim}
-When there are messages to read on one of the fd:s being watched by the epoll instance referred to by the file descriptor \emph{epfd}, epoll\_wait returns the number of fd:s that have new messages to be read.
-The epoll\_event *\emph{events} points to a buffer that will be filled with the incoming events and that will contain a maximum of \emph{maxevents}.
-The epoll\_event structure is shown below:
+and the function behaves as follows. When there are messages to be read on 
+one of the file descriptors observed by the \texttt{epoll} instance 
+identified with the file descriptor \texttt{epfd}, the function returns 
+the number of file descriptors that have new messages to be read. 
 
-%\verbatiminput{pseudo_epoll.c}
+If this happens, \texttt{epoll\_event *events} points to a buffer that 
+the function fills with the incoming events. The buffer in the end contains
+a maximum of \emph{maxevents}. The function waits for a maximum
+\texttt{timeout} value.
 
-\begin{verbatim}
+The \texttt{epoll\_event} structure follows.
+\begin{lstlisting}
 typedef union epoll_data {
- void    *ptr;
- int      fd;
- uint32_t u32;
- uint64_t u64;
+  void    *ptr;
+  int      fd;
+  uint32_t u32;
+  uint64_t u64;
 } epoll_data_t;
 
 struct epoll_event {
- uint32_t     events;    /* Epoll events */
- epoll_data_t data;      /* User data variable */
+  uint32_t     events; /* Epoll events */
+  epoll_data_t data;   /* User data variable */
 };
-\end{verbatim}
+\end{lstlisting}
 
-The void pointer \emph{epoll\_event.data.ptr} will be set to point to a \emph{sd\_event\_source} structure which is the element that is put in the prioritized queue. This element contains information concerning the prioritization and  defines the event type but also contains a structure containing the fd for the event and the callback function to be used when such an event is received.
-In each iteration of the main loop the function \emph{sd\_event\_run} is called, the part of the code that is instructive in this function is shown below:
+The void pointer \texttt{epoll\_event.data.ptr} will be set to point to a 
+\texttt{sd\_event\_source} structure. This structure is the element that is
+enqueued into the prioritized queue. The element contains information
+concerning the event priority and defines the event type. It also point to
+a structure containing the file descriptor for the event and its callback
+function.
 
-\begin{verbatim}
-_public_ int sd_event_run(sd_event *e, uint64_t timeout) {
+The function \texttt{sd\_event\_run} is called once for every iteration of
+the main loop. The relevant code in this function is shown below.
+\begin{lstlisting}
+_public_ int sd_event_run(sd_event *e, 
+  uint64_t timeout) {
+  struct epoll_event *ev_queue;
+  unsigned ev_queue_max;
+  sd_event_source *p;
+  int r, i, m,timeout;        
+  ev_queue = new(struct epoll_event, ev_queue_max);
+  m = epoll_wait(e->epoll_fd, ev_queue, 
+    ev_queue_max,timeout);
 
-struct epoll_event *ev_queue;
-unsigned ev_queue_max;
-sd_event_source *p;
-int r, i, m,timeout;
-            
-ev_queue = newa(struct epoll_event, ev_queue_max);
+  for (i = 0; i < m; i++) {
+    if (ev_queue[i].data.ptr == 
+        INT_TO_PTR(SOURCE_MONOTONIC))
+      r = flush_timer(...);
+    else if (ev_queue[i].data.ptr == 
+        INT_TO_PTR(SOURCE_REALTIME))
+      r = flush_timer(...)
+    else if (ev_queue[i].data.ptr == 
+        INT_TO_PTR(SOURCE_SIGNAL))
+      r = process_signal(e, ev_queue[i].events);
+    else if (ev_queue[i].data.ptr == 
+        INT_TO_PTR(SOURCE_WATCHDOG))
+      r = flush_timer(e, e->watchdog_fd, 
+        ev_queue[i].events, NULL);
+    else
+      r = process_io(e, ev_queue[i].data.ptr, 
+        ev_queue[i].events);
+  }
 
-m = epoll_wait(e->epoll_fd, ev_queue, ev_queue_max,timeout);
-
-for (i = 0; i < m; i++) {
-  if (ev_queue[i].data.ptr == INT_TO_PTR(SOURCE_MONOTONIC))
-    r = flush_timer(...);
-  else if (ev_queue[i].data.ptr == INT_TO_PTR(SOURCE_REALTIME))
-    r = flush_timer(...)
-  else if (ev_queue[i].data.ptr == INT_TO_PTR(SOURCE_SIGNAL))
-    r = process_signal(e, ev_queue[i].events);
-  else if (ev_queue[i].data.ptr == INT_TO_PTR(SOURCE_WATCHDOG))
-    r = flush_timer(e, e->watchdog_fd, ev_queue[i].events, NULL);
-  else
-    r = process_io(e, ev_queue[i].data.ptr, ev_queue[i].events);
+  p = event_next_pending(e);
+  r = source_dispatch(p);
+  return r;
 }
+\end{lstlisting}
+\martina{Instead of the nested else if, wouldn't it be better to have a
+  switch in the code above?}
 
+The \texttt{epoll\_wait} function is called and a for loop goes through 
+all the file descriptors and checks what their event type is to call the
+appropriate function to add them to the prioritized queue.
+The GTRM file descriptor is linked to a \texttt{IO\_SOURCE} event which 
+means that the function \texttt{process\_io()} will be called in case there
+is an event on such file descriptor.
 
-p = event_next_pending(e);
-
-r = source_dispatch(p);
-
-return r;
+Subsequently, the next event is dequeued from the queue and dispatched by
+calling \texttt{event\_next\_pending()}. The code of this function is
+shown below.
+\begin{lstlisting}
+static sd_event_source* 
+  event_next_pending(sd_event *e) {
+	  sd_event_source *p;
+  	p = prioq_peek(e->pending);
+  	if (!p)
+  		  return NULL;
+  	if (p->enabled == SD_EVENT_OFF)
+  		  return NULL;
+  	return p;
 }
-\end{verbatim}
-
-As can be seen, the \emph{epoll\_wait} function is called and a for loop goes through all of the fd:s and checks what their event type is to call the appropriate function to add them to the prioritized queue.
-The gtrm fd is linked to a \emph{IO\_SOURCE} event which means that the function \emph{process\_io()} will be called.
-
-Next the queue is peeked to get the next event in the queue to be dispatched by calling event\_next\_pending():
-\begin{verbatim}
-	static sd_event_source* event_next_pending(sd_event *e) {
-	sd_event_source *p;
-
-	p = prioq_peek(e->pending);
-	if (!p)
-		  return NULL;
-
-	if (p->enabled == SD_EVENT_OFF)
-		  return NULL;
-	return p;
-	}
-\end{verbatim}
-
-Finally the \emph{source\_dispatch} function is called to call the callback function linked to the popped top \emph{sd\_event\_source*} element.
-
-\begin{verbatim}
-	static int source_dispatch(sd_event_source *s) {
+\end{lstlisting}
+Finally, the \texttt{source\_dispatch} function is called to activate 
+the callback function linked to the top \texttt{sd\_event\_source*} 
+element.
+\begin{lstlisting}
+static int source_dispatch(sd_event_source *s) {
 	int r = 0;
-
 	switch (s->type) {
-
-	case SOURCE_IO:
-		  r = s->io.callback(s, s->io.fd, s->io.revents, s->userdata);
-		  break;
-
-	case SOURCE_MONOTONIC:
-		  r = s->time.callback(s, s->time.next, s->userdata);
-		  break;
-
-	case SOURCE_REALTIME:
-		  r = s->time.callback(s, s->time.next, s->userdata);
-		  break;
-	.
-	.
-	.
-		  r = s->exit.callback(s, s->userdata);
-		  break;
-
-	case SOURCE_WATCHDOG:
-		  assert_not_reached("Wut? I shouldn't exist.");
+  	case SOURCE_IO:
+  		  r = s->io.callback(s, s->io.fd, 
+          s->io.revents, s->userdata);
+  		  break;
+  	case SOURCE_MONOTONIC:
+  		  r = s->time.callback(s, s->time.next, 
+          s->userdata);
+  		  break;
+  	case SOURCE_REALTIME:
+  		  r = s->time.callback(s, s->time.next, 
+          s->userdata);
+  		  break;
+  	/* More cases covered */
+  	case SOURCE_WATCHDOG:
+  		  assert_not_reached("Wut? I shouldn't exist.");
 	}
-	
 	return 1;
-	}
-\end{verbatim}  
-
-\subsection{Setting up the socket}
-
-The socket is created and added to the epoll instance in \emph{manager\_setup\_gtrm(...)}, below is the instructive part of the code in \emph{manager\_setup\_gtrm(...)}:
-
-
-
-
-\begin{framed}
-		\begin{flushleft}
-		
-			\textbf{\emph{{static int manager\_setup\_gtrm(Manager *m)}}} \newline
-			Used to setup the socket, event source and file descriptor for the resource manager. Called from manager\_startup and manager\_reload.
-			\begin{itemize}
-			\item m: Reference to the manager.
-			\item Return value: Zero if function ran correctly, otherwise it is set to the corresponding error number.
-			\end{itemize}
-		\end{flushleft}	
-\end{framed}
-
-
-
-
-
-
-
-The socket is created in the function  with a call to the socket(..) function.
-\begin{verbatim}
-fd = socket(AF_UNIX, SOCK_DGRAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0);
-\end{verbatim}
-
-The socket is set to use the protocol family \emph{AF\_UNIX}, which provides efficient communication on the same machine. \emph{SOCK\_DGRAM} sets the socket type to be datagram since there is no need to resend missed obsolete data and no messages are expected to be lost when sent over the same machine anyway. \emph{SOCK\_NONBLOCK} prevents the socket from blocking during a read() call when there is no data to read which should not matter here since the polling makes sure that there is always something to read. A random address name is created and assigned to the socket by a call to bind(). Next the fd for the socket needs to be added to the epoll instance, and an epoll\_event needs to be associated to the fd. The \emph{epoll\_event} contains a pointer to a \emph{sd\_event\_source} that has been described earlier. This is all done in the call:  
-
-\begin{verbatim}
-r = sd_event_add_io(m->event, &m->gtrm_event_source, m->gtrm_fd,
- EPOLLIN, manager_dispatch_gtrm_fd, m);
-\end{verbatim}
-
-Now the gtrm socket has been added to the poll and a corresponding event will be returned if there is a message on the socket when calling \emph{epoll\_wait(...)}. 
-The last thing done in \emph{manager\_setup\_gtrm(...)} is to give the \emph{gtrm\_event\_source} a priority, this affects how the prioritized queue sorts messages from this source type and is set to the same as notify messages.
-
-Once the socket is setup and ready a environmental variable is set in Linux containing the address to the gtrm-socket. This is how applications will know where to send their messages to.
-
-
-\subsubsection{The callback function for gtrm socket:}
-Once an event has been popped from the prioritized queue the callback function \emph{static int manager\_dispatch\_gtrm\_fd(...)} is called. 
-The callback function contains all the code that should execute when a message is received on the gtrm socket. The function extracts the data from the message, which is the PID of the sending application, its performance, whether it is satisfied or not and the weight attribute. 
-The hashmap, which contains all the applications that are managed by GTRM, is then updated with this new data. 
-
-
-
-
-The instructive parts of the function are shown below:
-
-\begin{framed}
-		\begin{flushleft}
-			\textbf{\emph{static int manager\_dispatch\_gtrm\_fd(sd\_event\_source *source, int fd, unit32\_t revents, void *userdata)}}\newline
-				Called when we receive the performance of an application.
-				\begin{itemize}
-				\item source: source of the event.
-				\item fd: file descriptor to the event source.
-				\item revents: Set by the kernel to indicate what event on the file descriptor that triggered the call to this function. In our case it is always the incoming event.
-				\item userdata: In this case it contains a reference to the manager.
-				\item Return value: Not used, always zero.
-				\end{itemize}
-		\end{flushleft}	
-\end{framed}
-
-
-
-
-
-First some declarations and initializations
-
-\begin{verbatim}
-static int manager_dispatch_gtrm_fd(sd_event_source *source, int fd,
-uint32_t revents, void *userdata) {
-
-Manager *m = userdata;    		    
-//will contain the read message
-char buf[1024];
-//will be set to the byte size of the read message
-int n;
-//will contain the senders adress
-struct sockaddr_un *from;
-socklen_t fromlen;
-//stores RM data about the applications being managed
-rm_app_t *app;
-rm_app_t *app2;	
-
-fromlen = 1024;
-\end{verbatim}
-
-Here the \emph{rm\_app\_t} structure is used:
-
-\begin{framed}
-		\begin{flushleft}
-			\textbf{\emph{struct rm\_app\_t}}
-			Represents an application being managed and consists of the following fields.
-			\begin{itemize}
-			\item tid: Applications PID.
-			\item vp: Virtual platform.
-			\item vp\_old: Previous virtual platform.
-			\item performance: Performance, or matching function of the application.
-			\item weight: The current "weight" of the application.
-			\item happy: Indicates if the application is happy with its current performance.
-			\item sa: Socket Address, used to send back the performance multiplier.
-			\end{itemize}
-		\end{flushleft}	
-\end{framed}
-
-
-
-
-
-
-Now a while loop reads the socket one message each iteration until there are no more unread messages. 
-
-\begin{verbatim}
-do{		
-
-	memset(buf,'\0',1023);
-	from = calloc(1,sizeof(struct sockaddr_un));
-	app = calloc(1,sizeof(rm_app_t));	
-	n = recvfrom(fd,buf,1024,0,(struct sockaddr *) from,&fromlen);
-
-	//n is negative if there was no message if socket is non blocking
-	n = recvfrom(fd,buf,1024,0,(struct sockaddr *) from,&fromlen);
-	if(n<0)
-		break;
-	if(n>1024){//2do avoid magic numbers
-		log_error("manager_dispatch_gtrm_fd:received too big message");
-	}	
-
-	gtrm_char2gtrmstruct(buf, app);
-	pid_t pid = app->tid;
-	app->sa = from;
-
-	if(hashmap_get(m->gtrm_apps, pid) == NULL) {
-		hashmap_put(m->gtrm_apps, pid, app);
-	} else {
-		app2 = hashmap_get(m->gtrm_apps, pid);
-		gtrm_update_rm_struct(app,app2);
-	}															
-
-}while(n>0);
-The callback function which is registered and linked to the events for the gtrm socket when the socket communication is established, contains all the code that should execute when a message is received on the gtrm socket. The function extracts the data from the message, which is the PID of the sending application, its performance, whether it is satisfied or not and the weight attribute. 
-The hashmap, which contains all the applications that are managed by GTRM, is then updated with this new data. 
-m->update_gtrm = true;
-
-return 0;
 }
-\end{verbatim}
+\end{lstlisting}
 
-The data from a message is used to create a \emph{rm\_app\_t} struct. If the hashmap already contains a \emph{rm\_app\_t} struct for the application, the \emph{rm\_app\_t} in the hashmap is updated by calling the function 
-\emph{gtrm\_update\_rm\_struct(app,app2)}, otherwise it is added to the hashmap with the application pid as the key.
+\subsection{The GTRM socket}
 
-\emph{gtrm\_lib} functions used above:
+The socket used by the applications to communicate with the resource
+manager and by the resource manager to retrieve information about the
+application health is setup as follows.
 
+The socket is created and added to the \texttt{epoll} instance in the
+function \texttt{manager\_setup\_gtrm}, some information about it
+follows.
 
 \begin{framed}
-		\begin{flushleft}
-			\textbf{\emph{void gtrm\_char2gtrmstruct(char* str, rm\_app\_t *re)}}
-			Extracts data from a received string and store it as a struct instead. The data sent from an application consists of the PID, performance, weight and if the application is satisfied or not.
-			\begin{itemize} 
-			\item str: String to extract data from.
-			\item re: Struct to hold the extracted data.
-			\item Return value: None, the result is stored in re.
-			\end{itemize}
-		\end{flushleft}	
+	\begin{flushleft}
+		\textbf{\emph{{static int manager\_setup\_gtrm(Manager *m)}}} 
+    \newline
+		Used to setup the socket, event source and file descriptor for the
+    resource manager. Called from \texttt{manager\_startup} and 
+    \texttt{manager\_reload}.
+		\begin{itemize}
+		\item m: Reference to the manager.
+		\item Return value: Zero if function ran correctly, otherwise it is 
+      set to the corresponding error number.
+		\end{itemize}
+	\end{flushleft}	
 \end{framed}
 
-
+This function contains the socket creation, obtained through
+\texttt{socket}:
+\begin{verbatim}
+fd = socket(AF_UNIX, 
+  SOCK_DGRAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0);
+\end{verbatim}
+The socket uses the protocol family \texttt{AF\_UNIX}, which provides
+efficient communication on the same machine. \texttt{SOCK\_DGRAM} sets 
+the socket type to be datagram since there is no need to resend missed
+obsolete data and no messages are expected to be lost when sent over the 
+same machine. \texttt{SOCK\_NONBLOCK} prevents the socket from blocking 
+during a \texttt{read} call when there is no data to be read. A random 
+address name is created and assigned to the socket by a call to 
+\texttt{bind}. The file descriptor of the socket is then added to the 
+\texttt{epoll} instance, and an \texttt{epoll\_event} is associated to
+the file descriptor. The \texttt{epoll\_event} contains a pointer to 
+an \texttt{sd\_event\_source}. These functionalities are achieved through
+the call to \texttt{sd\_event\_add\_io}.
 
 \begin{verbatim}
-void gtrm_update_rm_struct(rm_app_t *src,rm_app_t *dest){
-	dest->performance = src->performance;			
-}
+r = sd_event_add_io(m->event, &m->gtrm_event_source, 
+  m->gtrm_fd, EPOLLIN, manager_dispatch_gtrm_fd, m);
 \end{verbatim}
 
+The GTRM socket has been therefore added to the poll and a corresponding 
+event is subsequently generated whenever a message is sent to that socket. 
+Finally, in the function \texttt{manager\_setup\_gtrm} a priority is given
+to the \texttt{gtrm\_event\_source}. This affects how the prioritized 
+queue sorts messages from this source type and the priority is set equally
+to the priority for notify messages.
 
+Once the socket is setup and ready, a environment variable is set in 
+Linux containing the address to the GTRM-socket. The environment variable is
+used by the applications to retrieve the destination of the messages to be
+sent about their performance.
+
+\subsubsection{GTRM socket's callback function:}
+Once an event has been popped from the prioritized queue the callback 
+function \texttt{manager\_dispatch\_gtrm\_fd} is invoked. 
+The callback function contains all the code that should be executed when a
+message is received on the GTRM socket. The function extracts the data 
+from the message --- the PID of application sending the message, its
+performance and its weight. The \texttt{hashmap}, which contains all the
+applications that are managed by GTRM, is then updated with this new data. 
+
+\begin{framed}
+	\begin{flushleft}
+		\textbf{\emph{static int manager\_dispatch\_gtrm\_fd \newline
+      (sd\_event\_source *source, int fd, unit32\_t revents, void *userdata)}} \newline 
+			Called upon receiving the performance of an application.
+			\begin{itemize}
+			\item source: source of the event.
+			\item fd: file descriptor to the event source.
+			\item revents: Set by the kernel to indicate what event on the file
+        descriptor that triggered the call to this function. For the purposes
+        of this work, it is always the incoming event.
+			\item userdata: Contains a reference to the manager.
+			\item Return value: Not used, always zero.
+			\end{itemize}
+	\end{flushleft}	
+\end{framed}
+
+The function contains some declaration and initialization.
+\begin{lstlisting}
+static int manager_dispatch_gtrm_fd
+  (sd_event_source *source, int fd,
+  uint32_t revents, void *userdata) {
+  Manager *m = userdata;    		    
+  char buf[1024]; // read message
+  int n; // byte size of the read message
+  struct sockaddr_un *from; // sender's adress
+  socklen_t fromlen;
+  rm_app_t *app; // data about the applications
+  rm_app_t *app2;	
+  fromlen = 1024;
+  ... // will be shown later
+\end{lstlisting}
+
+Within the function, the \texttt{rm\_app\_t} structure is used.
+\begin{framed}
+	\begin{flushleft}
+		\textbf{\emph{struct rm\_app\_t}}
+		Represents an application being managed and consists of the 
+    following fields.
+		\begin{itemize}
+		\item tid: Applications PID.
+		\item vp: Virtual platform.
+		\item vp\_old: Previous virtual platform.
+		\item performance: Matching function of the application.
+		\item weight: The current ``weight'' of the application.
+		\item happy: Indicates if the application is happy with its 
+      current performance.
+		\item sa: Socket Address, used to send back the performance 
+      multiplier.
+		\end{itemize}
+	\end{flushleft}	
+\end{framed}
+\martina{Why did you need to add the happy field? That's a difference
+  with the original GTRM approach. Is it for faster computation? In that
+  case, write it down here.}
+
+A while loop reads the socket one message at a time, until there are no 
+more unread messages. 
+
+\begin{lstlisting}
+  // resuming from above
+  do {		
+  	memset(buf, '\0', 1023);
+  	from = calloc(1, sizeof(struct sockaddr_un));
+  	app = calloc(1, sizeof(rm_app_t));	
+  	n = recvfrom(fd, buf, 1024, 0, 
+      (struct sockaddr *) from, &fromlen);
+    // with non-blocking sockets
+  	// if n is negative, there was no message
+  	n = recvfrom(fd, buf, 1024, 0, 
+      (struct sockaddr *) from, &fromlen);
+  	if (n<0)
+  		break;
+  	if (n>1024) // reading 1024 characters at a time
+  		log_error("manager_dispatch_gtrm_fd:
+        received too big message");
+
+  	gtrm_char2gtrmstruct(buf, app);
+  	pid_t pid = app->tid;
+  	app->sa = from;
+  	if(hashmap_get(m->gtrm_apps, pid) == NULL) {
+  		hashmap_put(m->gtrm_apps, pid, app);
+  	} else {
+  		app2 = hashmap_get(m->gtrm_apps, pid);
+  		gtrm_update_rm_struct(app,app2);
+  	}															
+  } while(n>0);
+  m->update_gtrm = true;
+  return 0;
+}
+\end{lstlisting}
+
+The data contained in the message is used to create a \texttt{rm\_app\_t}
+structure. If the hashmap already contains a \texttt{rm\_app\_t} structure 
+for the specific application, the \texttt{rm\_app\_t} in the hashmap is
+simply updated by calling the function 
+\texttt{gtrm\_update\_rm\_struct(app,app2)}. In the opposite case, the new
+application is added to the hashmap using the application PID as the key.
+
+Above, a few library function contained in \texttt{gtrm\_lib} were used.
+In particular, the \texttt{gtrm\_char2gtrmstruct} function is used to
+convert the information between the received string and the GTRM
+compliant structure.
+\begin{framed}
+	\begin{flushleft}
+		\textbf{\emph{void gtrm\_char2gtrmstruct(char* str, rm\_app\_t *re)}}
+		Extracts data from a received string and store it as a structure 
+    instead. The data sent from an application consists of the PID,
+    performance, weight and if the application is satisfied or not.
+		\begin{itemize} 
+		\item str: String to extract data from.
+		\item re: Struct to hold the extracted data.
+		\item Return value: None, the result is stored in re.
+		\end{itemize}
+	\end{flushleft}	
+\end{framed}
 
 \subsection{Resource management loop}
-The virtual platforms are re-calculated and applied for as long as the applications are not completely satisfied. This is run inside the \emph{manager\_loop}-function in \emph{manager.c}.
+The resource manager is recomputing the amount of resource to be given to
+the applications, and reapplied until the applications are not completely
+satisfied. The following code is contained inside the 
+\texttt{manager\_loop}-function of \texttt{manager.c}.
 
-\begin{verbatim}
+\begin{lstlisting}
 int manager_loop(Manager *m) {
-\end{verbatim}
-Before the loop actually start to run, a struct that contains the necessary data for the resource manager, \emph{gtrm\_t}, is created and initiated.
+\end{lstlisting}
+
+Before the loop actually starts to run, a structure that contains the
+necessary data for the resource manager, \texttt{gtrm\_t}, is created 
+and initialized.
 
 \begin{framed}
-		\begin{flushleft}
-		
-				\textbf{\emph{{struct gtrm\_t}}} \newline
-				Stores various parameters used by the GTRM.
-				\begin{itemize}
-				\item c1: Constant used for computing epsilon, determines how much we will change the virtual platform.
-				\item c2: Another constant used for computing epsilon similar as c1.
-				\item iterations: Keeps track of how many iterations the GTRM has run.
-				\item all\_happy: Used to indicate if we have to make any adjustments to the resource allocations.
-				\item num\_apps: Total amount of applications that we are managing.
-				\item prev\_apps: The amount of applications in the previous iteration.
-				\end{itemize}
-		\end{flushleft}	
+	\begin{flushleft}
+			\textbf{\emph{{struct gtrm\_t}}} \newline
+			Stores various parameters used by the GTRM.
+			\begin{itemize}
+			\item c1: Constant used for computing $\epsilon$, determines how much 
+        the virtual platforms will be changed.
+			\item c2: Another constant used for computing epsilon similar as c1.
+			\item iterations: Keeps track of how many iterations the GTRM has run.
+			\item all\_happy: Used to indicate if we have to make any adjustments 
+        to the resource allocations.
+			\item num\_apps: Total amount of applications that we are managing.
+			\item prev\_apps: The amount of applications in the previous iteration.
+			\end{itemize}
+	\end{flushleft}	
 \end{framed}
 
-\begin{verbatim}
+\begin{lstlisting}
   gtrm_t *gtrm_t = calloc(1,sizeof(struct gtrm_t));
   gtrm_t->num_apps = 0;
   gtrm_t->prev_apps = 0;
@@ -951,167 +1019,215 @@ Before the loop actually start to run, a struct that contains the necessary data
   gtrm_t->c1 = 0.1;
   gtrm_t->c2 = 10;
   while (m->exit_code == MANAGER_RUNNING) {
-    ...
-\end{verbatim}
-Inside the loop, an if-statement makes sure that the resource manager is not run if it is not needed. 
-\begin{verbatim}
+  ...
+\end{lstlisting}
+Inside the loop, an if-statement makes sure that the resource manager is not run if not needed. 
+\begin{lstlisting}
     if ((!(gtrm_t->all_happy) || m->update_gtrm) && 
-        !hashmap_isempty(m->gtrm_apps)) {
-\end{verbatim}
+      !hashmap_isempty(m->gtrm_apps)) {
+\end{lstlisting}
+
 The first step is to update the number of running applications.
-\begin{verbatim}
+\begin{lstlisting}
       gtrm_t->prev_apps = gtrm_t->num_apps;
       gtrm_t->num_apps = hashmap_size(m->gtrm_apps);
-\end{verbatim}
+\end{lstlisting}
 
 \begin{framed}
-		\begin{flushleft}
-				\textbf{\emph{{int gtrm\_compute\_virtual\_platforms(Hashmap *apps, gtrm\_t *gtrm\_t)}}} \newline
-				Calculates the amount of resources (virtual platform) for an application.
-				\begin{itemize}
-				\item apps: The hash-map containing information about the applications being managed.
-				\item gtrm\_t: Struct with parameters used when calculating the virtual platforms.
-				\item Return value: Not used, always zero.
-				\end{itemize}
-		\end{flushleft}	
-\end{framed}
-
-\begin{verbatim}
-
-      gtrm_compute_virtual_platforms(m->gtrm_apps, gtrm_t);
-      gtrm_t->iterations++;
-\end{verbatim}
-The virtual platforms are then applied to the applications and a variable set by the dispatch is reset to false.
-\begin{framed}
-		\begin{flushleft}
-				\textbf{\emph{{void gtrm\_apply\_virtual\_platforms(Manager* m)}}} \newline
-				Computes and applies the amount of CPUShares that each application shall be given.
-				\begin{itemize}
-				\item m: Reference to manager, used to get the applications
-				\item Return value: None.
-				\end{itemize}
-		\end{flushleft}	
-\end{framed}
-\begin{verbatim}
-      gtrm_apply_virtual_platforms(m); 
-      m->update_gtrm=false;																	
-\end{verbatim}
-The final step inside the loop is to update the performance multiplier and do the logging.
-\begin{framed}
-		\begin{flushleft}
-				\textbf{\emph{{void gtrm\_update\_performance\_multipliers(int gtrm\_fd, Hashmap *gtrm\_apps)}}} \newline
-				Calculates, updates and sends the performance multiplier to each application, using the performance, virtual platform and the previous virtual platform for each application.
-				\begin{itemize} 
-				\item gtrm\_fd: File descriptor used to send the performance multiplier.
-				\item gtrm\_apps: Hash-map containing rm\_app\_t structs for each application.
-				\item Return value: None.
-				\end{itemize}
-
-		\end{flushleft}	
-\end{framed}
-
-\begin{framed}
-		\begin{flushleft}
-				\textbf{\emph{{void gtrm\_write\_log(Hashmap *gtrm\_apps, unsigned int num\_applications)}}} \newline
-				Writes information about the resource management to a log file, which can then be used to generate some nice graphs.
-				\begin{itemize} 
-				\item gtrm\_apps: Hash-map containing rm\_app\_t structs for each application.
-				\item num\_applications: Used to make sure we don't try to print an empty hash-map.
-				\item Return value: None.
-		\end{itemize}
-
-		\end{flushleft}	
-\end{framed}
-
-
-
-
-\begin{verbatim}
-      gtrm_update_performance_multipliers(m->gtrm_fd,m->gtrm_apps);
-      gtrm_write_log(m->gtrm_apps, gtrm_t->num_apps);
-
-    }
-
-  }
-\end{verbatim}
-If the loop exits we have to deallocate the \emph{gtrm\_t} struct to avoid memory leakage.
-\begin{verbatim}
-  free(gtrm_t);
-  return m->exit_code;
-}
-\end{verbatim}
-
-\subsection{Applying the virtual platforms}
-The virtual platforms has to be distributed to the applications and that is done in the following function.
-\begin{verbatim}
-void gtrm_apply_virtual_platforms(Manager* m) {
-\end{verbatim}
-Three variables are defined for setting the shares, iterating through the hash-map and a struct for the application.
-\begin{verbatim}
-  int shares;
-  Iterator i;
-  rm_app_t* a;
-\end{verbatim}
-\emph{HASHMAP\_FOREACH} is a macro defined in \emph{hashmap.h} that is used to easily iterate through all the elements in the hash-map. The macro takes three parameters, a local variable to store the current element in the iteration, the hash-map which we want to iterate through and an Iterator. 
-\begin{verbatim}
-  HASHMAP_FOREACH(a, m->gtrm_apps, i) {
-\end{verbatim}
-Since the virtual platform is given as a percentage of the total amount of available resources, each applications virtual platform is multiplied by a constant, \emph{\_TOTAL\_SHARES}, to give the absolute amount of shares.
-\begin{verbatim}
-    shares = a->vp * _TOTAL_SHARES;
-\end{verbatim}
-Finally the CPUShares of the application is set, end then the loop repeats until we have updated all the applications in the system.
-
-\begin{framed}
-		\begin{flushleft}
-		
-			\textbf{\emph{{int manager\_set\_cpu\_shares(Manager *m, pid\_t pid, int shares)}}} \newline
-			Sets the CPUShares of an application.
+	\begin{flushleft}
+			\textbf{\emph{{int gtrm\_compute\_virtual\_platforms \newline
+      (Hashmap *apps, gtrm\_t *gtrm\_t)}}} \newline
+			Calculates the amount of resources (virtual platform) for an application.
 			\begin{itemize}
-			\item m: Reference to manager, used to get the applications.
-			\item pid: Process identifier of the application.
-			\item shares: Amount of shares we want to set.
-			\item Return value: Zero if successful, one otherwise.
+			\item apps: The hash-map containing information about the
+        applications being managed.
+			\item gtrm\_t: Struct with parameters used when calculating the 
+        virtual platforms.
+			\item Return value: Not used, always zero.
 			\end{itemize}
 		\end{flushleft}	
 \end{framed}
 
-\begin{verbatim}
+\begin{lstlisting}
+      gtrm_compute_virtual_platforms
+        (m->gtrm_apps, gtrm_t);
+      gtrm_t->iterations++;
+\end{lstlisting}
+
+The virtual platforms are then applied to the applications and a variable set by the dispatch is reset to false.
+\begin{framed}
+	\begin{flushleft}
+			\textbf{\emph{{void gtrm\_apply\_virtual\_platforms(Manager* m)}}}
+      \newline
+			Computes and applies the amount of CPUShares that each application 
+        shall be given.
+			\begin{itemize}
+			\item m: Reference to manager, used to get the applications
+			\item Return value: None.
+			\end{itemize}
+	\end{flushleft}	
+\end{framed}
+\begin{lstlisting}
+      gtrm_apply_virtual_platforms(m); 
+      m->update_gtrm=false;																	
+\end{lstlisting}
+
+The final step inside the loop is to update the performance multiplier to be
+provided to the applications and log the relevant data.
+\begin{framed}
+	\begin{flushleft}
+			\textbf{\emph{{void gtrm\_update\_performance\_multipliers \newline
+      (int gtrm\_fd, Hashmap *gtrm\_apps)}}} \newline
+			Calculates, updates and sends the performance multiplier to 
+      each application, using the performance, virtual platform and 
+      the previous virtual platform for each application.
+			\begin{itemize} 
+			\item gtrm\_fd: File descriptor used to send the performance 
+        multiplier.
+			\item gtrm\_apps: Hash-map containing rm\_app\_t structs for 
+        each application.
+			\item Return value: None.
+			\end{itemize}
+	\end{flushleft}	
+\end{framed}
+
+\begin{framed}
+	\begin{flushleft}
+		\textbf{\emph{{void gtrm\_write\_log \newline
+    (Hashmap *gtrm\_apps, unsigned int num\_applications)}}} \newline
+		Writes information about the resource management to a log file, 
+    which can then be used to generate graphs about the applications
+    behavior and the resource manager allocation.
+		\begin{itemize} 
+		\item gtrm\_apps: Hash-map containing rm\_app\_t structs for 
+      each application.
+		\item num\_applications: Used to make sure we don't try to print 
+      an empty hash-map.
+		\item Return value: None.
+	  \end{itemize}
+  \end{flushleft}	
+\end{framed}
+
+\begin{lstlisting}
+      gtrm_update_performance_multipliers
+        (m->gtrm_fd,m->gtrm_apps);
+      gtrm_write_log(m->gtrm_apps, gtrm_t->num_apps);
+    }
+  }
+\end{lstlisting}
+
+If the loop exits it is necessary to deallocate the \texttt{gtrm\_t} 
+structure to avoid memory leaks.
+\begin{lstlisting}
+  free(gtrm_t);
+  return m->exit_code;
+}
+\end{lstlisting}
+
+\subsection{Applying the virtual platforms}
+
+The computed values for the virtual platforms need to be distributed to 
+the applications. This is achieved via the following function.
+\begin{lstlisting}
+void gtrm_apply_virtual_platforms(Manager* m) {
+\end{lstlisting}
+
+Three variables are defined for setting the shares, iterating through 
+the hashmap and a structure for each application.
+\begin{lstlisting}
+  int shares;
+  Iterator i;
+  rm_app_t* a;
+\end{lstlisting}
+
+\texttt{HASHMAP\_FOREACH} is a macro defined in \texttt{hashmap.h} and it is
+used to easily iterate through all the elements in the hashmap. 
+The macro takes three parameters, a local variable to store the current
+element in the iteration, the hashmap to iterate through and an iterator.
+\begin{lstlisting}
+  HASHMAP_FOREACH(a, m->gtrm_apps, i) {
+\end{lstlisting}
+Since the virtual platform is given as a percentage of the total amount of
+available resource, each application's virtual platform is multiplied by a
+constant, \texttt{\_TOTAL\_SHARES}, to give the absolute amount of shares.
+\begin{lstlisting}
+    shares = a->vp * _TOTAL_SHARES;
     manager_set_cpu_shares(m, a->tid, shares);
   }
 }
-\end{verbatim}
+\end{lstlisting}
+Finally the CPUShares of the application is set, end then the loop repeats
+until all the applications in the system have been updated.
+
+\begin{framed}
+	\begin{flushleft}	
+		\textbf{\emph{{int manager\_set\_cpu\_shares(Manager *m, pid\_t pid, int shares)}}} \newline
+		Sets the CPUShares of an application.
+		\begin{itemize}
+		\item m: Reference to manager, used to get the applications.
+		\item pid: Process identifier of the application.
+		\item shares: Amount of shares we want to set.
+		\item Return value: Zero if successful, one otherwise.
+		\end{itemize}
+	\end{flushleft}	
+\end{framed}
+
 \subsection{Setting CPUShares}
-From the command line one can manually set the amount of CPUShare of an application by running the command, \emph{systemctl set-property 'service name' CPUShares='shares'} followed by running \emph{systemctl daemon-reload}. These commands take a lot of time since they involve calls via DBus to systemd. But since the resource manager is located in systemd, these calls can be circumvented, by setting the CPUShares directly.
-\begin{verbatim}
+From the command line one can manually set the amount of CPUShare of 
+an application by running the command, 
+\texttt{systemctl set-property 'service name' CPUShares='shares'} followed 
+by \texttt{systemctl daemon-reload}. These commands take a lot of time since
+they involve calls via \texttt{DBus} to \texttt{systemd}. That is the reason
+why in this work the resource manager itself is located within 
+\texttt{systemd}, so that these calls can be circumvented, by setting 
+the CPUShares directly.
+
+\begin{lstlisting}
 int manager_set_cpu_shares(Manager *m, pid_t pid, int shares){
-\end{verbatim}
-Two local variables are needed, a pointer to a \emph{Unit} and one to a \emph{CGroupContext}. From the PID of an application, the corresponding Unit pointer can be obtained.
-\begin{verbatim}
+\end{lstlisting}
+Two local variables are needed, a pointer to a \texttt{Unit} and one to a 
+\texttt{CGroupContext}. From the PID of an application, the corresponding 
+Unit pointer can be obtained.
+\begin{lstlisting}
   Unit* u;
   CGroupContext* c;
   u = manager_get_unit_by_pid(m, pid);
-\end{verbatim}
-In case the application does not exist, because the application has finished, the Unit pointer produced previously will be a NULL-pointer. The application is thus removed from the hash-map, which requires that we reset the virtual-platforms, and the function call is returned.
-\begin{verbatim}
+\end{lstlisting}
+In case the application does not exist, because the application terminated,
+the Unit pointer produced previously will be a NULL-pointer. The application
+is thus removed from the hashmap, which requires that we reset the virtual
+platforms, and the function call returns.
+\begin{lstlisting}
   if(u == NULL) {
     hashmap_remove(m->gtrm_apps, pid);
     reset_virtual_platforms(m->gtrm_apps);
     return 1;
   }
-\end{verbatim}
-If the Unit-pointer obtained was not NULL, a so called CGroupContext can now be acquired from the Unit-pointer.
-\begin{verbatim}
+\end{lstlisting}
+
+If the Unit-pointer obtained was not NULL, a so called \texttt{CGroupContext}
+can be acquired from the Unit-pointer.
+\begin{lstlisting}
   c = unit_get_cgroup_context(u);
-\end{verbatim}
-In this context the CPUShares can be set to what is desired and it is followed be a necessary call to apply the changes.
-\begin{verbatim}
+\end{lstlisting}
+In this context, the CPUShares can be set to what is desired and it is
+followed be a necessary call to apply the changes.
+\begin{lstlisting}
   c->cpu_shares = shares;
   cgroup_context_apply(c, CGROUP_CPU, u->cgroup_path);
   return 0;
 }
-\end{verbatim}
+\end{lstlisting}
 
+\martina{If you have not made an example of CPUShares before (see the
+  remarks on the other chapters) here you definitively need one. Otherwise
+  point back to that example and say that setting a CPUShare actually means
+  \emph{blah blah}. Also write a sentence saying that in~\cite{gtrm} the
+  setting was made through \texttt{SCHED\_DEADLINE} and was exact. How does
+  that compare to the CPUShares? Is it exact? Is it approximate? Is it
+  ensured? Can the application get more resource?}
+
+% --- MARTINA TODO from here
 
 \section{SL update in the application}
 The applications using the GTRM will have similar structure with the main difference in how they implement the SL/cpu-requirement relationship. 
@@ -1432,6 +1548,7 @@ The first important part in the application is the calculation of its performanc
 The resource manager part basically consists of two parts that sort of runs in parallel. Upon receiving the performance of an application, the handler or dispatch function corresponding to such an event is executed. In the diagram it is labled as \emph{gtrm\_dispatch}, and its main responsibilities is to read and parse the received message and then update the hash-map which contains the relevant data about the applications being managed. Meanwhile the resource management runs as a part of the main-loop, and it uses the information in the hash-map previously mentioned to calculate the virtual platforms, \emph{calculate\_virtual\_platforms}. These virtual platforms are then used to set the amount of CPUShares which will be given to each application in the call to \emph{apply\_virtual\_platforms}. To get a better service level adaptation, the performance number which depends on how much the virtual platform has been changed is sent to the application \emph{send\_performance\_number}.
 
 
+
 \chapter{Use cases}
 \label{chp:usecases}
 
@@ -1491,6 +1608,8 @@ In this case the static slice starts out not being under full load.
 \chapter{Testing}
 \label{chp:test}
 
+%monolith testing that we cant do :(
+\begin{comment}
 The end result will be a working prototype that can demonstrate that the system works and what results that can be expected. These are the main aspects that we want to test.
 To provide results and to prove that the thesis is valid, thorough testing is required. The main focus of the test is to see if the following can be achieved.
 \begin{itemize}
@@ -1510,6 +1629,18 @@ It is also desirable to test if the system can fulfill the previously described 
 \item By running different test applications that are resource demanding the camera can be tested during intense CPU-loads. Some of the applications will have a linear relationship between computational time and the SL while others will have a non linear one. This matters since the SL adaptation assumes a linear relationship between the SL and the computational time. If the steps in SL are small enough the linear relationship could still be assumed even for non linear ones.
 \end{itemize}
 
+\end{comment}
+
+
+
+
+
+
+
+
+
+
+
 \chapter{Results}
 \label{chp:results}
 
@@ -1521,9 +1652,12 @@ It is also desirable to test if the system can fulfill the previously described 
 
 \bibliographystyle{plain}
 \bibliography{mybib}
+
 \appendix
+
 \chapter{Source Code Overview}
 In this section follows an overview of the header and source files used in the system and their attributes.
+
 \section{gtrm\_lib.c/h}
 A library which contains various functions used by the resource manager to make various computations and inter process communication.
 
@@ -1601,8 +1735,6 @@ One of the main files in systemd and is for example responsible for inter proces
 \item gtrm\_event\_source: Used to determine the source of an event and how this event is supposed to be handled.
 \item gtrm\_apps: Hash-map containing all the applications being managed by the GTRM.
 \end{itemize}
-
-
 
 \subsection{static int manager\_dispatch\_gtrm\_fd(sd\_event\_source *source, int fd, unit32\_t revents, void *userdata)}
 Called when we receive the performance of an application.
@@ -1736,7 +1868,6 @@ Indicates the start of a job.
 Indicates the end of a job.
 \begin{itemize}
 \item a: Struct for representing the application.
-\item id: Identifier of the job that has completed.
 \item Return value: Exit status.
 \end{itemize}
 
@@ -1757,7 +1888,6 @@ Performs the service level adaptation, notifies the resource manager and writes 
 \begin{itemize}
 \item Return value: None.
 \end{itemize}
-
 
 
 \end{document}
