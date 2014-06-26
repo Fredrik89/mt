@@ -153,7 +153,7 @@ to maximize their profit by finishing jobs that arrive according to a
 Poisson process. Grosu and Chronopoulos~\cite{Gro05} made similar work with 
 load balancing strategies. The load is distributed amongst different 
 competing players which would hopefully reach a common state which would 
-benefit all the players the most. However, the is no cooperation on the
+benefit all the players the most. However, there is no cooperation on the
 application side to reach a consensus.
 
 Many resource managers are feedback oriented. The first resource managers
@@ -302,7 +302,7 @@ computation.
 
 \section{Systemd and Cgroups}
 
-Systemd [sysd] is a daemon for Linux, that executes system management
+Systemd ~\cite{sysd1}~\cite{sysd2} is a daemon for Linux, that executes system management
 operations. It is the first process that starts during boot, and thus it is
 given the PID 1. Systemd implements a lot of features for increased
 performance and system management over previous start up processes, like
@@ -436,7 +436,7 @@ This section introduces ...
 
 \subsection{Sockets}
 The communication between applications and \texttt{systemd} is obtained
-through sockets. The RM runs in the \texttt{systemd} main loop, therefore
+through sockets ~\cite{socket}. The RM runs in the \texttt{systemd} main loop, therefore
 sockets are used to send data between the RM and the applications.
 
 Sockets are the endpoints for \emph{inter-process communication} (IPC) 
@@ -472,7 +472,7 @@ installed, although the P3367 runs a more updated version of it.
 This is a small camera, connected to the network either wired or wireless. 
 It supports multiple H.264 streams and Motion JPEG running at a maximum
 resolution of 800x600 at 30 frames per second. It has two audio streaming
-channels, which means that it can both record and play audio clips. 
+channels, which means that it can both record and play audio clips. ~\cite{m1033} 
 
 \begin{figure}[h]
     \centering
@@ -489,7 +489,7 @@ using the collected data, for example some motion detection application.
 
 \subsection{Axis P3367}
 
-The Axis P3367 is a fixed dome network camera capable of multiple H.264
+The Axis P3367 ~\cite{p3367} is a fixed dome network camera capable of multiple H.264
 streams as well as Motion JPEG streams. It supports various frame rates and
 resolutions up to 5 Megapixel at 12 frames per second, it also supports 
 HDTV 1080p at 30 frames per second and has two way audio streaming 
@@ -505,7 +505,7 @@ capabilities.
 
 The power is supplied using Power over Ethernet, therefore the camera does 
 not need a separate power supply and is powered directly through the network
-cable. It features an ARTPEC-4 system-on-chip, developed by Axis, which
+cable. It features an ARTPEC-4 ~\cite{artpec-4} system-on-chip, developed by Axis, which
 contains a single-core CPU running at 400 MHz and a co-processor dedicated
 to video analytics.
 
@@ -1498,6 +1498,7 @@ gtrm_sl_cb (GstElement * identity, GstBuffer * buf, GstElement * src)
 \end{figure}
 
 Using slices one can set a minimum amount of available resources for the applications in the slice. If the applications under a slice/service don’t use all of the resources given to them, the unused resources are free to be used by other slices. Under each slice there can be sub-slices or services dividing the resources further, building a hierarchy in the cgroups folder. The slices in the pie chart above, represent two different sets of applications. The static yellow slice consists of applications that won’t be managed by GTRM and simply will share the resources under this slice according to a predefined setting. Good choices of applications to put here would be some that doesn’t vary much in their resource requirements or some that have very strict hard deadlines. The second slice, the red GTRM slice, consists of applications that will be managed by the GTRM and that might implement SL adaptation. Good choices of applications to put here would be ones that do vary much in their resource requirements and/or can vary its quality in some acceptable way to adapt to its available resources.
+
 
 All applications that are managed by the GTRM are run as services under the GTRM-slice. A service can, just as a slice, reserve a minimum percentage of allocated resources from it’s parent slice.
 
