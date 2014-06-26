@@ -192,6 +192,7 @@ The remaining of this report is organized as follows.
 \item Chapter~\ref{chp:background} gives a detailed description of
   the software and hardware used during this project.
 
+
 \item Chapter~\ref{chp:development} details the implementation and design
   decisions, defining therefore how the resulting camera acts.
 \item Chapter~\ref{chp:usecases} discusses the use cases that where
@@ -1530,6 +1531,8 @@ In this case the static slice starts out not being under full load.
 \chapter{Testing}
 \label{chp:test}
 
+%monolith testing that we cant do :(
+\begin{comment}
 The end result will be a working prototype that can demonstrate that the system works and what results that can be expected. These are the main aspects that we want to test.
 To provide results and to prove that the thesis is valid, thorough testing is required. The main focus of the test is to see if the following can be achieved.
 \begin{itemize}
@@ -1548,6 +1551,18 @@ It is also desirable to test if the system can fulfill the previously described 
 \item A moving PTZ-camera will cause a high load when it is moving around. This will cause the whole picture to be redrawn and not partly as when the image is still, and will be the ultimate stress test for the streaming part.
 \item By running different test applications that are resource demanding the camera can be tested during intense CPU-loads. Some of the applications will have a linear relationship between computational time and the SL while others will have a non linear one. This matters since the SL adaptation assumes a linear relationship between the SL and the computational time. If the steps in SL are small enough the linear relationship could still be assumed even for non linear ones.
 \end{itemize}
+
+\end{comment}
+
+
+
+
+
+
+
+
+
+
 
 \chapter{Results}
 \label{chp:results}
