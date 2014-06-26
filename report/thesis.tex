@@ -908,6 +908,7 @@ Within the function, the \texttt{rm\_app\_t} structure is used.
 		\item performance: Matching function of the application.
 		\item weight: The current ``weight'' of the application.
 		\item happy: Indicates if the application is happy with its 
+
       current performance.
 		\item sa: Socket Address, used to send back the performance 
       multiplier.
@@ -1447,48 +1448,43 @@ The bit-rate is the amount of data that flows through the application, measured 
 \end{framed}
 
 The function which initiates the video pipeline is called \emph{cache\_video}, located in \emph{video.c} and is described below. The function is quite large but described is only what is relevant for this thesis.
-\begin{verbatim}
+\begin{lstlisting}
 static GstElement *
 cache_video (gpointer key, Props * props, gpointer * user_data)
 {
   ...
-\end{verbatim}
+\end{lstlisting}
 At first all the different elements for the pipeline is defined, including the identity element, which is called \emph{gtrm\_sl\_adapt}. A call to \emph{setup\_sl\_adapt} sets up the what is needed for the service level adaptation.
-\begin{verbatim}
+\begin{lstlisting}
   GstElement *gtrm_sl_adapt = NULL;
   ...
   setup_sl_adapt (service_level, epsilon, weight, deadline_seconds);
   ...
-\end{verbatim}
+\end{lstlisting}
 The identity element is now created by the following calls and the \emph{hand-off-signal} of the element is enabled and set up.
-\begin{verbatim}
+\begin{lstlisting}
   gtrm_sl_adapt = gst_element_factory_make ("identity", "gtrm");
-  g_object_set (G_OBJECT (gtrm_sl_adapt), "signal-handoffs",
-  TRUE, NULL);
-  g_signal_connect (gtrm_sl_adapt, "handoff", 
-  G_CALLBACK (gtrm_sl_cb), src);
+  g_object_set (G_OBJECT (gtrm_sl_adapt), "signal-handoffs", TRUE, NULL);
+  g_signal_connect (gtrm_sl_adapt, "handoff", G_CALLBACK (gtrm_sl_cb), src);
   ...
-\end{verbatim}
+\end{lstlisting}
 The last thing to be done is to actually insert the element into the pipeline, which can be done by adding the element to the parameters of the following function-calls.
-\begin{verbatim}
-    gst_bin_add_many (GST_BIN (p), src, gtrm_sl_adapt, convert,
-    caps_filter, sink, NULL);
+\begin{lstlisting}
+    gst_bin_add_many (GST_BIN (p), src, gtrm_sl_adapt, convert, caps_filter, sink, NULL);
     ...
-    gst_element_link_many (src, gtrm_sl_adapt, convert, 
-    caps_filter, sink, NULL)
+    gst_element_link_many (src, gtrm_sl_adapt, convert, caps_filter, sink, NULL);
     ...
 }
-\end{verbatim}
+\end{lstlisting}
 
 The callback function consists of a single call to \emph{sl\_adapt()}, which is defined in another file called \emph{sl\_adapt.c}. This adaptation looks more or less identical to that in the test application described above.
-\begin{verbatim}
+\begin{lstlisting}
 static void
-gtrm_sl_cb (GstElement * identity, GstBuffer * buf, 
-           GstElement * src)
+gtrm_sl_cb (GstElement * identity, GstBuffer * buf, GstElement * src)
 {
   sl_adapt();
 }
-\end{verbatim}
+\end{lstlisting}
 
 \section{Resource Allocation}
 \begin{figure}
