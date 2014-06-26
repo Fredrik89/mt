@@ -499,63 +499,122 @@ at the same time, especially due to the video analytics co-processor.
 \chapter{Implementation}
 \label{chp:development}
 
-All code were written in C and cross-compiled using Axis' compiler for the corresponding platform e.g. camera. For the resource allocation different service files and slices were specified, and the resulting plots were generated with Octave.
-\section{Constraints} %What we decided to do and not to do
-Creating service levels for all the applications running on the system would not be a realistic approach. This is because there are many different applications, some of which may not even be developed at Axis, and developers cannot be expected to modify all of them to implement the performance measurements and service level features needed. Instead the service level part is only implemented in the video streaming application and on some test applications that does some random computations to stress the system. This thesis only focuses on the implementation of the already mentioned work at LTH and will not look into proofs of convergence for the algorithm, neither will it look into other types of SL functions than the simple linear case where the CPU requirement are a linear function of the SL. It can be argued that the CPU requirement/SL relationship can be linearized around a point and hence still be linear in a small interval. Only the time sensitive matching function $f_{i}=\frac{D{i}}{R_{i}}-1$ where $D_{i}$ is the soft deadline for the application and $R_{i}$ is the job response time.
+This chapter describes the implementation of the GTRM framework for
+Axis cameras. The code commented upon was written in C and cross-compiled 
+using Axis' compiler for the corresponding hardware platform. The resource
+allocation framework was testing in different use cases and with a
+variety of service files and slices. The resulting plots are generated with
+Octave.
+
+\section{Design choices}
+
+Introducing service levels in all the applications running on camera
+is not a realistic approach. This is because there are many different
+applications, some of which may not even be developed at Axis, and 
+developers are not expected to modify all these applications to implement 
+the performance measurements and service level features needed, despite the
+modification being trivial in many cases. Also, for some applications it is
+not possible to identify the concept of service level. 
+
+The service level is in this work implemented for the video streaming
+application and for some test application that generates mathematical load
+in the system. This thesis only focuses on the implementation of GTRM and 
+assumes that a correct implementation of the framework implies also that
+the proof of convergence of the game theoretic strategy holds, as
+demonstrated for~\cite{gtrm}.
+
+Also, the service level assignment is limited to the linear case, where
+resource requirements (in this case CPU requirements) are a linear function 
+of the service level. It can be argued that the CPU requirement/SL
+relationship can be linearized around a point and hence still considered
+linear close to the operating point. 
+
+The matching function used to determine the performance of the application is
+time sensitive and reads as
+\begin{equation}
+f_{i}=\cfrac{D_{i}}{R_{i}}-1
+\end{equation}
+where $D_{i}$ is the soft deadline for the job and $R_{i}$ is the job 
+response time. This matching function is positive when the resource given is
+aboundant and negative if it is scarce. It is also zero in case there
+is a perfect match between the resource given and the service level set by
+the application. The aim of GTRM is to bring $f_i$ to zero for all the
+running applications. It is assumed that $f_i$ is measurable also for the
+non-service level aware applications. The matching function is updated as
+the average of the measured value for the last ten jobs.
 
 
-
-
-
-
-
-\section{The update algorithms to implement}
-
+\section{Adaptation}
 
 \subsection{Service Level update}
-There are two ways of implementing SL, one simpler and one more advanced. The first one simply multiplies the current SL with the matching function and multiplies the result with a constant scale factor. This will decrease the service level if the performance is negative and increase it if it is positive. The scaling factor (called epsilon) slows down the adaption rate to avoid instability. 
-\[sl_i(t+1)= sl_i(t) + \epsilon*(f_i(t)*sl_i(t)) \]
-The second way also includes how much the virtual platform of the application has changed. This is calculated as the performance multiplier, PM.
-\[PM_i = (1+f_i)*(vp_i(i+1)/vp(i))\]
-After calculating the performance multiplier the new service level can be calculated:
-\[sl_i(t+1)=sl_i(t) + (\epsilon*sl_i(t)*PM_i)\]
+In the following we discuss to possible ways of adjusting the service level.
+In the first case, the application only considers information that are
+internally available, while in the second case, the application receives
+hint from GTRM and follows those hints.
 
-\subsection{Performance/matching function update}
-The performance of a job will be based on how it can keep its deadline. The rule for calculating an individual jobs performance is:
-$f_{i}=\frac{D{i}}{R_{i}}-1$ where $D_{i}$ is the soft deadline for the application and $R_{i}$ is the job response time.
-The applications job will be updated as the average of the ten last jobs performance.
+The \emph{independent adaptation} simply multiplies the current service level,
+the matching function and a constant scale factor $\epsilon$. This adaptation
+decreases the service level if the performance is negative and increases it 
+if the matching function is positive. The scaling factor $\epsilon$ slows 
+down the adaption rate to avoid instability. 
 
-\subsection{Virtual platform update}
+\begin{equation}
+sl_i(t+1)= sl_i(t) + \epsilon*(f_i(t)*sl_i(t))
+\end{equation}
 
-The update for the virtual platforms is done according to the algorithm described on page 4 in "A Game-Theoretic Resource Manager for RT Applications" \cite{gtrm}:
+The \emph{coordinated adaptation} follows a suggestion given by the resource
+manager, that includes also the variation of the resource allocation. In fact,
+the resource manager sends to the application a \emph{performance multiplier}
+$PM_i$ that is used as an estimation of how much the service levels should
+change to match the current allocation, that is unknown on the application
+side.
 
+The performance multiplier $PM_i$ is computed as
+\begin{equation}
+PM_i = (1+f_i) \cdot (vp_i(i+1)/vp(i))
+\end{equation}
+and the applications sets the new service level as
+\begin{equation}
+sl_i(t+1) = sl_i(t) + (\epsilon \cdot sl_i(t) \cdot PM_i).
+\end{equation}
+
+\subsection{Resource Allocation update}
+
+The resource update changes the virtual platforms allocated to each running
+application. It follows the algorithm described in 
+``A Game-Theoretic Resource Manager for RT Applications''~\cite[page 4]{gtrm}.
 
 \begin{quotation}
-\em
-	the RM assigns resources according to
-	the following rule:
+	[...] the RM assigns resources according to the rule:
 	\begin{enumerate}
-
-	\item it measures the performance\footnote{As stated in its definition, $f_i$ is a function of the service level $s_i$ and the virtual platform $v_i$. However, here we intentionally hide this dependency and report only the dependency on time $t$, since the RM only measures a value over time.} $f_i(t)$;  
+	\item it measures the performance\footnote{As stated in its definition, 
+    $f_i$ is a function of the service level $s_i$ and the virtual platform 
+    $v_i$. However, here we intentionally hide this dependency and report 
+    only the dependency on time $t$, since the RM only measures a value 
+    over time.} $f_i(t)$;  
 	\item it updates the virtual platform $\tilde{v}_{i}$ as follows:
-
 		\begin{multline}
-		  \tilde{v}_i(t+1) =\tilde{v}_i(t) + \epsilon_{ RM}(t)\Big(- \lambda_i f_i(t) + \sum_{j=1}^n \lambda_j f_j(t) \tilde{v}_i(t)\Big),
+		  \tilde{v}_i(t+1) = \tilde{v}_i(t) + 
+                         \epsilon_{ RM}(t)\Big(- \lambda_i f_i(t) + 
+                         \sum_{j=1}^n \lambda_j f_j(t) \tilde{v}_i(t)\Big),
 		  \label{eq:RecursionForResources}
 		\end{multline}
-		  where $\epsilon_{ RM}(t)$ is a step-size sequence;
-	\item it computes the original value of bandwidth by $$v_i(t+1) = m \tilde{v}_i(t+1),$$
+		where $\epsilon_{ RM}(t)$ is a step-size sequence;
+	\item it computes the original value of bandwidth by 
+    $$v_i(t+1) = m \tilde{v}_i(t+1),$$
 	\item it updates the time $t\leftarrow t+1$ and repeats.
 	\end{enumerate}
-	
-	
 \end{quotation}
 
-Here $\tilde{v}$ is the normalized virtual platform, hence the conversion from normalized to actual in step3. In place of bandwidth CPUShares will be used in this paper.
+Here $\tilde{v}$ is the normalized virtual platform and $m$ is the number
+of computing elements. This means that the computed resource allocation $v$
+represents the percentage of the total resources allocated to the application
+and is converted into the actual value during the third step of the
+algorithm. CPUShares are used here in place of bandwidth.
 
-
-
-
+\martina{Can you comment a bit on what is the difference between CPUShares
+  and bandwidth? From what I understand, it makes a difference in the
+  multicore case.}
 
 \section{IPC}
 The resource management is implemented as a part of systemd, with all of the resource management source code integrated into systemds. If an application has a poor matching function it sends information to systemd via UNIX-sockets. The interprocess communication (IPC) consists of one socket in systemd and one for each application that the RM is monitoring. The socket setup was implemented by more or less copying the “Notify” feature of systemd which is used by certain services that want to for example notify systemd that they have started or about other status changes [sysd-notify].
@@ -1112,9 +1171,11 @@ Create the socket adress and pass it as an argument to gtrm\_lib\_setup\_socket(
 
 Next the arguments for the  	gtrm\_lib\_set(..) functions are initialized and passed.
 \begin{verbatim}	
+
 	myself->weight = weight;
 	myself->application_id = getpid();
-	uint64_t deadline = (unsigned int) ((double)1000000000 * deadline_seconds);
+	uint64_t deadline = (unsigned int) ((double)1000000000 
+                        * deadline_seconds);
 	uint64_t ert[1] = {deadline};
 	gtrm_lib_set(myself, 1, ert);
 	
@@ -1253,39 +1314,24 @@ The resources of the applications running in the GTRM-slice will be managed by t
 
 
 \subsection{.service and .slice files}
-The resource split shown in \ref{fig:Piechart} is made my creating a gtrm.slice file in the folder \emph{/etc/systemd/system}:
-\begin{quotation}
-gtrm.slice
-\em
+The resource split shown in \ref{fig:Piechart} is made by creating a gtrm.slice file in the folder \emph{/etc/systemd/system}:
+\subsubsection{gtrm.slice}
+\begin{verbatim}
 [Unit]
 
 [Slice]
 CPUShares=1024
-\end{quotation}
-
-
+\end{verbatim}
 Create the same service files in the same folder:
-\begin{quotation}
-gtrm-test.service
-\em
+\subsubsection{gtrm-test.service and gtrm-test2.service}
+\begin{verbatim}
 [Unit]
 
 [Service]
-ExecStart=/mnt/flash/test-gtrm-app 50 10 0 0 0 0.1 0.5 0.04\newline
+ExecStart=/mnt/flash/test-gtrm-app 50 10 0 0 0 0.1 0.5 0.04
 CPUShares=100
 Slice=gtrm.slice
-\end{quotation}
-
-\begin{quotation}
-gtrm-test2.service
-\em
-[Unit]
-
-[Service]
-ExecStart=/mnt/flash/test-gtrm-app 50 10 0 0 0 0.1 0.5 0.04\newline
-CPUShares=100
-Slice=gtrm.slice
-\end{quotation}
+\end{verbatim}
 
 Any application that wants to use the GTRM needs to create such a service file in this folder.
 Systemd creates by default a slice that all services will run under unless otherwise specified. Any service file in the \emph{/etc/systemd/system} folder overrides a service file for the 
@@ -1399,13 +1445,12 @@ It is also desirable to test if the system can fulfill the previously described 
 \bibliographystyle{plain}
 \bibliography{mybib}
 \appendix
-\chapter{Appendix A}
-\section{Source Code}
+\chapter{Source Code Overview}
 In this section follows an overview of the header and source files used in the system and their attributes.
-\subsection{gtrm\_lib.c/h}
+\section{gtrm\_lib.c/h}
 A library which contains various functions used by the resource manager to make various computations and inter process communication.
 
-\subsubsection{struct rm\_app\_t}
+\subsection{struct rm\_app\_t}
 Represents an application being managed and consists of the following fields.
 \begin{itemize}
 \item tid: Applications PID.
@@ -1417,7 +1462,7 @@ Represents an application being managed and consists of the following fields.
 \item sa: Socket Address, used to send back the performance multiplier.
 \end{itemize}
 
-\subsubsection{struct gtrm\_t}
+\subsection{struct gtrm\_t}
 Stores various parameters used by the GTRM.
 \begin{itemize}
 \item c1: Constant used for computing epsilon, determines how much we will change the virtual platform.
@@ -1428,7 +1473,7 @@ Stores various parameters used by the GTRM.
 \item prev\_apps: The amount of applications in the previous iteration.
 \end{itemize}
 
-\subsubsection{void gtrm\_char2gtrmstruct(char* str, rm\_app\_t *re)}
+\subsection{void gtrm\_char2gtrmstruct(char* str, rm\_app\_t *re)}
 Extracts data from a received string and store it as a struct instead. The data sent from an application consists of the PID, performance, weight and if the application is satisfied or not.
 \begin{itemize} 
 \item str: String to extract data from.
@@ -1436,7 +1481,7 @@ Extracts data from a received string and store it as a struct instead. The data 
 \item Return value: None, the result is stored in \emph{re}.
 \end{itemize}
 
-\subsubsection{int gtrm\_send\_performance\_multiplier(double pm, int fd, struct sockaddr *sa)}
+\subsection{int gtrm\_send\_performance\_multiplier(double pm, int fd, struct sockaddr *sa)}
 Sends a performance multiplier to an application via sockets.
 \begin{itemize} 
 \item pm: Performance multiplier to send.
@@ -1445,7 +1490,7 @@ Sends a performance multiplier to an application via sockets.
 \item Return value: Always zero.
 \end{itemize}
 
-\subsubsection{double gtrm\_get\_epsilon(unsigned int iterations, unsigned int offset, double c1, double c2)}
+\subsection{double gtrm\_get\_epsilon(unsigned int iterations, unsigned int offset, double c1, double c2)}
 Calculates the constant epsilon used by the resource manager.
 \begin{itemize} 
 \item iterations: Number of iterations run by the RM.
@@ -1455,7 +1500,7 @@ Calculates the constant epsilon used by the resource manager.
 \item Return value: The calculated epsilon or one if this is the first iteration.
 \end{itemize}
 
-\subsubsection{void gtrm\_update\_performance\_multipliers(int gtrm\_fd, Hashmap *gtrm\_apps)}
+\subsection{void gtrm\_update\_performance\_multipliers(int gtrm\_fd, Hashmap *gtrm\_apps)}
 Calculates, updates and sends the performance multiplier to each application, using the performance, virtual platform and the previous virtual platform for each application.
 \begin{itemize} 
 \item gtrm\_fd: File descriptor used to send the performance multiplier.
@@ -1463,7 +1508,7 @@ Calculates, updates and sends the performance multiplier to each application, us
 \item Return value: None.
 \end{itemize}
 
-\subsubsection{void gtrm\_write\_log(Hashmap *gtrm\_apps, unsigned int num\_applications)}
+\subsection{void gtrm\_write\_log(Hashmap *gtrm\_apps, unsigned int num\_applications)}
 Writes information about the resource management to a log file, which can then be used to generate some nice graphs.
 \begin{itemize} 
 \item gtrm\_apps: Hash-map containing rm\_app\_t structs for each application.
@@ -1471,7 +1516,7 @@ Writes information about the resource management to a log file, which can then b
 \item Return value: None.
 \end{itemize}
 
-\subsection{manager.c/h}
+\section{manager.c/h}
 One of the main files in systemd and is for example responsible for inter process communication. The following fields are added to the \emph{Manager} struct in manager.h:
 \begin{itemize}
 \item gtrm\_socket: String that represent the socket used by GTRM.
@@ -1482,7 +1527,7 @@ One of the main files in systemd and is for example responsible for inter proces
 
 
 
-\subsubsection{static int manager\_dispatch\_gtrm\_fd(sd\_event\_source *source, int fd, unit32\_t revents, void *userdata)}
+\subsection{static int manager\_dispatch\_gtrm\_fd(sd\_event\_source *source, int fd, unit32\_t revents, void *userdata)}
 Called when we receive the performance of an application.
 \begin{itemize}
 \item source: source of the event.
@@ -1492,14 +1537,14 @@ Called when we receive the performance of an application.
 \item Return value: Not used, always zero.
 \end{itemize}
 
-\subsubsection{static int manager\_setup\_gtrm(Manager *m)}
+\subsection{static int manager\_setup\_gtrm(Manager *m)}
 Used to setup the socket, event source and file descriptor for the resource manager. Called from manager\_startup and manager\_reload.
 \begin{itemize}
 \item m: Reference to the manager.
 \item Return value: Zero if function ran correctly, otherwise it is set to the corresponding error number.
 \end{itemize}
 
-\subsubsection{int gtrm\_compute\_virtual\_platforms(Hashmap *apps, gtrm\_t *gtrm\_t)}
+\subsection{int gtrm\_compute\_virtual\_platforms(Hashmap *apps, gtrm\_t *gtrm\_t)}
 Calculates the amount of resources (virtual platform) for an application.
 \begin{itemize}
 \item apps: The hash-map containing information about the applications being managed.
@@ -1507,21 +1552,21 @@ Calculates the amount of resources (virtual platform) for an application.
 \item Return value: Not used, always zero.
 \end{itemize}
 
-\subsubsection{void gtrm\_apply\_virtual\_platforms(Manager* m)}
+\subsection{void gtrm\_apply\_virtual\_platforms(Manager* m)}
 Computes and applies the amount of CPUShares that each application shall be given.
 \begin{itemize}
 \item m: Reference to manager, used to get the applications
 \item Return value: None.
 \end{itemize}
 
-\subsubsection{int manager\_loop(Manager *m)}
+\subsection{int manager\_loop(Manager *m)}
 The main loop of the system which continuously calls gtrm\_compute\_virtual\_platforms, gtrm\_apply\_virtual\_platforms and gtrm\_update\_performance\_multipliers if all applications are not satisfied with their performance.
 \begin{itemize}
 \item m: Reference to manager, used to get the applications.
 \item Return value: Exit code of systemd.
 \end{itemize}
 
-\subsubsection{int manager\_set\_cpu\_shares(Manager *m, pid\_t pid, int shares)}
+\subsection{int manager\_set\_cpu\_shares(Manager *m, pid\_t pid, int shares)}
 Sets the CPUShares of an application.
 \begin{itemize}
 \item m: Reference to manager, used to get the applications.
@@ -1530,10 +1575,10 @@ Sets the CPUShares of an application.
 \item Return value: Zero if successful, one otherwise.
 \end{itemize}
 
-\subsection{gtrm\_app\_lib.c/h}
+\section{gtrm\_app\_lib.c/h}
 These files are used by the applications to get performance, send performance and setup IPC, for example.
 In the header file the following structs are defined:
-\subsubsection{struct \_job\_h}
+\subsection{struct \_job\_h}
 A struct used to represent a job. Applications can have different type of jobs with different deadlines. We only use one type however.
 \begin{itemize}
 \item id: Identifier to keep track of a job being executed.
@@ -1542,7 +1587,7 @@ A struct used to represent a job. Applications can have different type of jobs w
 \item end\_timestamp: Time when we were finished with job. The timestamps are used to calculate the total execution time of a job.
 \end{itemize}
 
-\subsubsection{struct \_application\_h}
+\subsection{struct \_application\_h}
 Each application stores the relevant information in terms of resource management and SL-adaptation in this struct.
 \begin{itemize}
 \item application\_id: Identifier for an application.
@@ -1556,14 +1601,14 @@ Each application stores the relevant information in terms of resource management
 \item happy: Indicates if the application is satisfied with its performance or not.
 \end{itemize}
 
-\subsubsection{int gtrm\_lib\_setup\_socket(char* filename)}
+\subsection{int gtrm\_lib\_setup\_socket(char* filename)}
 Sets up a socket to communicate with the resource manager.
 \begin{itemize}
 \item filename: The socket needs a file to work, the parameter specifies its path.
 \item Return value: Zero, not used.
 \end{itemize}
 
-\subsubsection{void gtrm\_lib\_send\_performance(\_application\_h *h, double performance)}
+\subsection{void gtrm\_lib\_send\_performance(\_application\_h *h, double performance)}
 Sends the performance of an application to the GTRM.
 \begin{itemize}
 \item h: Struct representing an application.
@@ -1571,7 +1616,7 @@ Sends the performance of an application to the GTRM.
 \item Return value: None.
 \end{itemize}
 
-\subsubsection{int gtrm\_lib\_set(\_application\_h* a, uint types, uint64\_t* ert)}
+\subsection{int gtrm\_lib\_set(\_application\_h* a, uint types, uint64\_t* ert)}
 Initializes the application struct with job types and their expected response times.
 \begin{itemize}
 \item a: Struct representing an application.
@@ -1580,14 +1625,14 @@ Initializes the application struct with job types and their expected response ti
 \item Return value: Exit status of function.
 \end{itemize}
 
-\subsubsection{static int manager\_setup\_gtrm(Manager *m)}
+\subsection{static int manager\_setup\_gtrm(Manager *m)}
 Used to setup the socket, event source and file descriptor for the resource manager. Called from manager\_startup and manager\_reload.
 \begin{itemize}
 \item m: Reference to the manager.
 \item Return value: Zero if function ran correctly, otherwise it is set to the corresponding error number.
 \end{itemize}
 
-\subsubsection{double gtrm\_lib\_get\_performance\_number(\_application\_h* a, int job\_type)}
+\subsection{double gtrm\_lib\_get\_performance\_number(\_application\_h* a, int job\_type)}
 Calculates the peformance (matching function) by averaging the performance of the last ten jobs of a specified type.
 \begin{itemize}
 \item a: Struct representing an application.
@@ -1595,14 +1640,14 @@ Calculates the peformance (matching function) by averaging the performance of th
 \item Return value: Applications performance.
 \end{itemize}
 
-\subsubsection{int gtrm\_lib\_update\_performance\_multiplier(\_application\_h *a)}
+\subsection{int gtrm\_lib\_update\_performance\_multiplier(\_application\_h *a)}
 Receives the performance multiplier computed by the RM.
 \begin{itemize}
 \item a: Struct for representing the application, and storing the performance multiplier.
 \item Return value: Zero, never used.
 \end{itemize}
 
-\subsubsection{int gtrm\_lib\_signalstart(\_application\_h* a, uint type)}
+\subsection{int gtrm\_lib\_signalstart(\_application\_h* a, uint type)}
 Indicates the start of a job.
 \begin{itemize}
 \item a: Struct for representing the application.
@@ -1610,7 +1655,7 @@ Indicates the start of a job.
 \item Return value: Identifier of the started job.
 \end{itemize}
 
-\subsubsection{int gtrm\_lib\_signalend(\_application\_h* a, uint id)}
+\subsection{int gtrm\_lib\_signalend(\_application\_h* a, uint id)}
 Indicates the end of a job.
 \begin{itemize}
 \item a: Struct for representing the application.
