@@ -165,6 +165,7 @@ The remaining of this report is organized as follows.
 \begin{itemize}
 \item Chapter~\ref{chp:background} gives a detailed description of
   the software and hardware used during this project.
+
 \item Chapter~\ref{chp:development} details the implementation and design
   decisions, defining therefore how the resulting camera acts.
 \item Chapter~\ref{chp:usecases} discusses the use cases that where
@@ -1109,22 +1110,129 @@ Create the socket adress and pass it as an argument to gtrm\_lib\_setup\_socket(
 
 
 
+Next the arguments for the  	gtrm\_lib\_set(..) functions are initialized and passed.
 \begin{verbatim}	
+	myself->weight = weight;
+	myself->application_id = getpid();
 	uint64_t deadline = (unsigned int) ((double)1000000000 * deadline_seconds);
 	uint64_t ert[1] = {deadline};
 	gtrm_lib_set(myself, 1, ert);
-	myself->weight = weight;
-	myself->application_id = getpid();
 	
 \end{verbatim}
+An application can have different job types corresponding to different deadlines. The test application only has one job type. 
+
+\begin{framed}
+	\begin{flushleft}		
+		\emph{\textbf{{int gtrm\_lib\_set(\_application\_h* a, uint types, uint64\_t* ert)}}}
+		Initializes the application struct with job types and their expected response times.
+		\begin{itemize}
+		\item a: Struct representing an application.
+		\item types: Number of different job types.
+		\item ert: Array of expected response time for each job type.
+		\item Return value: Exit status of function.
+\end{itemize}
+	\end{flushleft}
+\end{framed}
 
 
 
+Next is the main loop of the program. The basic structure is described as the left part in figure \ref{fig:sdiag}.
+
+\begin{verbatim}
+	for(;;) {		
+		
+		int64_t cpu_requirement = a_cpu * service_level + b_cpu;
+		int64_t mem_requirement = a_mem * service_level + b_mem;
+
+		int type = 0;
+		id = gtrm_lib_jobsignaler_signalstart(myself, type);
+		
+		// Do the required work	
+		do_work(cpu_requirement, mem_requirement, NOISE_PERCENTAGE);
+		
+		gtrm_lib_jobsignaler_signalend(myself, id);
+		id = 0;
+											
+		performance = gtrm_lib_get_performance_number(myself, type);
+		
+		// I want to adapt only if needed
+		if (performance < -0.01 || performance > 0.01) {
+			myself->happy = false;
+						
+			// send performance to systemd
+			gtrm_lib_send_performance(myself, performance);				
+			
+			//if there is no multiplier to read use the simple SL adaption
+			if(gtrm_lib_update_performance_multiplier(myself) == 0)
+				service_level+= epsilon*service_level*(myself->performance_multiplier-1);
+			else
+				service_level += epsilon * (performance * service_level);	
+													
+			if (service_level < MINIMUM_SERVICE_LEVEL)
+				service_level = MINIMUM_SERVICE_LEVEL;
+			if (service_level != service_level) // avoid nans
+				service_level = 1.0;
+
+		} else if(myself->happy==false) {			
+			myself->happy = true;
+			gtrm_lib_send_performance(myself, performance);
+		}	
+	}	
+}
+\end{}
+\end{verbatim}
+Here the following functions are used:
+
+\begin{framed}
+	\begin{flushleft}		
+		\emph{\textbf{{int gtrm\_lib\_signalstart(\_application\_h* a, uint type)}}}
+				Indicates the start of a job.
+				\begin{itemize}
+				\item a: Struct for representing the application.
+				\item type: Type of the job that is started.
+				\item Return value: Identifier of the started job.
+				\end{itemize}
+	\end{flushleft}
+\end{framed}
 
 
+\begin{framed}
+	\begin{flushleft}	
+			\emph{\textbf{{int gtrm\_lib\_signalend(\_application\_h* a, uint id)}}}
+			Indicates the end of a job.
+			\begin{itemize}
+			\item a: Struct for representing the application.
+			\item id: Identifier of the job that has completed.
+			\item Return value: Exit status.
+			\end{itemize}
+	\end{flushleft}
+\end{framed}
 
 
+\begin{framed}
+	\begin{flushleft}	
+			\emph{\textbf{{double gtrm\_lib\_get\_performance\_number(\_application\_h* a, int job\_type)}}}
+			Calculates the peformance (matching function) by averaging the performance of the last ten jobs of a specified type.
+			\begin{itemize}
+			\item a: Struct representing an application.
+			\item type: Which job type for which we want to calculate the performance.
+			\item Return value: Applications performance.
+			\end{itemize}
+	\end{flushleft}
+\end{framed}
 
+\begin{framed}
+	\begin{flushleft}	
+			\emph{\textbf{{int gtrm\_send\_performance\_multiplier(double pm, int fd, struct sockaddr *sa)}}}
+			Sends a performance multiplier to an application via sockets.
+			\begin{itemize} 
+			\item pm: Performance multiplier to send.
+			\item fd: File descriptor used to send the performance multiplier.
+			\item sa: Socket address.
+			\item Return value: Always zero.
+			\end{itemize}
+	\end{flushleft}
+\end{framed}
 
 
 \section{Resource Allocation}
