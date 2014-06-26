@@ -499,63 +499,122 @@ at the same time, especially due to the video analytics co-processor.
 \chapter{Implementation}
 \label{chp:development}
 
-All code were written in C and cross-compiled using Axis' compiler for the corresponding platform e.g. camera. For the resource allocation different service files and slices were specified, and the resulting plots were generated with Octave.
-\section{Constraints} %What we decided to do and not to do
-Creating service levels for all the applications running on the system would not be a realistic approach. This is because there are many different applications, some of which may not even be developed at Axis, and developers cannot be expected to modify all of them to implement the performance measurements and service level features needed. Instead the service level part is only implemented in the video streaming application and on some test applications that does some random computations to stress the system. This thesis only focuses on the implementation of the already mentioned work at LTH and will not look into proofs of convergence for the algorithm, neither will it look into other types of SL functions than the simple linear case where the CPU requirement are a linear function of the SL. It can be argued that the CPU requirement/SL relationship can be linearized around a point and hence still be linear in a small interval. Only the time sensitive matching function $f_{i}=\frac{D{i}}{R_{i}}-1$ where $D_{i}$ is the soft deadline for the application and $R_{i}$ is the job response time.
+This chapter describes the implementation of the GTRM framework for
+Axis cameras. The code commented upon was written in C and cross-compiled 
+using Axis' compiler for the corresponding hardware platform. The resource
+allocation framework was testing in different use cases and with a
+variety of service files and slices. The resulting plots are generated with
+Octave.
+
+\section{Design choices}
+
+Introducing service levels in all the applications running on camera
+is not a realistic approach. This is because there are many different
+applications, some of which may not even be developed at Axis, and 
+developers are not expected to modify all these applications to implement 
+the performance measurements and service level features needed, despite the
+modification being trivial in many cases. Also, for some applications it is
+not possible to identify the concept of service level. 
+
+The service level is in this work implemented for the video streaming
+application and for some test application that generates mathematical load
+in the system. This thesis only focuses on the implementation of GTRM and 
+assumes that a correct implementation of the framework implies also that
+the proof of convergence of the game theoretic strategy holds, as
+demonstrated for~\cite{gtrm}.
+
+Also, the service level assignment is limited to the linear case, where
+resource requirements (in this case CPU requirements) are a linear function 
+of the service level. It can be argued that the CPU requirement/SL
+relationship can be linearized around a point and hence still considered
+linear close to the operating point. 
+
+The matching function used to determine the performance of the application is
+time sensitive and reads as
+\begin{equation}
+f_{i}=\cfrac{D_{i}}{R_{i}}-1
+\end{equation}
+where $D_{i}$ is the soft deadline for the job and $R_{i}$ is the job 
+response time. This matching function is positive when the resource given is
+aboundant and negative if it is scarce. It is also zero in case there
+is a perfect match between the resource given and the service level set by
+the application. The aim of GTRM is to bring $f_i$ to zero for all the
+running applications. It is assumed that $f_i$ is measurable also for the
+non-service level aware applications. The matching function is updated as
+the average of the measured value for the last ten jobs.
 
 
-
-
-
-
-
-\section{The update algorithms to implement}
-
+\section{Adaptation}
 
 \subsection{Service Level update}
-There are two ways of implementing SL, one simpler and one more advanced. The first one simply multiplies the current SL with the matching function and multiplies the result with a constant scale factor. This will decrease the service level if the performance is negative and increase it if it is positive. The scaling factor (called epsilon) slows down the adaption rate to avoid instability. 
-\[sl_i(t+1)= sl_i(t) + \epsilon*(f_i(t)*sl_i(t)) \]
-The second way also includes how much the virtual platform of the application has changed. This is calculated as the performance multiplier, PM.
-\[PM_i = (1+f_i)*(vp_i(i+1)/vp(i))\]
-After calculating the performance multiplier the new service level can be calculated:
-\[sl_i(t+1)=sl_i(t) + (\epsilon*sl_i(t)*PM_i)\]
+In the following we discuss to possible ways of adjusting the service level.
+In the first case, the application only considers information that are
+internally available, while in the second case, the application receives
+hint from GTRM and follows those hints.
 
-\subsection{Performance/matching function update}
-The performance of a job will be based on how it can keep its deadline. The rule for calculating an individual jobs performance is:
-$f_{i}=\frac{D{i}}{R_{i}}-1$ where $D_{i}$ is the soft deadline for the application and $R_{i}$ is the job response time.
-The applications job will be updated as the average of the ten last jobs performance.
+The \emph{independent adaptation} simply multiplies the current service level,
+the matching function and a constant scale factor $\epsilon$. This adaptation
+decreases the service level if the performance is negative and increases it 
+if the matching function is positive. The scaling factor $\epsilon$ slows 
+down the adaption rate to avoid instability. 
 
-\subsection{Virtual platform update}
+\begin{equation}
+sl_i(t+1)= sl_i(t) + \epsilon*(f_i(t)*sl_i(t))
+\end{equation}
 
-The update for the virtual platforms is done according to the algorithm described on page 4 in "A Game-Theoretic Resource Manager for RT Applications" \cite{gtrm}:
+The \emph{coordinated adaptation} follows a suggestion given by the resource
+manager, that includes also the variation of the resource allocation. In fact,
+the resource manager sends to the application a \emph{performance multiplier}
+$PM_i$ that is used as an estimation of how much the service levels should
+change to match the current allocation, that is unknown on the application
+side.
 
+The performance multiplier $PM_i$ is computed as
+\begin{equation}
+PM_i = (1+f_i) \cdot (vp_i(i+1)/vp(i))
+\end{equation}
+and the applications sets the new service level as
+\begin{equation}
+sl_i(t+1) = sl_i(t) + (\epsilon \cdot sl_i(t) \cdot PM_i).
+\end{equation}
+
+\subsection{Resource Allocation update}
+
+The resource update changes the virtual platforms allocated to each running
+application. It follows the algorithm described in 
+``A Game-Theoretic Resource Manager for RT Applications''~\cite[page 4]{gtrm}.
 
 \begin{quotation}
-\em
-	the RM assigns resources according to
-	the following rule:
+	[...] the RM assigns resources according to the rule:
 	\begin{enumerate}
-
-	\item it measures the performance\footnote{As stated in its definition, $f_i$ is a function of the service level $s_i$ and the virtual platform $v_i$. However, here we intentionally hide this dependency and report only the dependency on time $t$, since the RM only measures a value over time.} $f_i(t)$;  
+	\item it measures the performance\footnote{As stated in its definition, 
+    $f_i$ is a function of the service level $s_i$ and the virtual platform 
+    $v_i$. However, here we intentionally hide this dependency and report 
+    only the dependency on time $t$, since the RM only measures a value 
+    over time.} $f_i(t)$;  
 	\item it updates the virtual platform $\tilde{v}_{i}$ as follows:
-
 		\begin{multline}
-		  \tilde{v}_i(t+1) =\tilde{v}_i(t) + \epsilon_{ RM}(t)\Big(- \lambda_i f_i(t) + \sum_{j=1}^n \lambda_j f_j(t) \tilde{v}_i(t)\Big),
+		  \tilde{v}_i(t+1) = \tilde{v}_i(t) + 
+                         \epsilon_{ RM}(t)\Big(- \lambda_i f_i(t) + 
+                         \sum_{j=1}^n \lambda_j f_j(t) \tilde{v}_i(t)\Big),
 		  \label{eq:RecursionForResources}
 		\end{multline}
-		  where $\epsilon_{ RM}(t)$ is a step-size sequence;
-	\item it computes the original value of bandwidth by $$v_i(t+1) = m \tilde{v}_i(t+1),$$
+		where $\epsilon_{ RM}(t)$ is a step-size sequence;
+	\item it computes the original value of bandwidth by 
+    $$v_i(t+1) = m \tilde{v}_i(t+1),$$
 	\item it updates the time $t\leftarrow t+1$ and repeats.
 	\end{enumerate}
-	
-	
 \end{quotation}
 
-Here $\tilde{v}$ is the normalized virtual platform, hence the conversion from normalized to actual in step3. In place of bandwidth CPUShares will be used in this paper.
+Here $\tilde{v}$ is the normalized virtual platform and $m$ is the number
+of computing elements. This means that the computed resource allocation $v$
+represents the percentage of the total resources allocated to the application
+and is converted into the actual value during the third step of the
+algorithm. CPUShares are used here in place of bandwidth.
 
-
-
-
+\martina{Can you comment a bit on what is the difference between CPUShares
+  and bandwidth? From what I understand, it makes a difference in the
+  multicore case.}
 
 \section{IPC}
 The resource management is implemented as a part of systemd, with all of the resource management source code integrated into systemds. If an application has a poor matching function it sends information to systemd via UNIX-sockets. The interprocess communication (IPC) consists of one socket in systemd and one for each application that the RM is monitoring. The socket setup was implemented by more or less copying the “Notify” feature of systemd which is used by certain services that want to for example notify systemd that they have started or about other status changes [sysd-notify].
