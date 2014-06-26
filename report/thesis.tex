@@ -1111,7 +1111,8 @@ Create the socket adress and pass it as an argument to gtrm\_lib\_setup\_socket(
 
 
 \begin{verbatim}	
-	uint64_t deadline = (unsigned int) ((double)1000000000 * deadline_seconds);
+	uint64_t deadline = (unsigned int) ((double)1000000000 
+                        * deadline_seconds);
 	uint64_t ert[1] = {deadline};
 	gtrm_lib_set(myself, 1, ert);
 	myself->weight = weight;
@@ -1146,39 +1147,24 @@ The resources of the applications running in the GTRM-slice will be managed by t
 
 
 \subsection{.service and .slice files}
-The resource split shown in \ref{fig:Piechart} is made my creating a gtrm.slice file in the folder \emph{/etc/systemd/system}:
-\begin{quotation}
-gtrm.slice
-\em
+The resource split shown in \ref{fig:Piechart} is made by creating a gtrm.slice file in the folder \emph{/etc/systemd/system}:
+\subsubsection{gtrm.slice}
+\begin{verbatim}
 [Unit]
 
 [Slice]
 CPUShares=1024
-\end{quotation}
-
-
+\end{verbatim}
 Create the same service files in the same folder:
-\begin{quotation}
-gtrm-test.service
-\em
+\subsubsection{gtrm-test.service and gtrm-test2.service}
+\begin{verbatim}
 [Unit]
 
 [Service]
-ExecStart=/mnt/flash/test-gtrm-app 50 10 0 0 0 0.1 0.5 0.04\newline
+ExecStart=/mnt/flash/test-gtrm-app 50 10 0 0 0 0.1 0.5 0.04
 CPUShares=100
 Slice=gtrm.slice
-\end{quotation}
-
-\begin{quotation}
-gtrm-test2.service
-\em
-[Unit]
-
-[Service]
-ExecStart=/mnt/flash/test-gtrm-app 50 10 0 0 0 0.1 0.5 0.04\newline
-CPUShares=100
-Slice=gtrm.slice
-\end{quotation}
+\end{verbatim}
 
 Any application that wants to use the GTRM needs to create such a service file in this folder.
 Systemd creates by default a slice that all services will run under unless otherwise specified. Any service file in the \emph{/etc/systemd/system} folder overrides a service file for the 
@@ -1292,7 +1278,7 @@ It is also desirable to test if the system can fulfill the previously described 
 \bibliographystyle{plain}
 \bibliography{mybib}
 \appendix
-\chapter{Source Code}
+\chapter{Source Code Overview}
 In this section follows an overview of the header and source files used in the system and their attributes.
 \section{gtrm\_lib.c/h}
 A library which contains various functions used by the resource manager to make various computations and inter process communication.
