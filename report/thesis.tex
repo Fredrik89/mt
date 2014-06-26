@@ -193,6 +193,7 @@ The remaining of this report is organized as follows.
   the software and hardware used during this project.
 
 
+
 \item Chapter~\ref{chp:development} details the implementation and design
   decisions, defining therefore how the resulting camera acts.
 \item Chapter~\ref{chp:usecases} discusses the use cases that where
@@ -1628,6 +1629,47 @@ It is also desirable to test if the system can fulfill the previously described 
 \end{itemize}
 
 \end{comment}
+
+
+
+The first part of the testing is done by starting and stopping different test-applications on the camera running on the gtrm-slice.
+The slices and services are started and stopped with the command line tool systemctl \cite{systemctl}.
+
+The camera is split into two different top level slices, the gtrm.slice, containing the test services, and the system.slice that contains all other services. The command line tool systemd-cgls shows the layout of the service/slice tree:
+
+
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{systemd-cgls2}
+    \caption{The first lines of the output from  systemd-cgls}
+    \label{fig:systemd-cgls2}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{systemd-cgls1}
+    \caption{The last lines of the output from systemd-cgls}
+    \label{fig:systemd-cgls2}
+\end{figure}
+
+
+
+\subsection{adsf}
+Start four test-applications at approximately the same time:
+
+
+
+
+
+\subsection{adsff}
+Start the test-applications one by one:
+
+
+
+\subsection
+Start 
+
 
 
 
