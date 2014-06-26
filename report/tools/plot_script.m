@@ -11,9 +11,9 @@
  T2=T;
  
         
-v_handle = figure;
-f_handle = figure;
-sl_handle = figure;
+v_handle = figure
+f_handle = figure
+sl_handle = figure
 
 
 
@@ -74,15 +74,15 @@ for i =1:NO_OF_PLOTS
 	plot(T(:,1),T(:,3),my_colors(i))
 	title('virtual platform')
 	legend(my_legend)
+	axis("tight");
 	hold off
-	
-	
-	
+			
 	figure(f_handle)
 	hold on
 	plot(T(:,1),T(:,4),my_colors(i))
 	title('performance')
 	legend(my_legend)
+	axis("tight");
 	hold off	
 
 	S=dlmread(log_name,",\t");
@@ -99,6 +99,7 @@ for i =1:NO_OF_PLOTS
 	plot(S(:,1),S(:,3),my_colors(i))
 	title('service level')	
 	legend(my_legend)
+	axis("tight");
 	hold off		
 end
 
