@@ -166,6 +166,7 @@ The remaining of this report is organized as follows.
 \item Chapter~\ref{chp:background} gives a detailed description of
   the software and hardware used during this project.
 
+
 \item Chapter~\ref{chp:development} details the implementation and design
   decisions, defining therefore how the resulting camera acts.
 \item Chapter~\ref{chp:usecases} discusses the use cases that where
@@ -1295,6 +1296,83 @@ Here the following functions are used:
 	\end{flushleft}
 \end{framed}
 
+\section{Video Streaming}
+The work carried out in the video streaming part of the project has still not been completely finished, but this is the proposed solution and implementation.
+
+The streaming service, named \emph{Monolith}, streams both video and audio, handles image compression and filtering, manages several different streams, such as H.264 and MJPEG streams. It is this application that has been modified to implement the service-level feature by altering the image quality. This is done by modifying the pipeline which makes up the video-streaming.
+
+In this pipeline an "identity" element is added, which is an element that simply forwards the frames received to the next element without actually doing anything to them. This element is added just after the first element (source element). By activating the so called "hand-off"-signal of the identity element, a signal-handler-function is called every time the element receives a new buffer. In this function, computation of how long time each frame takes to be processed is made, which is used to compute the matching function. After the matching function has been computed, it is now possible to update the service level and notify the resource manager. Finally the service level is used to set the desired bit-rate in the bit-rate controller.
+
+The bit-rate is the amount of data that flows through the application, measured in kbit/s. This means that a higher bit-rate gives better image quality, since we have more data per frame, but at the cost of higher computation time. In the event that the frame rate drops because of limited CPU-resources, the bit-rate can be reduced which allows a higher frame rate. The bit-rate controller is a controller which aims to keep a certain bit-rate, independent on how the imagery looks. If the scenery becomes more complex this will increase the bit-rate. To cope with this the image quality is reduce by the controller which will decrease the bit-rate to desired level. The image quality is adjusted by changing the amount of compression.
+
+
+\begin{framed}
+	\begin{flushleft}	
+		\emph{\textbf{{void setup\_sl\_adapt(float service\_level, double epsilon, double weight, double deadline\_seconds)}}}
+		Sets up deadline for computing the matching function and sets up the IPC with the resource management.
+		\begin{itemize}
+		\item service\_level: Initial service level.
+		\item epsilon: Constant which specifies service level adaptation rate.
+		\item weight: Determines how the much of the adaptation will be done by altering the service level or the changing the amount of resources.
+		\item deadline\_seconds: This deadline will correspond to the desired frame rate.
+		\item Return value: None.
+	\end{itemize}
+	\end{flushleft}
+\end{framed}
+
+\begin{framed}
+	\begin{flushleft}	
+		\emph{\textbf{{void sl\_adapt()}}}
+		Performs the service level adaptation, notifies the resource manager and writes some logging.
+		\begin{itemize}
+		\item Return value: None.
+		\end{itemize}
+		\end{flushleft}
+\end{framed}
+
+The function which initiates the video pipeline is called \emph{cache\_video}, located in \emph{video.c} and is described below. The function is quite large but described is only what is relevant for this thesis.
+\begin{verbatim}
+static GstElement *
+cache_video (gpointer key, Props * props, gpointer * user_data)
+{
+  ...
+\end{verbatim}
+At first all the different elements for the pipeline is defined, including the identity element, which is called \emph{gtrm\_sl\_adapt}. A call to \emph{setup\_sl\_adapt} sets up the what is needed for the service level adaptation.
+\begin{verbatim}
+  GstElement *gtrm_sl_adapt = NULL;
+  ...
+  setup_sl_adapt (service_level, epsilon, weight, deadline_seconds);
+  ...
+\end{verbatim}
+The identity element is now created by the following calls and the \emph{hand-off-signal} of the element is enabled and set up.
+\begin{verbatim}
+  gtrm_sl_adapt = gst_element_factory_make ("identity", "gtrm");
+  g_object_set (G_OBJECT (gtrm_sl_adapt), "signal-handoffs",
+  TRUE, NULL);
+  g_signal_connect (gtrm_sl_adapt, "handoff", 
+  G_CALLBACK (gtrm_sl_cb), src);
+  ...
+\end{verbatim}
+The last thing to be done is to actually insert the element into the pipeline, which can be done by adding the element to the parameters of the following function-calls.
+\begin{verbatim}
+    gst_bin_add_many (GST_BIN (p), src, gtrm_sl_adapt, convert,
+    caps_filter, sink, NULL);
+    ...
+    gst_element_link_many (src, gtrm_sl_adapt, convert, 
+    caps_filter, sink, NULL)
+    ...
+}
+\end{verbatim}
+
+The callback function consists of a single call to \emph{sl\_adapt()}, which is defined in another file called \emph{sl\_adapt.c}. This adaptation looks more or less identical to that in the test application described above.
+\begin{verbatim}
+static void
+gtrm_sl_cb (GstElement * identity, GstBuffer * buf, 
+           GstElement * src)
+{
+  sl_adapt();
+}
+\end{verbatim}
 
 \section{Resource Allocation}
 \begin{figure}
@@ -1352,7 +1430,6 @@ The sequence diagram in figure \ref{fig:sdiag} describes the flow of execution t
 The first important part in the application is the calculation of its performance, the matching function, here called \emph{calculate\_performance()}. The matching function has to be properly calculated or else the application will not be managed correctly. According to this matching function the service level will then be adapted, \emph{update\_service\_level()} and finally the resource manager will be notified by the \emph{send\_performance()} call.
 
 The resource manager part basically consists of two parts that sort of runs in parallel. Upon receiving the performance of an application, the handler or dispatch function corresponding to such an event is executed. In the diagram it is labled as \emph{gtrm\_dispatch}, and its main responsibilities is to read and parse the received message and then update the hash-map which contains the relevant data about the applications being managed. Meanwhile the resource management runs as a part of the main-loop, and it uses the information in the hash-map previously mentioned to calculate the virtual platforms, \emph{calculate\_virtual\_platforms}. These virtual platforms are then used to set the amount of CPUShares which will be given to each application in the call to \emph{apply\_virtual\_platforms}. To get a better service level adaptation, the performance number which depends on how much the virtual platform has been changed is sent to the application \emph{send\_performance\_number}.
-
 
 
 \chapter{Use cases}
@@ -1662,6 +1739,25 @@ Indicates the end of a job.
 \item id: Identifier of the job that has completed.
 \item Return value: Exit status.
 \end{itemize}
+
+\section{sl\_adapt.c}
+Used by the streaming application, \emph{monolith}, to incorporate service level features.
+\subsection{void setup\_sl\_adapt(float service\_level, double epsilon, double weight, double deadline\_seconds)}
+Sets up deadline for computing the matching function and sets up the IPC with the resource management.
+\begin{itemize}
+\item service\_level: Initial service level.
+\item epsilon: Constant which specifies service level adaptation rate.
+\item weight: Determines how the much of the adaptation will be done by altering the service level or the changing the amount of resources.
+\item deadline\_seconds: This deadline will correspond to the desired frame rate.
+\item Return value: None.
+\end{itemize}
+
+\subsection{void sl\_adapt()}
+Performs the service level adaptation, notifies the resource manager and writes some logging.
+\begin{itemize}
+\item Return value: None.
+\end{itemize}
+
 
 
 \end{document}
