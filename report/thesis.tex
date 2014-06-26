@@ -981,7 +981,7 @@ compliant structure.
 	\end{flushleft}	
 \end{framed}
 
-\subsection{Resource management loop}
+\subsection{Resource Manager Update}
 The resource manager is recomputing the amount of resource to be given to
 the applications, and reapplied until the applications are not completely
 satisfied. The following code is contained inside the 
@@ -1229,143 +1229,157 @@ followed be a necessary call to apply the changes.
   that compare to the CPUShares? Is it exact? Is it approximate? Is it
   ensured? Can the application get more resource?}
 
-% --- MARTINA TODO from here
 
-\section{SL update in the application}
-The applications using the GTRM will have similar structure with the main difference in how they implement the SL/cpu-requirement relationship. 
-The SL will affect some parameters that affect the cpu requirement and this is different from application to application. 
-The SL adaptation will need to be run periodically and a socket needs to be established and read during the SL adaptation. 
-The test-application is shown below to give an idea about how an application can implement the SL adaptation and what functions that are provided by \emph{gtrm\_app\_lib.c}.
-The test application and library are altered versions of the test application and library \emph{jobsignaler.c} created at the Department of Control at Lunds University.
-Most modifications are made in order to allow the use of  sockets instead of the initial shared memory approach.
+\section{Service Level Update}
 
+The applications using the GTRM framework have all a similar structure,
+the main difference being how they implement the update in the service
+level to match the resource allocation. In fact, the service level changes
+are mapped into some parameter changes, that in turn affect the resource
+requirement. This is different on a per application basis and every
+application developer knows better what to change within the application
+to make it require less or more resource and provide a worse or better
+quality of service.
 
+In general, however, a few elements can be identified. The service level
+adaptation should run periodically and a socket nees to be established
+and read during the adaptation phase. Below, we show an example of
+test application, to show how the service level adaptation can be performed
+and what functions are provided by \texttt{gtrm\_app\_lib.c}.
+The test application and library are altered versions of the test 
+application and library \texttt{jobsignaler.c} used within~\cite{gtrm}.
+The modifications are mainly due to the presence of sockets, instead of
+the initial shared memory approach used by \texttt{jobsignaler}.
 
-First some declarations:
-\begin{verbatim}
-...
+\begin{lstlisting}
+// Initial declarations, some not reported
+// because irrelevant [...]
 uint id;
 _application_h* myself;
-...	
 
-
-int main(int argc, char* argv[]) {
-...
-	//parsed from char* argv[].
+int main (int argc, char* argv[]) {
+	// parsing information from char* argv[].
 	float service_level;
 	float a_cpu, b_cpu;
 	float a_mem, b_mem;
 	double epsilon, weight;
 	double deadline_seconds;
 	
-		
 	int jobs;
 	double performance;
-\end{verbatim}
+\end{lstlisting}
 
-
-Create the socket adress and pass it as an argument to gtrm\_lib\_setup\_socket(). This creates a socket with a fd linked to a file with this name.
-\begin{verbatim}
+The application creates the socket adress and pass it as an argument to 
+\texttt{gtrm\_lib\_setup\_socket}. The file descriptor is then linked to
+a file with the application name.
+\begin{lstlisting}
 	char* sock_path = "/root/temp/app";
 	unsigned int r_nbr = random_u64();
 	char* sock_name[100];
-
 	sprintf(sock_name,"%s/%u",sock_path,r_nbr);
 	gtrm_lib_setup_socket(sock_name);
-\end{verbatim}
-
+\end{lstlisting}
 
 \begin{framed}
 	\begin{flushleft}		
 		\emph{\textbf{{int gtrm\_lib\_setup\_socket(char* filename)}}}
-		Sets up a socket to communicate with the resource manager. Reads an environmental variable set by systemd for the gtrm socket adress and creates a socket adress struct.
+		Sets up a socket to communicate with the resource manager. 
+    Reads an environment variable set by \texttt{systemd} for the GTRM
+    socket adress and creates a socket adress struct.
 		\begin{itemize}
-		\item filename: The socket needs a file to work, the parameter specifies its path.
+		\item filename: The socket needs a file to work, the parameter 
+      specifies its path.
 		\item Return value: Zero, not used.
 		\end{itemize}
 	\end{flushleft}
 \end{framed}
 
-
-
-Next the arguments for the  	gtrm\_lib\_set(..) functions are initialized and passed.
-\begin{verbatim}	
-
+Subsequently the arguments for the \texttt{gtrm\_lib\_set} function
+are initialized and passed.
+\begin{lstlisting}	
 	myself->weight = weight;
 	myself->application_id = getpid();
-	uint64_t deadline = (unsigned int) ((double)1000000000 
-                        * deadline_seconds);
+	uint64_t deadline = (unsigned int) 
+    ((double)1000000000 * deadline_seconds);
 	uint64_t ert[1] = {deadline};
 	gtrm_lib_set(myself, 1, ert);
-	
-\end{verbatim}
-An application can have different job types corresponding to different deadlines. The test application only has one job type. 
+\end{lstlisting}
+Applications can have different job types corresponding to different 
+deadlines within the same code. For example, this is the case of a video
+decoder/encoder, that could process different types of frames (I/B/P)
+with different requirements. Encoding an I frame requires to simply
+transfer the information from one place to the other, while encoding a B and
+P frame, in fact, require to compute the differences between the previous
+I frame and eventually the subsequent ones. The test application has 
+only one job type but the framework directly supports multiple job types. 
 
 \begin{framed}
 	\begin{flushleft}		
-		\emph{\textbf{{int gtrm\_lib\_set(\_application\_h* a, uint types, uint64\_t* ert)}}}
-		Initializes the application struct with job types and their expected response times.
+		\emph{\textbf{{int gtrm\_lib\_set
+    (\_application\_h* a, uint types, uint64\_t* ert)}}} \newline
+		Initializes the application struct with job types and their 
+    expected response times.
 		\begin{itemize}
-		\item a: Struct representing an application.
-		\item types: Number of different job types.
-		\item ert: Array of expected response time for each job type.
-		\item Return value: Exit status of function.
-\end{itemize}
-	\end{flushleft}
+		  \item a: Struct representing an application.
+		  \item types: Number of different job types.
+		  \item ert: Array of expected response time for each job type.
+		  \item Return value: Exit status of function.
+    \end{itemize}
+  \end{flushleft}
 \end{framed}
 
+The main loop of the program follows. The basic structure is described as 
+the left part of Figure~\ref{fig:sdiag}.
 
-
-Next is the main loop of the program. The basic structure is described as the left part in figure \ref{fig:sdiag}.
-
-\begin{verbatim}
+\begin{lstlisting}
 	for(;;) {		
-		
-		int64_t cpu_requirement = a_cpu * service_level + b_cpu;
-		int64_t mem_requirement = a_mem * service_level + b_mem;
-
+		int64_t cpu_requirement = a_cpu * service_level 
+      + b_cpu;
+		int64_t mem_requirement = a_mem * service_level 
+      + b_mem;
 		int type = 0;
-		id = gtrm_lib_jobsignaler_signalstart(myself, type);
-		
+		id = gtrm_lib_jobsignaler_signalstart
+      (myself, type);		
 		// Do the required work	
-		do_work(cpu_requirement, mem_requirement, NOISE_PERCENTAGE);
-		
+		do_work(cpu_requirement, mem_requirement, 
+      NOISE_PERCENTAGE);	
 		gtrm_lib_jobsignaler_signalend(myself, id);
-		id = 0;
-											
-		performance = gtrm_lib_get_performance_number(myself, type);
+		id = 0;										
+		performance = gtrm_lib_get_performance_number
+      (myself, type);
 		
-		// I want to adapt only if needed
+		// Adapt only if needed
 		if (performance < -0.01 || performance > 0.01) {
-			myself->happy = false;
-						
+			myself->happy = false;					
 			// send performance to systemd
-			gtrm_lib_send_performance(myself, performance);				
-			
-			//if there is no multiplier to read use the simple SL adaption
-			if(gtrm_lib_update_performance_multiplier(myself) == 0)
-				service_level+= epsilon*service_level*(myself->performance_multiplier-1);
+			gtrm_lib_send_performance(myself, performance);					
+			// if there is no multiplier to read use the 
+      // simple service level adaption
+			if (gtrm_lib_update_performance_multiplier
+          (myself) == 0)
+				service_level += epsilon * service_level *
+          (myself->performance_multiplier-1);
 			else
-				service_level += epsilon * (performance * service_level);	
-													
+				service_level += epsilon * 
+          (performance * service_level);	
+		  // saturation											
 			if (service_level < MINIMUM_SERVICE_LEVEL)
 				service_level = MINIMUM_SERVICE_LEVEL;
 			if (service_level != service_level) // avoid nans
 				service_level = 1.0;
-
-		} else if(myself->happy==false) {			
+		} else if(myself->happy == false) {			
 			myself->happy = true;
 			gtrm_lib_send_performance(myself, performance);
 		}	
 	}	
 }
-\end{}
-\end{verbatim}
-Here the following functions are used:
+\end{lstlisting}
 
+In the code, the following functions are used.
 \begin{framed}
 	\begin{flushleft}		
-		\emph{\textbf{{int gtrm\_lib\_signalstart(\_application\_h* a, uint type)}}}
+		\emph{\textbf{{int gtrm\_lib\_signalstart
+      (\_application\_h* a, uint type)}}} \newline
 				Indicates the start of a job.
 				\begin{itemize}
 				\item a: Struct for representing the application.
@@ -1375,10 +1389,10 @@ Here the following functions are used:
 	\end{flushleft}
 \end{framed}
 
-
 \begin{framed}
 	\begin{flushleft}	
-			\emph{\textbf{{int gtrm\_lib\_signalend(\_application\_h* a, uint id)}}}
+			\emph{\textbf{{int gtrm\_lib\_signalend
+        (\_application\_h* a, uint id)}}} \newline
 			Indicates the end of a job.
 			\begin{itemize}
 			\item a: Struct for representing the application.
@@ -1388,33 +1402,37 @@ Here the following functions are used:
 	\end{flushleft}
 \end{framed}
 
-
 \begin{framed}
 	\begin{flushleft}	
-			\emph{\textbf{{double gtrm\_lib\_get\_performance\_number(\_application\_h* a, int job\_type)}}}
-			Calculates the peformance (matching function) by averaging the performance of the last ten jobs of a specified type.
-			\begin{itemize}
-			\item a: Struct representing an application.
-			\item type: Which job type for which we want to calculate the performance.
-			\item Return value: Applications performance.
-			\end{itemize}
+		\emph{\textbf{{double gtrm\_lib\_get\_performance\_number \newline
+    (\_application\_h* a, int job\_type)}}} \newline
+		Calculates the peformance (matching function) by averaging 
+    the performance of the last ten jobs of a specified type.
+		\begin{itemize}
+		\item a: Struct representing an application.
+		\item type: Which job type for which we want to calculate 
+      the performance.
+		\item Return value: Applications performance.
+		\end{itemize}
 	\end{flushleft}
 \end{framed}
 
 \begin{framed}
 	\begin{flushleft}	
-			\emph{\textbf{{int gtrm\_send\_performance\_multiplier(double pm, int fd, struct sockaddr *sa)}}}
-			Sends a performance multiplier to an application via sockets.
-			\begin{itemize} 
-			\item pm: Performance multiplier to send.
-			\item fd: File descriptor used to send the performance multiplier.
-			\item sa: Socket address.
-			\item Return value: Always zero.
-			\end{itemize}
+		\emph{\textbf{{int gtrm\_send\_performance\_multiplier \newline
+    (double pm, int fd, struct sockaddr *sa)}}} \newline
+		Sends a performance multiplier to an application via sockets.
+		\begin{itemize} 
+		\item pm: Performance multiplier to send.
+		\item fd: File descriptor used to send the performance multiplier.
+		\item sa: Socket address.
+		\item Return value: Always zero.
+		\end{itemize}
 	\end{flushleft}
 \end{framed}
 
 \section{Video Streaming}
+
 The work carried out in the video streaming part of the project has still not been completely finished, but this is the proposed solution and implementation.
 
 The streaming service, named \emph{Monolith}, streams both video and audio, handles image compression and filtering, manages several different streams, such as H.264 and MJPEG streams. It is this application that has been modified to implement the service-level feature by altering the image quality. This is done by modifying the pipeline which makes up the video-streaming.
