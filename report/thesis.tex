@@ -20,6 +20,9 @@
 
 \newcommand{\fixed}[1]
   {\todo[inline,color=blue!30,caption={}]{\textbf{Fixed:} #1}}
+\newcommand{\newstuff}[1]
+  {\todo[inline,color=green!30,caption={}]{\textbf{newstuff:} #1}}
+
 
 \begin{document}
 
@@ -575,6 +578,8 @@ the application. The aim of GTRM is to bring $f_i$ to zero for all the
 running applications. It is assumed that $f_i$ is measurable also for the
 non-service level aware applications. The matching function is updated as
 the average of the measured value for the last ten jobs.
+\newstuff{Resource management in this paper is restricted to cpu, cgroups have a controller to handle memory management as well, the \emph{memory} controller, 
+which is not installed on the camera.}
 
 
 \section{Adaptation}
