@@ -6,6 +6,7 @@
 \usepackage[left=2.5cm,right=2.5cm,top=3cm,bottom=5cm]{geometry}
 \usepackage{graphicx}
 \usepackage{listings}
+\usepackage{color}
 \usepackage{url}
 \usepackage{verbatim}
 \usepackage[]{algorithm2e}
@@ -18,6 +19,31 @@
   {\todo[inline,color=red!30,caption={}]{\textbf{Martina:} #1}}
 
 \begin{document}
+
+\lstset{
+  language=C,
+  basicstyle=\footnotesize,
+  numbers=left,
+  numberstyle=\footnotesize,
+  stepnumber=1,
+  numbersep=5pt,
+  backgroundcolor=\color{white},
+  showspaces=false,
+  showstringspaces=false,
+  showtabs=false,
+  frame=leftline,
+  tabsize=2,
+  captionpos=b,
+  breaklines=true,
+  breakatwhitespace=false,
+  escapeinside={\%*}{*)},
+  xleftmargin=2\parindent,
+  keywordstyle=\bfseries\color{green!40!black},
+  commentstyle=\itshape\color{purple!90!black},
+  identifierstyle=\color{black},
+  stringstyle=\color{orange},
+}
+
 \begin{titlepages}
 \author{Fredrik Johnsson and Olle Svensson}
 \title{Resource management and prioritization in an embedded Linux system}
@@ -616,306 +642,341 @@ algorithm. CPUShares are used here in place of bandwidth.
   and bandwidth? From what I understand, it makes a difference in the
   multicore case.}
 
-\section{IPC}
-The resource management is implemented as a part of systemd, with all of the resource management source code integrated into systemds. If an application has a poor matching function it sends information to systemd via UNIX-sockets. The interprocess communication (IPC) consists of one socket in systemd and one for each application that the RM is monitoring. The socket setup was implemented by more or less copying the “Notify” feature of systemd which is used by certain services that want to for example notify systemd that they have started or about other status changes [sysd-notify].
-Systemd uses epoll to find out which sockets has received new messages. The events returned from epoll\_wait() are then put in a prioritized queue. This prioritized queue is then popped and the callback function for top most event is called. This means that a message might not be read immediately after being read from the epoll buffer. Most of the functions used to manage epoll are located in “sd-event”. 
+\section{Inter-Process Communication}
 
+The resource manager is implemented within \texttt{systemd} and its code
+is therefore integrated into the \texttt{systemd} code. If an application
+has a poor matching function it should send information to \texttt{systemd}
+via UNIX-sockets. The Inter-Process Communication (IPC) consists of one 
+socket declared within the \texttt{systemd} code and one for each application
+that the resource manager should monitor. 
+The socket setup is inspired by the ``Notify'' feature of \texttt{systemd}
+which is used by services that want to notify \texttt{systemd} that they 
+have started or about status changes [sysd-notify].
 
-The epoll\_wait function is shown below
+\subsection{Retrieving new events}
+
+The system uses \texttt{epoll} to find out which sockets has received new 
+messages. The events returned from \texttt{epoll\_wait()} are then put in 
+a prioritized queue. This first element in the prioritized queue is then 
+dequeued, calling its callback function. This means that a message might 
+not be read immediately after being retreived from the buffer. Most of the
+functions used to manage \texttt{epoll} are located in \texttt{sd-event}.
+
+\martina{What is sd-event?}
+
+The \texttt{epoll\_wait} prototype is
 \begin{verbatim}
-
-
 int epoll_wait(int epfd, struct epoll_event *events,
-                      int maxevents, int timeout);	 
+               int maxevents, int timeout);	 
 \end{verbatim}
-When there are messages to read on one of the fd:s being watched by the epoll instance referred to by the file descriptor \emph{epfd}, epoll\_wait returns the number of fd:s that have new messages to be read.
-The epoll\_event *\emph{events} points to a buffer that will be filled with the incoming events and that will contain a maximum of \emph{maxevents}.
-The epoll\_event structure is shown below:
+and the function behaves as follows. When there are messages to be read on 
+one of the file descriptors observed by the \texttt{epoll} instance 
+identified with the file descriptor \texttt{epfd}, the function returns 
+the number of file descriptors that have new messages to be read. 
 
-%\verbatiminput{pseudo_epoll.c}
+If this happens, \texttt{epoll\_event *events} points to a buffer that 
+the function fills with the incoming events. The buffer in the end contains
+a maximum of \emph{maxevents}. The function waits for a maximum
+\texttt{timeout} value.
 
-\begin{verbatim}
+The \texttt{epoll\_event} structure follows.
+\begin{lstlisting}
 typedef union epoll_data {
- void    *ptr;
- int      fd;
- uint32_t u32;
- uint64_t u64;
+  void    *ptr;
+  int      fd;
+  uint32_t u32;
+  uint64_t u64;
 } epoll_data_t;
 
 struct epoll_event {
- uint32_t     events;    /* Epoll events */
- epoll_data_t data;      /* User data variable */
+  uint32_t     events; /* Epoll events */
+  epoll_data_t data;   /* User data variable */
 };
-\end{verbatim}
+\end{lstlisting}
 
-The void pointer \emph{epoll\_event.data.ptr} will be set to point to a \emph{sd\_event\_source} structure which is the element that is put in the prioritized queue. This element contains information concerning the prioritization and  defines the event type but also contains a structure containing the fd for the event and the callback function to be used when such an event is received.
-In each iteration of the main loop the function \emph{sd\_event\_run} is called, the part of the code that is instructive in this function is shown below:
+The void pointer \texttt{epoll\_event.data.ptr} will be set to point to a 
+\texttt{sd\_event\_source} structure. This structure is the element that is
+enqueued into the prioritized queue. The element contains information
+concerning the event priority and defines the event type. It also point to
+a structure containing the file descriptor for the event and its callback
+function.
 
-\begin{verbatim}
-_public_ int sd_event_run(sd_event *e, uint64_t timeout) {
+The function \texttt{sd\_event\_run} is called once for every iteration of
+the main loop. The relevant code in this function is shown below.
+\begin{lstlisting}
+_public_ int sd_event_run(sd_event *e, 
+  uint64_t timeout) {
+  struct epoll_event *ev_queue;
+  unsigned ev_queue_max;
+  sd_event_source *p;
+  int r, i, m,timeout;        
+  ev_queue = new(struct epoll_event, ev_queue_max);
+  m = epoll_wait(e->epoll_fd, ev_queue, 
+    ev_queue_max,timeout);
 
-struct epoll_event *ev_queue;
-unsigned ev_queue_max;
-sd_event_source *p;
-int r, i, m,timeout;
-            
-ev_queue = newa(struct epoll_event, ev_queue_max);
+  for (i = 0; i < m; i++) {
+    if (ev_queue[i].data.ptr == 
+        INT_TO_PTR(SOURCE_MONOTONIC))
+      r = flush_timer(...);
+    else if (ev_queue[i].data.ptr == 
+        INT_TO_PTR(SOURCE_REALTIME))
+      r = flush_timer(...)
+    else if (ev_queue[i].data.ptr == 
+        INT_TO_PTR(SOURCE_SIGNAL))
+      r = process_signal(e, ev_queue[i].events);
+    else if (ev_queue[i].data.ptr == 
+        INT_TO_PTR(SOURCE_WATCHDOG))
+      r = flush_timer(e, e->watchdog_fd, 
+        ev_queue[i].events, NULL);
+    else
+      r = process_io(e, ev_queue[i].data.ptr, 
+        ev_queue[i].events);
+  }
 
-m = epoll_wait(e->epoll_fd, ev_queue, ev_queue_max,timeout);
-
-for (i = 0; i < m; i++) {
-  if (ev_queue[i].data.ptr == INT_TO_PTR(SOURCE_MONOTONIC))
-    r = flush_timer(...);
-  else if (ev_queue[i].data.ptr == INT_TO_PTR(SOURCE_REALTIME))
-    r = flush_timer(...)
-  else if (ev_queue[i].data.ptr == INT_TO_PTR(SOURCE_SIGNAL))
-    r = process_signal(e, ev_queue[i].events);
-  else if (ev_queue[i].data.ptr == INT_TO_PTR(SOURCE_WATCHDOG))
-    r = flush_timer(e, e->watchdog_fd, ev_queue[i].events, NULL);
-  else
-    r = process_io(e, ev_queue[i].data.ptr, ev_queue[i].events);
+  p = event_next_pending(e);
+  r = source_dispatch(p);
+  return r;
 }
+\end{lstlisting}
+\martina{Instead of the nested else if, wouldn't it be better to have a
+  switch in the code above?}
 
+The \texttt{epoll\_wait} function is called and a for loop goes through 
+all the file descriptors and checks what their event type is to call the
+appropriate function to add them to the prioritized queue.
+The GTRM file descriptor is linked to a \texttt{IO\_SOURCE} event which 
+means that the function \texttt{process\_io()} will be called in case there
+is an event on such file descriptor.
 
-p = event_next_pending(e);
-
-r = source_dispatch(p);
-
-return r;
+Subsequently, the next event is dequeued from the queue and dispatched by
+calling \texttt{event\_next\_pending()}. The code of this function is
+shown below.
+\begin{lstlisting}
+static sd_event_source* 
+  event_next_pending(sd_event *e) {
+	  sd_event_source *p;
+  	p = prioq_peek(e->pending);
+  	if (!p)
+  		  return NULL;
+  	if (p->enabled == SD_EVENT_OFF)
+  		  return NULL;
+  	return p;
 }
-\end{verbatim}
-
-As can be seen, the \emph{epoll\_wait} function is called and a for loop goes through all of the fd:s and checks what their event type is to call the appropriate function to add them to the prioritized queue.
-The gtrm fd is linked to a \emph{IO\_SOURCE} event which means that the function \emph{process\_io()} will be called.
-
-Next the queue is peeked to get the next event in the queue to be dispatched by calling event\_next\_pending():
-\begin{verbatim}
-	static sd_event_source* event_next_pending(sd_event *e) {
-	sd_event_source *p;
-
-	p = prioq_peek(e->pending);
-	if (!p)
-		  return NULL;
-
-	if (p->enabled == SD_EVENT_OFF)
-		  return NULL;
-	return p;
-	}
-\end{verbatim}
-
-Finally the \emph{source\_dispatch} function is called to call the callback function linked to the popped top \emph{sd\_event\_source*} element.
-
-\begin{verbatim}
-	static int source_dispatch(sd_event_source *s) {
+\end{lstlisting}
+Finally, the \texttt{source\_dispatch} function is called to activate 
+the callback function linked to the top \texttt{sd\_event\_source*} 
+element.
+\begin{lstlisting}
+static int source_dispatch(sd_event_source *s) {
 	int r = 0;
-
 	switch (s->type) {
-
-	case SOURCE_IO:
-		  r = s->io.callback(s, s->io.fd, s->io.revents, s->userdata);
-		  break;
-
-	case SOURCE_MONOTONIC:
-		  r = s->time.callback(s, s->time.next, s->userdata);
-		  break;
-
-	case SOURCE_REALTIME:
-		  r = s->time.callback(s, s->time.next, s->userdata);
-		  break;
-	.
-	.
-	.
-		  r = s->exit.callback(s, s->userdata);
-		  break;
-
-	case SOURCE_WATCHDOG:
-		  assert_not_reached("Wut? I shouldn't exist.");
+  	case SOURCE_IO:
+  		  r = s->io.callback(s, s->io.fd, 
+          s->io.revents, s->userdata);
+  		  break;
+  	case SOURCE_MONOTONIC:
+  		  r = s->time.callback(s, s->time.next, 
+          s->userdata);
+  		  break;
+  	case SOURCE_REALTIME:
+  		  r = s->time.callback(s, s->time.next, 
+          s->userdata);
+  		  break;
+  	/* More cases covered */
+  	case SOURCE_WATCHDOG:
+  		  assert_not_reached("Wut? I shouldn't exist.");
 	}
-	
 	return 1;
-	}
-\end{verbatim}  
-
-\subsection{Setting up the socket}
-
-The socket is created and added to the epoll instance in \emph{manager\_setup\_gtrm(...)}, below is the instructive part of the code in \emph{manager\_setup\_gtrm(...)}:
-
-
-
-
-\begin{framed}
-		\begin{flushleft}
-		
-			\textbf{\emph{{static int manager\_setup\_gtrm(Manager *m)}}} \newline
-			Used to setup the socket, event source and file descriptor for the resource manager. Called from manager\_startup and manager\_reload.
-			\begin{itemize}
-			\item m: Reference to the manager.
-			\item Return value: Zero if function ran correctly, otherwise it is set to the corresponding error number.
-			\end{itemize}
-		\end{flushleft}	
-\end{framed}
-
-
-
-
-
-
-
-The socket is created in the function  with a call to the socket(..) function.
-\begin{verbatim}
-fd = socket(AF_UNIX, SOCK_DGRAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0);
-\end{verbatim}
-
-The socket is set to use the protocol family \emph{AF\_UNIX}, which provides efficient communication on the same machine. \emph{SOCK\_DGRAM} sets the socket type to be datagram since there is no need to resend missed obsolete data and no messages are expected to be lost when sent over the same machine anyway. \emph{SOCK\_NONBLOCK} prevents the socket from blocking during a read() call when there is no data to read which should not matter here since the polling makes sure that there is always something to read. A random address name is created and assigned to the socket by a call to bind(). Next the fd for the socket needs to be added to the epoll instance, and an epoll\_event needs to be associated to the fd. The \emph{epoll\_event} contains a pointer to a \emph{sd\_event\_source} that has been described earlier. This is all done in the call:  
-
-\begin{verbatim}
-r = sd_event_add_io(m->event, &m->gtrm_event_source, m->gtrm_fd,
- EPOLLIN, manager_dispatch_gtrm_fd, m);
-\end{verbatim}
-
-Now the gtrm socket has been added to the poll and a corresponding event will be returned if there is a message on the socket when calling \emph{epoll\_wait(...)}. 
-The last thing done in \emph{manager\_setup\_gtrm(...)} is to give the \emph{gtrm\_event\_source} a priority, this affects how the prioritized queue sorts messages from this source type and is set to the same as notify messages.
-
-Once the socket is setup and ready a environmental variable is set in Linux containing the address to the gtrm-socket. This is how applications will know where to send their messages to.
-
-
-\subsubsection{The callback function for gtrm socket:}
-Once an event has been popped from the prioritized queue the callback function \emph{static int manager\_dispatch\_gtrm\_fd(...)} is called. 
-The callback function contains all the code that should execute when a message is received on the gtrm socket. The function extracts the data from the message, which is the PID of the sending application, its performance, whether it is satisfied or not and the weight attribute. 
-The hashmap, which contains all the applications that are managed by GTRM, is then updated with this new data. 
-
-
-
-
-The instructive parts of the function are shown below:
-
-\begin{framed}
-		\begin{flushleft}
-			\textbf{\emph{static int manager\_dispatch\_gtrm\_fd(sd\_event\_source *source, int fd, unit32\_t revents, void *userdata)}}\newline
-				Called when we receive the performance of an application.
-				\begin{itemize}
-				\item source: source of the event.
-				\item fd: file descriptor to the event source.
-				\item revents: Set by the kernel to indicate what event on the file descriptor that triggered the call to this function. In our case it is always the incoming event.
-				\item userdata: In this case it contains a reference to the manager.
-				\item Return value: Not used, always zero.
-				\end{itemize}
-		\end{flushleft}	
-\end{framed}
-
-
-
-
-
-First some declarations and initializations
-
-\begin{verbatim}
-static int manager_dispatch_gtrm_fd(sd_event_source *source, int fd,
-uint32_t revents, void *userdata) {
-
-Manager *m = userdata;    		    
-//will contain the read message
-char buf[1024];
-//will be set to the byte size of the read message
-int n;
-//will contain the senders adress
-struct sockaddr_un *from;
-socklen_t fromlen;
-//stores RM data about the applications being managed
-rm_app_t *app;
-rm_app_t *app2;	
-
-fromlen = 1024;
-\end{verbatim}
-
-Here the \emph{rm\_app\_t} structure is used:
-
-\begin{framed}
-		\begin{flushleft}
-			\textbf{\emph{struct rm\_app\_t}}
-			Represents an application being managed and consists of the following fields.
-			\begin{itemize}
-			\item tid: Applications PID.
-			\item vp: Virtual platform.
-			\item vp\_old: Previous virtual platform.
-			\item performance: Performance, or matching function of the application.
-			\item weight: The current "weight" of the application.
-			\item happy: Indicates if the application is happy with its current performance.
-			\item sa: Socket Address, used to send back the performance multiplier.
-			\end{itemize}
-		\end{flushleft}	
-\end{framed}
-
-
-
-
-
-
-Now a while loop reads the socket one message each iteration until there are no more unread messages. 
-
-\begin{verbatim}
-do{		
-
-	memset(buf,'\0',1023);
-	from = calloc(1,sizeof(struct sockaddr_un));
-	app = calloc(1,sizeof(rm_app_t));	
-	n = recvfrom(fd,buf,1024,0,(struct sockaddr *) from,&fromlen);
-
-	//n is negative if there was no message if socket is non blocking
-	n = recvfrom(fd,buf,1024,0,(struct sockaddr *) from,&fromlen);
-	if(n<0)
-		break;
-	if(n>1024){//2do avoid magic numbers
-		log_error("manager_dispatch_gtrm_fd:received too big message");
-	}	
-
-	gtrm_char2gtrmstruct(buf, app);
-	pid_t pid = app->tid;
-	app->sa = from;
-
-	if(hashmap_get(m->gtrm_apps, pid) == NULL) {
-		hashmap_put(m->gtrm_apps, pid, app);
-	} else {
-		app2 = hashmap_get(m->gtrm_apps, pid);
-		gtrm_update_rm_struct(app,app2);
-	}															
-
-}while(n>0);
-The callback function which is registered and linked to the events for the gtrm socket when the socket communication is established, contains all the code that should execute when a message is received on the gtrm socket. The function extracts the data from the message, which is the PID of the sending application, its performance, whether it is satisfied or not and the weight attribute. 
-The hashmap, which contains all the applications that are managed by GTRM, is then updated with this new data. 
-m->update_gtrm = true;
-
-return 0;
 }
-\end{verbatim}
+\end{lstlisting}
 
-The data from a message is used to create a \emph{rm\_app\_t} struct. If the hashmap already contains a \emph{rm\_app\_t} struct for the application, the \emph{rm\_app\_t} in the hashmap is updated by calling the function 
-\emph{gtrm\_update\_rm\_struct(app,app2)}, otherwise it is added to the hashmap with the application pid as the key.
+\subsection{The GTRM socket}
 
-\emph{gtrm\_lib} functions used above:
+The socket used by the applications to communicate with the resource
+manager and by the resource manager to retrieve information about the
+application health is setup as follows.
 
+The socket is created and added to the \texttt{epoll} instance in the
+function \texttt{manager\_setup\_gtrm}, some information about it
+follows.
 
 \begin{framed}
-		\begin{flushleft}
-			\textbf{\emph{void gtrm\_char2gtrmstruct(char* str, rm\_app\_t *re)}}
-			Extracts data from a received string and store it as a struct instead. The data sent from an application consists of the PID, performance, weight and if the application is satisfied or not.
-			\begin{itemize} 
-			\item str: String to extract data from.
-			\item re: Struct to hold the extracted data.
-			\item Return value: None, the result is stored in re.
-			\end{itemize}
-		\end{flushleft}	
+	\begin{flushleft}
+		\textbf{\emph{{static int manager\_setup\_gtrm(Manager *m)}}} 
+    \newline
+		Used to setup the socket, event source and file descriptor for the
+    resource manager. Called from \texttt{manager\_startup} and 
+    \texttt{manager\_reload}.
+		\begin{itemize}
+		\item m: Reference to the manager.
+		\item Return value: Zero if function ran correctly, otherwise it is 
+      set to the corresponding error number.
+		\end{itemize}
+	\end{flushleft}	
 \end{framed}
 
-
+This function contains the socket creation, obtained through
+\texttt{socket}:
+\begin{verbatim}
+fd = socket(AF_UNIX, 
+  SOCK_DGRAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0);
+\end{verbatim}
+The socket uses the protocol family \texttt{AF\_UNIX}, which provides
+efficient communication on the same machine. \texttt{SOCK\_DGRAM} sets 
+the socket type to be datagram since there is no need to resend missed
+obsolete data and no messages are expected to be lost when sent over the 
+same machine. \texttt{SOCK\_NONBLOCK} prevents the socket from blocking 
+during a \texttt{read} call when there is no data to be read. A random 
+address name is created and assigned to the socket by a call to 
+\texttt{bind}. The file descriptor of the socket is then added to the 
+\texttt{epoll} instance, and an \texttt{epoll\_event} is associated to
+the file descriptor. The \texttt{epoll\_event} contains a pointer to 
+an \texttt{sd\_event\_source}. These functionalities are achieved through
+the call to \texttt{sd\_event\_add\_io}.
 
 \begin{verbatim}
-void gtrm_update_rm_struct(rm_app_t *src,rm_app_t *dest){
-	dest->performance = src->performance;			
-}
+r = sd_event_add_io(m->event, &m->gtrm_event_source, 
+  m->gtrm_fd, EPOLLIN, manager_dispatch_gtrm_fd, m);
 \end{verbatim}
 
+The GTRM socket has been therefore added to the poll and a corresponding 
+event is subsequently generated whenever a message is sent to that socket. 
+Finally, in the function \texttt{manager\_setup\_gtrm} a priority is given
+to the \texttt{gtrm\_event\_source}. This affects how the prioritized 
+queue sorts messages from this source type and the priority is set equally
+to the priority for notify messages.
 
+Once the socket is setup and ready, a environment variable is set in 
+Linux containing the address to the GTRM-socket. The environment variable is
+used by the applications to retrieve the destination of the messages to be
+sent about their performance.
+
+\subsubsection{GTRM socket's callback function:}
+Once an event has been popped from the prioritized queue the callback 
+function \texttt{manager\_dispatch\_gtrm\_fd} is invoked. 
+The callback function contains all the code that should be executed when a
+message is received on the GTRM socket. The function extracts the data 
+from the message --- the PID of application sending the message, its
+performance and its weight. The \texttt{hashmap}, which contains all the
+applications that are managed by GTRM, is then updated with this new data. 
+
+\begin{framed}
+	\begin{flushleft}
+		\textbf{\emph{static int manager\_dispatch\_gtrm\_fd \newline
+      (sd\_event\_source *source, int fd, unit32\_t revents, void *userdata)}} \newline 
+			Called upon receiving the performance of an application.
+			\begin{itemize}
+			\item source: source of the event.
+			\item fd: file descriptor to the event source.
+			\item revents: Set by the kernel to indicate what event on the file
+        descriptor that triggered the call to this function. For the purposes
+        of this work, it is always the incoming event.
+			\item userdata: Contains a reference to the manager.
+			\item Return value: Not used, always zero.
+			\end{itemize}
+	\end{flushleft}	
+\end{framed}
+
+The function contains some declaration and initialization.
+\begin{lstlisting}
+static int manager_dispatch_gtrm_fd
+  (sd_event_source *source, int fd,
+  uint32_t revents, void *userdata) {
+  Manager *m = userdata;    		    
+  char buf[1024]; // read message
+  int n; // byte size of the read message
+  struct sockaddr_un *from; // sender's adress
+  socklen_t fromlen;
+  rm_app_t *app; // data about the applications
+  rm_app_t *app2;	
+  fromlen = 1024;
+  ... // will be shown later
+\end{lstlisting}
+
+Within the function, the \texttt{rm\_app\_t} structure is used.
+\begin{framed}
+	\begin{flushleft}
+		\textbf{\emph{struct rm\_app\_t}}
+		Represents an application being managed and consists of the 
+    following fields.
+		\begin{itemize}
+		\item tid: Applications PID.
+		\item vp: Virtual platform.
+		\item vp\_old: Previous virtual platform.
+		\item performance: Matching function of the application.
+		\item weight: The current ``weight'' of the application.
+		\item happy: Indicates if the application is happy with its 
+      current performance.
+		\item sa: Socket Address, used to send back the performance 
+      multiplier.
+		\end{itemize}
+	\end{flushleft}	
+\end{framed}
+\martina{Why did you need to add the happy field? That's a difference
+  with the original GTRM approach. Is it for faster computation? In that
+  case, write it down here.}
+
+A while loop reads the socket one message at a time, until there are no 
+more unread messages. 
+
+\begin{lstlisting}
+  // resuming from above
+  do {		
+  	memset(buf, '\0', 1023);
+  	from = calloc(1, sizeof(struct sockaddr_un));
+  	app = calloc(1, sizeof(rm_app_t));	
+  	n = recvfrom(fd, buf, 1024, 0, 
+      (struct sockaddr *) from, &fromlen);
+    // with non-blocking sockets
+  	// if n is negative, there was no message
+  	n = recvfrom(fd, buf, 1024, 0, 
+      (struct sockaddr *) from, &fromlen);
+  	if (n<0)
+  		break;
+  	if (n>1024) // reading 1024 characters at a time
+  		log_error("manager_dispatch_gtrm_fd:
+        received too big message");
+
+  	gtrm_char2gtrmstruct(buf, app);
+  	pid_t pid = app->tid;
+  	app->sa = from;
+  	if(hashmap_get(m->gtrm_apps, pid) == NULL) {
+  		hashmap_put(m->gtrm_apps, pid, app);
+  	} else {
+  		app2 = hashmap_get(m->gtrm_apps, pid);
+  		gtrm_update_rm_struct(app,app2);
+  	}															
+  } while(n>0);
+  m->update_gtrm = true;
+  return 0;
+}
+\end{lstlisting}
+
+The data contained in the message is used to create a \texttt{rm\_app\_t}
+structure. If the hashmap already contains a \texttt{rm\_app\_t} structure 
+for the specific application, the \texttt{rm\_app\_t} in the hashmap is
+simply updated by calling the function 
+\texttt{gtrm\_update\_rm\_struct(app,app2)}. In the opposite case, the new
+application is added to the hashmap using the application PID as the key.
+
+Above, a few library function contained in \texttt{gtrm\_lib} were used.
+In particular, the \texttt{gtrm\_char2gtrmstruct} function is used to
+convert the information between the received string and the GTRM
+compliant structure.
+\begin{framed}
+	\begin{flushleft}
+		\textbf{\emph{void gtrm\_char2gtrmstruct(char* str, rm\_app\_t *re)}}
+		Extracts data from a received string and store it as a structure 
+    instead. The data sent from an application consists of the PID,
+    performance, weight and if the application is satisfied or not.
+		\begin{itemize} 
+		\item str: String to extract data from.
+		\item re: Struct to hold the extracted data.
+		\item Return value: None, the result is stored in re.
+		\end{itemize}
+	\end{flushleft}	
+\end{framed}
 
 \subsection{Resource management loop}
 The virtual platforms are re-calculated and applied for as long as the applications are not completely satisfied. This is run inside the \emph{manager\_loop}-function in \emph{manager.c}.
@@ -1444,9 +1505,12 @@ It is also desirable to test if the system can fulfill the previously described 
 
 \bibliographystyle{plain}
 \bibliography{mybib}
+
 \appendix
+
 \chapter{Source Code Overview}
 In this section follows an overview of the header and source files used in the system and their attributes.
+
 \section{gtrm\_lib.c/h}
 A library which contains various functions used by the resource manager to make various computations and inter process communication.
 
@@ -1524,8 +1588,6 @@ One of the main files in systemd and is for example responsible for inter proces
 \item gtrm\_event\_source: Used to determine the source of an event and how this event is supposed to be handled.
 \item gtrm\_apps: Hash-map containing all the applications being managed by the GTRM.
 \end{itemize}
-
-
 
 \subsection{static int manager\_dispatch\_gtrm\_fd(sd\_event\_source *source, int fd, unit32\_t revents, void *userdata)}
 Called when we receive the performance of an application.
@@ -1662,7 +1724,6 @@ Indicates the end of a job.
 \item id: Identifier of the job that has completed.
 \item Return value: Exit status.
 \end{itemize}
-
 
 \end{document}
 
