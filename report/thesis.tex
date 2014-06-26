@@ -165,6 +165,7 @@ The remaining of this report is organized as follows.
 \begin{itemize}
 \item Chapter~\ref{chp:background} gives a detailed description of
   the software and hardware used during this project.
+
 \item Chapter~\ref{chp:development} details the implementation and design
   decisions, defining therefore how the resulting camera acts.
 \item Chapter~\ref{chp:usecases} discusses the use cases that where
@@ -1291,13 +1292,12 @@ It is also desirable to test if the system can fulfill the previously described 
 \bibliographystyle{plain}
 \bibliography{mybib}
 \appendix
-\chapter{Appendix A}
-\section{Source Code}
+\chapter{Source Code}
 In this section follows an overview of the header and source files used in the system and their attributes.
-\subsection{gtrm\_lib.c/h}
+\section{gtrm\_lib.c/h}
 A library which contains various functions used by the resource manager to make various computations and inter process communication.
 
-\subsubsection{struct rm\_app\_t}
+\subsection{struct rm\_app\_t}
 Represents an application being managed and consists of the following fields.
 \begin{itemize}
 \item tid: Applications PID.
@@ -1309,7 +1309,7 @@ Represents an application being managed and consists of the following fields.
 \item sa: Socket Address, used to send back the performance multiplier.
 \end{itemize}
 
-\subsubsection{struct gtrm\_t}
+\subsection{struct gtrm\_t}
 Stores various parameters used by the GTRM.
 \begin{itemize}
 \item c1: Constant used for computing epsilon, determines how much we will change the virtual platform.
@@ -1320,7 +1320,7 @@ Stores various parameters used by the GTRM.
 \item prev\_apps: The amount of applications in the previous iteration.
 \end{itemize}
 
-\subsubsection{void gtrm\_char2gtrmstruct(char* str, rm\_app\_t *re)}
+\subsection{void gtrm\_char2gtrmstruct(char* str, rm\_app\_t *re)}
 Extracts data from a received string and store it as a struct instead. The data sent from an application consists of the PID, performance, weight and if the application is satisfied or not.
 \begin{itemize} 
 \item str: String to extract data from.
@@ -1328,7 +1328,7 @@ Extracts data from a received string and store it as a struct instead. The data 
 \item Return value: None, the result is stored in \emph{re}.
 \end{itemize}
 
-\subsubsection{int gtrm\_send\_performance\_multiplier(double pm, int fd, struct sockaddr *sa)}
+\subsection{int gtrm\_send\_performance\_multiplier(double pm, int fd, struct sockaddr *sa)}
 Sends a performance multiplier to an application via sockets.
 \begin{itemize} 
 \item pm: Performance multiplier to send.
@@ -1337,7 +1337,7 @@ Sends a performance multiplier to an application via sockets.
 \item Return value: Always zero.
 \end{itemize}
 
-\subsubsection{double gtrm\_get\_epsilon(unsigned int iterations, unsigned int offset, double c1, double c2)}
+\subsection{double gtrm\_get\_epsilon(unsigned int iterations, unsigned int offset, double c1, double c2)}
 Calculates the constant epsilon used by the resource manager.
 \begin{itemize} 
 \item iterations: Number of iterations run by the RM.
@@ -1347,7 +1347,7 @@ Calculates the constant epsilon used by the resource manager.
 \item Return value: The calculated epsilon or one if this is the first iteration.
 \end{itemize}
 
-\subsubsection{void gtrm\_update\_performance\_multipliers(int gtrm\_fd, Hashmap *gtrm\_apps)}
+\subsection{void gtrm\_update\_performance\_multipliers(int gtrm\_fd, Hashmap *gtrm\_apps)}
 Calculates, updates and sends the performance multiplier to each application, using the performance, virtual platform and the previous virtual platform for each application.
 \begin{itemize} 
 \item gtrm\_fd: File descriptor used to send the performance multiplier.
@@ -1355,7 +1355,7 @@ Calculates, updates and sends the performance multiplier to each application, us
 \item Return value: None.
 \end{itemize}
 
-\subsubsection{void gtrm\_write\_log(Hashmap *gtrm\_apps, unsigned int num\_applications)}
+\subsection{void gtrm\_write\_log(Hashmap *gtrm\_apps, unsigned int num\_applications)}
 Writes information about the resource management to a log file, which can then be used to generate some nice graphs.
 \begin{itemize} 
 \item gtrm\_apps: Hash-map containing rm\_app\_t structs for each application.
@@ -1374,7 +1374,7 @@ One of the main files in systemd and is for example responsible for inter proces
 
 
 
-\subsubsection{static int manager\_dispatch\_gtrm\_fd(sd\_event\_source *source, int fd, unit32\_t revents, void *userdata)}
+\subsection{static int manager\_dispatch\_gtrm\_fd(sd\_event\_source *source, int fd, unit32\_t revents, void *userdata)}
 Called when we receive the performance of an application.
 \begin{itemize}
 \item source: source of the event.
@@ -1384,14 +1384,14 @@ Called when we receive the performance of an application.
 \item Return value: Not used, always zero.
 \end{itemize}
 
-\subsubsection{static int manager\_setup\_gtrm(Manager *m)}
+\subsection{static int manager\_setup\_gtrm(Manager *m)}
 Used to setup the socket, event source and file descriptor for the resource manager. Called from manager\_startup and manager\_reload.
 \begin{itemize}
 \item m: Reference to the manager.
 \item Return value: Zero if function ran correctly, otherwise it is set to the corresponding error number.
 \end{itemize}
 
-\subsubsection{int gtrm\_compute\_virtual\_platforms(Hashmap *apps, gtrm\_t *gtrm\_t)}
+\subsection{int gtrm\_compute\_virtual\_platforms(Hashmap *apps, gtrm\_t *gtrm\_t)}
 Calculates the amount of resources (virtual platform) for an application.
 \begin{itemize}
 \item apps: The hash-map containing information about the applications being managed.
@@ -1399,21 +1399,21 @@ Calculates the amount of resources (virtual platform) for an application.
 \item Return value: Not used, always zero.
 \end{itemize}
 
-\subsubsection{void gtrm\_apply\_virtual\_platforms(Manager* m)}
+\subsection{void gtrm\_apply\_virtual\_platforms(Manager* m)}
 Computes and applies the amount of CPUShares that each application shall be given.
 \begin{itemize}
 \item m: Reference to manager, used to get the applications
 \item Return value: None.
 \end{itemize}
 
-\subsubsection{int manager\_loop(Manager *m)}
+\subsection{int manager\_loop(Manager *m)}
 The main loop of the system which continuously calls gtrm\_compute\_virtual\_platforms, gtrm\_apply\_virtual\_platforms and gtrm\_update\_performance\_multipliers if all applications are not satisfied with their performance.
 \begin{itemize}
 \item m: Reference to manager, used to get the applications.
 \item Return value: Exit code of systemd.
 \end{itemize}
 
-\subsubsection{int manager\_set\_cpu\_shares(Manager *m, pid\_t pid, int shares)}
+\subsection{int manager\_set\_cpu\_shares(Manager *m, pid\_t pid, int shares)}
 Sets the CPUShares of an application.
 \begin{itemize}
 \item m: Reference to manager, used to get the applications.
@@ -1422,10 +1422,10 @@ Sets the CPUShares of an application.
 \item Return value: Zero if successful, one otherwise.
 \end{itemize}
 
-\subsection{gtrm\_app\_lib.c/h}
+\section{gtrm\_app\_lib.c/h}
 These files are used by the applications to get performance, send performance and setup IPC, for example.
 In the header file the following structs are defined:
-\subsubsection{struct \_job\_h}
+\subsection{struct \_job\_h}
 A struct used to represent a job. Applications can have different type of jobs with different deadlines. We only use one type however.
 \begin{itemize}
 \item id: Identifier to keep track of a job being executed.
@@ -1434,7 +1434,7 @@ A struct used to represent a job. Applications can have different type of jobs w
 \item end\_timestamp: Time when we were finished with job. The timestamps are used to calculate the total execution time of a job.
 \end{itemize}
 
-\subsubsection{struct \_application\_h}
+\subsection{struct \_application\_h}
 Each application stores the relevant information in terms of resource management and SL-adaptation in this struct.
 \begin{itemize}
 \item application\_id: Identifier for an application.
@@ -1448,14 +1448,14 @@ Each application stores the relevant information in terms of resource management
 \item happy: Indicates if the application is satisfied with its performance or not.
 \end{itemize}
 
-\subsubsection{int gtrm\_lib\_setup\_socket(char* filename)}
+\subsection{int gtrm\_lib\_setup\_socket(char* filename)}
 Sets up a socket to communicate with the resource manager.
 \begin{itemize}
 \item filename: The socket needs a file to work, the parameter specifies its path.
 \item Return value: Zero, not used.
 \end{itemize}
 
-\subsubsection{void gtrm\_lib\_send\_performance(\_application\_h *h, double performance)}
+\subsection{void gtrm\_lib\_send\_performance(\_application\_h *h, double performance)}
 Sends the performance of an application to the GTRM.
 \begin{itemize}
 \item h: Struct representing an application.
@@ -1463,7 +1463,7 @@ Sends the performance of an application to the GTRM.
 \item Return value: None.
 \end{itemize}
 
-\subsubsection{int gtrm\_lib\_set(\_application\_h* a, uint types, uint64\_t* ert)}
+\subsection{int gtrm\_lib\_set(\_application\_h* a, uint types, uint64\_t* ert)}
 Initializes the application struct with job types and their expected response times.
 \begin{itemize}
 \item a: Struct representing an application.
@@ -1472,14 +1472,14 @@ Initializes the application struct with job types and their expected response ti
 \item Return value: Exit status of function.
 \end{itemize}
 
-\subsubsection{static int manager\_setup\_gtrm(Manager *m)}
+\subsection{static int manager\_setup\_gtrm(Manager *m)}
 Used to setup the socket, event source and file descriptor for the resource manager. Called from manager\_startup and manager\_reload.
 \begin{itemize}
 \item m: Reference to the manager.
 \item Return value: Zero if function ran correctly, otherwise it is set to the corresponding error number.
 \end{itemize}
 
-\subsubsection{double gtrm\_lib\_get\_performance\_number(\_application\_h* a, int job\_type)}
+\subsection{double gtrm\_lib\_get\_performance\_number(\_application\_h* a, int job\_type)}
 Calculates the peformance (matching function) by averaging the performance of the last ten jobs of a specified type.
 \begin{itemize}
 \item a: Struct representing an application.
@@ -1487,14 +1487,14 @@ Calculates the peformance (matching function) by averaging the performance of th
 \item Return value: Applications performance.
 \end{itemize}
 
-\subsubsection{int gtrm\_lib\_update\_performance\_multiplier(\_application\_h *a)}
+\subsection{int gtrm\_lib\_update\_performance\_multiplier(\_application\_h *a)}
 Receives the performance multiplier computed by the RM.
 \begin{itemize}
 \item a: Struct for representing the application, and storing the performance multiplier.
 \item Return value: Zero, never used.
 \end{itemize}
 
-\subsubsection{int gtrm\_lib\_signalstart(\_application\_h* a, uint type)}
+\subsection{int gtrm\_lib\_signalstart(\_application\_h* a, uint type)}
 Indicates the start of a job.
 \begin{itemize}
 \item a: Struct for representing the application.
@@ -1502,7 +1502,7 @@ Indicates the start of a job.
 \item Return value: Identifier of the started job.
 \end{itemize}
 
-\subsubsection{int gtrm\_lib\_signalend(\_application\_h* a, uint id)}
+\subsection{int gtrm\_lib\_signalend(\_application\_h* a, uint id)}
 Indicates the end of a job.
 \begin{itemize}
 \item a: Struct for representing the application.
