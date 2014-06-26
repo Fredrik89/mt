@@ -498,17 +498,51 @@ at the same time, especially due to the video analytics co-processor.
 \chapter{Implementation}
 \label{chp:development}
 
-All code were written in C and cross-compiled using Axis' compiler for the corresponding platform e.g. camera. For the resource allocation different service files and slices were specified, and the resulting plots were generated with Octave.
-\section{Constraints} %What we decided to do and not to do
-Creating service levels for all the applications running on the system would not be a realistic approach. This is because there are many different applications, some of which may not even be developed at Axis, and developers cannot be expected to modify all of them to implement the performance measurements and service level features needed. Instead the service level part is only implemented in the video streaming application and on some test applications that does some random computations to stress the system. This thesis only focuses on the implementation of the already mentioned work at LTH and will not look into proofs of convergence for the algorithm, neither will it look into other types of SL functions than the simple linear case where the CPU requirement are a linear function of the SL. It can be argued that the CPU requirement/SL relationship can be linearized around a point and hence still be linear in a small interval. Only the time sensitive matching function $f_{i}=\frac{D{i}}{R_{i}}-1$ where $D_{i}$ is the soft deadline for the application and $R_{i}$ is the job response time.
+This chapter describes the implementation of the GTRM framework for
+Axis cameras. The code commented upon was written in C and cross-compiled 
+using Axis' compiler for the corresponding hardware platform. The resource
+allocation framework was testing in different use cases and with a
+variety of service files and slices. The resulting plots are generated with
+Octave.
+
+\section{Design choices}
+
+Introducing service levels in all the applications running on camera
+is not a realistic approach. This is because there are many different
+applications, some of which may not even be developed at Axis, and 
+developers are not expected to modify all these applications to implement 
+the performance measurements and service level features needed, despite the
+modification being trivial in many cases. Also, for some applications it is
+not possible to identify the concept of service level. 
+
+The service level is in this work implemented for the video streaming
+application and for some test application that generates mathematical load
+in the system. This thesis only focuses on the implementation of GTRM and 
+assumes that a correct implementation of the framework implies also that
+the proof of convergence of the game theoretic strategy holds, as
+demonstrated for~\cite{gtrm}.
+
+Also, the service level assignment is limited to the linear case, where
+resource requirements (in this case CPU requirements) are a linear function 
+of the service level. It can be argued that the CPU requirement/SL
+relationship can be linearized around a point and hence still considered
+linear close to the operating point. 
+
+The matching function used to determine the performance of the application is
+time sensitive and reads as
+\begin{equation}
+f_{i}=\cfrac{D_{i}}{R_{i}}-1
+\end{equation}
+where $D_{i}$ is the soft deadline for the job and $R_{i}$ is the job 
+response time. This matching function is positive when the resource given is
+aboundant and negative if it is scarce. It is also zero in case there
+is a perfect match between the resource given and the service level set by
+the application. The aim of GTRM is to bring $f_i$ to zero for all the
+running applications. It is assumed that $f_i$ is measurable also for the
+non-service level aware applications.
 
 
-
-
-
-
-
-\section{The update algorithms to implement}
+\section{Adaptation}
 
 
 \subsection{Service Level update}
