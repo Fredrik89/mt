@@ -279,7 +279,9 @@ system.
   introduced, what happens?}
 
 \begin{equation}
-adaptation
+\tilde{v}_i(t+1) = \tilde{v}_i(t) + 
+                         \epsilon_{ RM}(t)\Big(- \lambda_i f_i(t) + 
+                         \sum_{j=1}^n \lambda_j f_j(t) \tilde{v}_i(t)\Big),
 \label{eq:resourceadaptation}
 \end{equation}
 
@@ -1573,64 +1575,133 @@ static void gtrm_sl_cb (GstElement * identity,
 \end{lstlisting}
 
 \section{Resource Allocation}
-\begin{figure}
-    \centering
-    \includegraphics{piechart.jpeg}
-    \caption{Pie chart describing how we split up our resources}
-    \label{fig:Piechart}
+
+The resource allocation mechanism is realized using \texttt{cgroups},
+\texttt{CPUShares} and \emph{slices}. Using slices one can set a minimum
+amount of available resources for the applications that belong to the slice.
+
+If the applications under a slice do not use all of the resources allocated 
+to them, the unused share is free to be used by other slices. In a
+hierarchical manner, each slice can have sub-slices, therefore dividing the resource at a finer granularity level. The hierarchy is built within the
+\texttt{cgroups} folder.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.7\textwidth]{piechart.jpeg}
+  \caption{Pie chart for resource allocation.}
+  \label{fig:Piechart}
 \end{figure}
 
-Using slices one can set a minimum amount of available resources for the applications in the slice. If the applications under a slice/service don’t use all of the resources given to them, the unused resources are free to be used by other slices. Under each slice there can be sub-slices or services dividing the resources further, building a hierarchy in the cgroups folder. The slices in the pie chart above, represent two different sets of applications. The static yellow slice consists of applications that won’t be managed by GTRM and simply will share the resources under this slice according to a predefined setting. Good choices of applications to put here would be some that doesn’t vary much in their resource requirements or some that have very strict hard deadlines. The second slice, the red GTRM slice, consists of applications that will be managed by the GTRM and that might implement SL adaptation. Good choices of applications to put here would be ones that do vary much in their resource requirements and/or can vary its quality in some acceptable way to adapt to its available resources.
+The slices in the pie chart of Figure~\ref{fig:Piechart} represent two
+different sets of applications. The static yellow slice consists of
+applications that are not managed by GTRM and share the resources
+according to the predefined setting given by the slice. Applications
+that belong to this set usually do not vary their resource requirement
+or are hard real-time, which means they should be given enough resource
+so that their deadlines are met. 
 
+The red set shows two applications managed by the GTRM framework. These
+application might implement the service level adaptation paradigm.
+Applications belonging to this slice usually do vary their resource
+requirements, or can change the quality of the computation to adapt to the
+available resources. In Figure~\ref{fig:Piechart} there are two applications
+(also called services) of this type.
 
-All applications that are managed by the GTRM are run as services under the GTRM-slice. A service can, just as a slice, reserve a minimum percentage of allocated resources from it’s parent slice.
+All applications that are managed by the GTRM run as services under the 
+GTRM-slice. A service can reserve a minimum percentage of allocated 
+resources referring to its parent slice.
+In the Pie chart above the static slice would be guaranteed a minimum of 
+\sfrac{1}{3} of the total resources while the two GTRM services are given 
+half of the \sfrac{2}{3} reserved by its parent slice, therefore obtaining
+a minimum of \sfrac{1}{3} of the total available resources each.
 
-In the Pie chart above the static slice would be guaranteed a minimum of \sfrac{1}{3} of the total resources while Service1 and Service2 would be given half of the \sfrac{2}{3} reserved by its parent slice, guaranteeing  them a minimum of \sfrac{1}{3} of the total available resources each.
+In the GTRM slice, some of the applications are service level aware and some
+other are not. Ideally all applications running in the GTRM-slice should, 
+if it makes sense to the application, have a concept of service level.
+Each application is assigned a weight, that sets how much responsibility
+for the adaptation is taken care by the application that changes its service
+level and how much adaptation should be realized via resource allocation.
+All applications in the GTRM slice must implement the performance evaluatio
+via matching function and the communication with the resource manager via
+socket.
 
-The resources of the applications running in the GTRM-slice will be managed by the GTRM. Some of the applications will have SL capabilities implemented and some will not. Ideally all applications running in the GTRM-slice should, if it makes sense to the application, have a SL implemented to put the theory into practice. An extension of the project would be to have the entire system managed by the GTRM and have all applications manage their SL. The weight is the parameter that sets how big part of the adaptation that is made by changing the service level contra changing the amount of resources. By using the weight parameter an application can be set to only use resource adaption. However all applications in the gtrm slice must implement calculation of the performance and communication with the RM.
+\subsection{Resource allocation in practice}
+The resource split shown in Figure~\ref{fig:Piechart} is made by creating 
+a \texttt{gtrm.slice} file in the folder \texttt{/etc/systemd/system}.
+Any application that wants to take advantage of the GTRM capabilities needs
+to create a service file in the same folder.
 
+If no such file is created, by default, \texttt{systemd} defines a slice 
+that all services will belong to. Any service file in the 
+\texttt{/etc/systemd/system} folder overrides a service file for the 
+same application declared somewhere else. An example of such files follows.
 
-\subsection{.service and .slice files}
-The resource split shown in \ref{fig:Piechart} is made by creating a gtrm.slice file in the folder \emph{/etc/systemd/system}:
 \subsubsection{gtrm.slice}
 \begin{verbatim}
 [Unit]
-
 [Slice]
 CPUShares=1024
 \end{verbatim}
-Create the same service files in the same folder:
+
 \subsubsection{gtrm-test.service and gtrm-test2.service}
 \begin{verbatim}
 [Unit]
-
 [Service]
 ExecStart=/mnt/flash/test-gtrm-app 50 10 0 0 0 0.1 0.5 0.04
 CPUShares=100
 Slice=gtrm.slice
 \end{verbatim}
 
-Any application that wants to use the GTRM needs to create such a service file in this folder.
-Systemd creates by default a slice that all services will run under unless otherwise specified. Any service file in the \emph{/etc/systemd/system} folder overrides a service file for the 
-same application declared somewhere else.
-
-
-
+\martina{Is it the same example of Figure~\ref{fig:Piechart}? If so,
+  please write it somewhere. Again, if so, please show also the file
+  that is generated for the static slice, that is unchanged and say where
+  it resides in the file system. It would be nice to also expand on the
+  cgroups file system structure, showing the tree of files and where
+  they do belong.}
 
 \section{Sequence diagram}
-\begin{figure}
+
+The sequence diagram in Figure~\ref{fig:sdiag} describes the flow of 
+execution of the system via pseudo-code. Some functions call that are 
+not relevant and have been left out. 
+
+The application computes its performance (matching function), via a 
+function called \texttt{calculate\_performance()}. According to its value,
+and eventually to the performance multiplier received from the resource
+manager at the past step, the service level of the application is adjusted,
+calling \texttt{update\_service\_level()}. Finally, the resource manager
+is notified via the \texttt{send\_performance()} call.
+
+\begin{figure}[t]
     \centering
-    \includegraphics[width=\textwidth]{diag.png}
+    \includegraphics[width=0.9\textwidth]{diag.png}
     \caption{Sequence diagram}
     \label{fig:sdiag}
 \end{figure}
-The sequence diagram in figure \ref{fig:sdiag} describes the flow of execution throughout the system via pseudo-code. Some functions call that are not relevant have been left out but will be described further below. 
 
-The first important part in the application is the calculation of its performance, the matching function, here called \emph{calculate\_performance()}. The matching function has to be properly calculated or else the application will not be managed correctly. According to this matching function the service level will then be adapted, \emph{update\_service\_level()} and finally the resource manager will be notified by the \emph{send\_performance()} call.
+The resource manager consists of parallel parts. Upon receiving the
+performance of an application, the handler (or dispatch function)
+corresponding to the reception event is executed. In the sequence diagram of
+Figure~\ref{fig:sdiag}, this call is labeled as \texttt{gtrm\_dispatch}.
+Its main responsibility is to read and parse the received message and 
+then update the hashmap containing the relevant data about the application
+that sent the performance measurement. Meanwhile, the resource management 
+runs as a part of the main resource manager loop. The resource management
+algorithm uses the information in the hashmap to calculate the new virtual
+platforms via the function \texttt{calculate\_virtual\_platforms} according
+to Equation~\eqref{eq:resourceadaptation} and~\eqref{eq:RecursionForResources}.
+These virtual platforms are then used to set the amount of CPUShares to
+be given to each application in the call to \texttt{apply\_virtual\_platforms}.
 
-The resource manager part basically consists of two parts that sort of runs in parallel. Upon receiving the performance of an application, the handler or dispatch function corresponding to such an event is executed. In the diagram it is labled as \emph{gtrm\_dispatch}, and its main responsibilities is to read and parse the received message and then update the hash-map which contains the relevant data about the applications being managed. Meanwhile the resource management runs as a part of the main-loop, and it uses the information in the hash-map previously mentioned to calculate the virtual platforms, \emph{calculate\_virtual\_platforms}. These virtual platforms are then used to set the amount of CPUShares which will be given to each application in the call to \emph{apply\_virtual\_platforms}. To get a better service level adaptation, the performance number which depends on how much the virtual platform has been changed is sent to the application \emph{send\_performance\_number}.
+To ease the service level adaptation, the resource manager also sends a
+suggestion to the application, that depends on how much the virtual platform
+is changed in the current round via a call to 
+\texttt{send\_performance\_number}.
 
-
+\martina{Is the application always waiting to receive the performance
+  multiplier? This was avoided via the shared memory, before. Is it now so?
+  If so, is it send in the application socket via a communication initiated
+  by the resource manager? Comment on this in the application subsection.}
 
 \chapter{Use cases}
 \label{chp:usecases}
