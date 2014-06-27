@@ -199,9 +199,7 @@ The remaining of this report is organized as follows.
 \item Chapter~\ref{chp:usecases} discusses the use cases that where
   taken as a reference for the project. These describe the product
   functionality and are relevant to test the resulting prototype.
-\item Chapter~\ref{chp:test} outlines how the product was tested.
-\item Chapter~\ref{chp:results} shows the results obtained with the
-  tests and discusses the findings of the thesis.
+\item Chapter~\ref{chp:test} outlines how the product was tested and shows the results obtained with the tests and discusses the findings of the thesis.
 \item Chapter~\ref{chp:conclusion} finally concludes the report and
   highlights future works.
 \end{itemize}
@@ -394,7 +392,7 @@ is no competition.
 \section{Video Streaming}
 
 The video streaming application is based upon the GStreamer multimedia
-framework. The framework is a modular system, where a chain is built by
+framework ~\cite{gst}~\cite{gst-tutorial}. The framework is a modular system, where a chain is built by
 linking elements together in a pipeline to form a process chain. 
 The data flows downstream from a source element, through filter elements 
 and end up in a sink element, see Figure~\ref{fig:pipeline} for a graphical
@@ -457,7 +455,7 @@ the latter is the one used by the GTRM socket.
 
 
 \subsection{Epoll}
-Epoll is a Linux system call, allowing the user to listen to multiple 
+Epoll~\cite{epoll} is a Linux system call, allowing the user to listen to multiple 
 sockets simultaneously. The API function \texttt{epoll\_wait(...)} returns 
 a queue of event-objects containing information about what file descriptors
 have received datagrams together with other information. By looking at this 
@@ -517,6 +515,7 @@ at the same time, especially due to the video analytics co-processor.
 
 \martina{Will you present test with both the cameras or only with one of
   them? Will you present the same tests on both the cameras? In this case,
+
   explain why one camera is better than another for testing some specific
   feature of your approach. Is there something special beside ``they have
   systemd'' why you chose these two models? How are those positioned
@@ -1760,7 +1759,7 @@ In this case the static slice starts out not being under full load.
 \item The GTRM loop will continue to run. The SL adaptation in the applications will not run if the SL is at minimum and the performance is below the defined boundary or if the SL is at maximum and the performance is above the boundary.
 \end{enumerate}
 
-\chapter{Testing}
+\chapter{Testing and Results}
 \label{chp:test}
 
 %monolith testing that we cant do :(
@@ -1788,7 +1787,7 @@ It is also desirable to test if the system can fulfill the previously described 
 
 
 
-The first part of the testing is done by starting and stopping different test-applications on the camera running on the gtrm-slice.
+The first part of the testing is done by starting and stopping different test-applications on the Axis P3367 camera, running on the gtrm-slice.
 The slices and services are started and stopped with the command line tool systemctl \cite{systemctl}.
 
 The camera is split into two different top level slices, the gtrm.slice, containing the test services, and the system.slice that contains all other services. The command line tool systemd-cgls shows the layout of the service/slice tree:
@@ -1834,13 +1833,15 @@ By varying the a\_cpu and b\_cpu the speed that the cpu requirement changes due 
 	\end{flushleft}
 \end{framed}	
 
+To test the system, several applications are ran with different parameters, according to two different test sequences.
+
+In the first sequence all the applications are launched at the same time. The applications are expected to converge to a matching function close to or equal to zero, with a service level that will stabilize over time. It also expected that the resource manager will initially assign all the applications the same amount of resources. As their demands and adaptation rates vary, the applications service level and virtual platforms does not have to converge identically, but if the system works as intended they should all end up with a performance close to zero.
+
+Sequence number two launches the same applications as in sequence number one but one after each other with some delay between them. Every time an application is added the system is expected to reset the virtual platforms, assigning each application the same amount of resources. After that the system will then manage the resources and service level until all the applications are satisfied with their performance.
 
 
-
-\subsection{Test1}
-\subsubsection{Start four test-applications on after another}
-
-Four applications gets started as services with varying a\_cpu and epsilon.
+\subsection{Test 1}
+The first test uses the following applications.
 
 %\begin{comment}
 \begin{verbatim}
@@ -1857,37 +1858,29 @@ Four applications gets started as services with varying a\_cpu and epsilon.
 \end{verbatim}
 %\end{comment}
 
+\subsubsection{Test Sequence 1}
 
+%insert result
 
+\subsubsection{Test Sequence 2}
 
+%insert result
 
+\subsection{Test 2}
+The second test uses the following applications.
 
+%\begin{comment}
+\begin{verbatim}
+\end{verbatim}
+%\end{comment}
 
+\subsubsection{Test Sequence 1}
 
-\subsection{adsff}
-Start the test-applications one by one:
+%insert result
 
+\subsubsection{Test Sequence 2}
 
-
-
-
-
-\subsection
-Start 
-
-
-
-
-
-
-
-
-
-
-
-
-\chapter{Results}
-\label{chp:results}
+%insert result
 
 \chapter{Conclusion and Further Work}
 \label{chp:conclusion}
