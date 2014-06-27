@@ -1705,58 +1705,139 @@ is changed in the current round via a call to
 \chapter{Use cases}
 \label{chp:usecases}
 
-For implementation and testing reasons we came up with the following use-cases. In all the use cases we assume that the static slice is under heavy load so that no extra resources are given to the GTRM-slice. 
-\section{Normal mode}
+This chapter introduces relevant use cases that were the basis for the
+work and guided the design of the system. In all the use cases it is assumed
+that the resource available to the static slice is correctly sized, so that
+the GTRM-slice does not have any more available than the allocated resource
+and has to distribute it to the applications running within the slice.
+
+\section{Nominal Conditions}
+
+In nominal conditions, the system is well dimensioned. The applications
+running inside the GTRM slice can be run at maximum service level without 
+overloading the hardware.
+
+The service level for all the running applications should be at the
+highest possible value. The matching functions of the applications should
+be either positive or zero for the applications and the deadlines of all
+the running services should be hit.
+
+\section{Overload Conditions (Streaming Dependant)}
+
+In this second case, the streaming application is overloading the system.
+The applications subsequently mentioned are all included in the GTRM slice,
+that should allocate the resources available for them in order to match
+the deadlines of every applications, including the streaming service.
+
+The detailed conditions addressed are the following:
 \begin{enumerate}
-\item The system runs under good conditions, meaning we have enough resources for all applications and the GTRM-slice can run at maximum SL without any problems.
-\item The GTRM and SL adaptation will not drag down performance compared to the old system.
+\item The camera is filming a scene that causes a high load. This may happen
+  because the camera itself is moving around or because the scenary is
+  very dynamic.
+\item Service level aware applications are running together with the
+  streaming service. These applications (including the streaming one) adapt
+  their service level (and therefore the quality of their computation).
+\item The GTRM increases the resource given to the applications with the
+  worst performance (matching function). The resource is taken from other,
+  better performing, applications on the same slice. These better performing
+  services lower their service level to accomodate the change in the resource
+  allocation.
+\item The scene becomes more static or the camera stops, therefore inflicing
+  a lighter load on the system. The service level of the applications can be
+  increased since the streaming one is not so demanding in terms of resource.
 \end{enumerate}
-\section{Balancing a high load caused by video streaming}
-The applications mentioned here are all on the GTRM-slice.
+
+The matching function of all the applications should be close to zero, since
+they can all adjust their service level in a reasonable way during the
+execution. The frame rate for the video streaming should be constant during
+the execution, because the internal service adaptation of the streaming
+service should take care of adjusting the compression level of the image.
+
+\section{Overload Conditions (Non-Streaming Dependant)}
+
+At the beginning of this use case the static slice is not fully loaded,
+therefore some of the resource may be transfered from it to the GTRM
+managed slice.
 
 \begin{enumerate}
-\item The camera will film something that causes a high load, for example, a PTZ-camera is moving around or an intense scenery is being filmed.
-\item The applications with the worst performance  will adapt and lower their SL (e.g. quality) assuming they have weights setup to do so.
-\item The GTRM will increase the resources given to the applications with the worst performance. These resources are taken from other, better performing,  processes on the slice that in turn will lower their SL to accommodate for the change in CPU.
-\item When the scenery is “calmer” we will have an overall increase on the SL and the virtual platform will be redistributed.
-\item The frame rate will be about the same during the entire procedure.
+\item The static slice is not consuming all the resource allocated to it,
+  therefore the GTRM slice can collect some of the remaining resource. The
+  applications belonging to the GTRM slice can raise their service level to
+  a value that is higher than the one that would be the equilibrium point
+  in the nominal conditions.
+\item The resource demand of the static slice starts to grow.
+\item The service level of the applications belonging to the GTRM slice
+  adapt, lowering the quality of the computation, until a new equilibrium
+  is reached.
+\item The demand of the static slice becomes lower again and the resource
+  is released to the GTRM slice. The service level increase and the resource
+  is redistributed to the applicaions on the GTRM slice.
 \end{enumerate}
-\section{Balancing a high load caused by other applications}
-In this case the static slice starts out not being under full load.
-\begin{enumerate}
-\item The static slice is giving extra resources to the GTRM-slice, making the applications on the GTRM-slice have a higher SL than they normally would.
-\item The resource demand of the applications on the static slice starts to grow. 
-\item The SL of the applications on the GTRM-slice will adapt and lower their SL:s (e.g. quality).
-\item The static slice is done with the more demanding tasks and starts giving extra resources to the GTRM-slice again. Now we will see an increase in the SL and a redistribution of CPU resources to the applications on the GTRM-slice.
-\item The frame rate will be about the same during the entire procedure.
-\item The applications in the static slice will run without any issues.
-\end{enumerate}
-\section{GTRM-slice not running}
-\begin{enumerate}
-\item No applications are running in the GTRM-slice.
-\item The static slice is allowed to use the entire amount of resources if necessary.
-\item Some applications on the GTRM-slice starts to run.
-\item The GTRM-slice will adjust its SL and virtual platforms as in ‘use case 3’ .
-\end{enumerate}
+
+Again, the frame rate of the streaming application should be the same
+during the execution. Also, the applications on the static slice should be
+able to run without harm even when causing a higher (but still within the
+amount of resource statically allocated) load onto the system.
+
+\section{GTRM slice empty and filled}
+
+This is a corner case, where no applications are running within the GTRM
+slice. The static slice is allowed to use the entire amount of resource if
+necessary. During the test case, some applications of the GTRM slice are
+started and the virtual platforms should be adjusted accordingly, taking
+resource from the static slice until the size of the static slice meets
+the original allocation. If sized correctly, the matching functions of the
+applications belonging to the GTRM slice should be zero or positive and
+their service level should settle to an equilibrium value.
 
 \section{Applications with different weights}
+
+During this test, some applications are run in the GTRM slice. However, these
+applications are highly heterogeneous --- which means that they have different
+weights and they are willing to adjust their service level to various extents.
+Some applications are eager to help the infrastructure and will lower their
+requirement easily, while some other applications are more reluctant to
+reduce the quality of the performed computation.
+
 \begin{enumerate}
-\item Applications with different weights are running in the GTRM-slice. All applications have a good enough performance which means that no adaptation or resource management is running. 
-\item One of the applications performance goes bad.
-\item Resource management and SL adaptation for all applications starts.
-\item The applications with the higher weights adapts mainly by increasing their cpu, which typically goes faster than adjusting the SL, making them reach a good performance faster. At the same time the applications with lower weights changes more slowly toward a better performance and adapts mainly by lowering their SL.
-\item The system reaches a stable point.
+\item As a starting point, all the applications running in the GTRM slice
+  have a positive or zero matching function, meaning that they are satisfied
+  with the amount of resource assigned to them.
+\item The performance of one of the application decreases, for example due to
+  an increase in its computational load.
+\item The GTRM and the service level adaptation starts trying to compensate
+  for that.
 \end{enumerate}
 
-\section{System reaches stable point with some bad performances}
+It is expected that the system reaches a stable point. The applications with
+the higher weights adapt their matching function mainly due to an increase
+in the amount of allocated resource. The allocation with lower weights cope
+with the reduced resource availability by decreasing their service level.
+
+\section{Nominal conditions in overload case}
+
+In this case, a number of applications are running with reasonable
+performance levels and no adaptation is needed. The system is subsequently
+loaded to the point where some of the applications can not be satisfied.
+
 \begin{enumerate}
-\item A number of applications are running with good performances and no adaptation or resource management is being made.
-\item A new application is started with a default SL.
-\item Resource manager and SL adaptation is started.
-\item The system reaches a stable point where not all applications have a good performance. 
-\item The applications that supports SL adaptation will have lowered this as much as possible.
-\item The GTRM loop will continue to run. The SL adaptation in the applications will not run if the SL is at minimum and the performance is below the defined boundary or if the SL is at maximum and the performance is above the boundary.
+\item A number of applications are running with good performances and 
+  no service level adaptation or resource management is needed.
+\item A new application is started with a default service level.
+\item The resource manager takes care of allocating the resource to the
+  new application, redistributing the available capacity. At the same
+  time, the service level adjustment within the application tries to match
+  the amount of resource given by the GTRM.
+\item The amount of load introduced in the system is too much for the
+  applications to be entirely satisfied. Some applications still have a 
+  negative matching function, despite having reduced their service
+  level to the minimum value.
 \end{enumerate}
+
+The system reaches a stable point where not all applications have a good
+performance. The applications that supports the service level adaptation 
+lowered their quality as much as possible. The GTRM loop will continue to
+try to adjust to the current conditions.
 
 \chapter{Testing}
 \label{chp:test}
