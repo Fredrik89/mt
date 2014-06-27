@@ -561,6 +561,7 @@ The matching function used to determine the performance of the application is
 time sensitive and reads as
 \begin{equation}
 f_{i}=\cfrac{D_{i}}{R_{i}}-1
+\label{eq:matchingfunctiongeneral}
 \end{equation}
 where $D_{i}$ is the soft deadline for the job and $R_{i}$ is the job 
 response time. This matching function is positive when the resource given is
@@ -588,6 +589,7 @@ down the adaption rate to avoid instability.
 
 \begin{equation}
 sl_i(t+1)= sl_i(t) + \epsilon*(f_i(t)*sl_i(t))
+\label{eq:servicelevelsimple}
 \end{equation}
 
 The \emph{coordinated adaptation} follows a suggestion given by the resource
@@ -604,6 +606,7 @@ PM_i = (1+f_i) \cdot (vp_i(i+1)/vp(i))
 and the applications sets the new service level as
 \begin{equation}
 sl_i(t+1) = sl_i(t) + (\epsilon \cdot sl_i(t) \cdot PM_i).
+\label{eq:servicelevelnotsimple}
 \end{equation}
 
 \subsection{Resource Allocation update}
@@ -1231,6 +1234,7 @@ followed be a necessary call to apply the changes.
 
 
 \section{Service Level Update}
+\label{sec:servicelevelupdatesection}
 
 The applications using the GTRM framework have all a similar structure,
 the main difference being how they implement the update in the service
@@ -1433,26 +1437,64 @@ In the code, the following functions are used.
 
 \section{Video Streaming}
 
-The work carried out in the video streaming part of the project has still not been completely finished, but this is the proposed solution and implementation.
+This work features the modification of the video streaming application,
+that is still undergoing. The proposed solution and implementation is
+discussed here.
 
-The streaming service, named \emph{Monolith}, streams both video and audio, handles image compression and filtering, manages several different streams, such as H.264 and MJPEG streams. It is this application that has been modified to implement the service-level feature by altering the image quality. This is done by modifying the pipeline which makes up the video-streaming.
+The streaming service, named \texttt{Monolith}, streams both video and 
+audio. It handles image compression and filtering, manages several different
+streams, such as H.264 and MJPEG streams. This application has been modified
+to implement the service-level feature. The service level alters the image
+quality by modifying the pipeline to prepare the frame for the video
+streaming service.
 
-In this pipeline an "identity" element is added, which is an element that simply forwards the frames received to the next element without actually doing anything to them. This element is added just after the first element (source element). By activating the so called "hand-off"-signal of the identity element, a signal-handler-function is called every time the element receives a new buffer. In this function, computation of how long time each frame takes to be processed is made, which is used to compute the matching function. After the matching function has been computed, it is now possible to update the service level and notify the resource manager. Finally the service level is used to set the desired bit-rate in the bit-rate controller.
+In this pipeline an ``identity'' element is added. The identity element
+forwards the received frames to the next element without actually applying
+the operations that were supposed to be applied according to the pipeline
+stage. This element is added just after the first (source) element.
 
-The bit-rate is the amount of data that flows through the application, measured in kbit/s. This means that a higher bit-rate gives better image quality, since we have more data per frame, but at the cost of higher computation time. In the event that the frame rate drops because of limited CPU-resources, the bit-rate can be reduced which allows a higher frame rate. 
+\martina{Check that the next sentence describes what you actually did.
+  I rephrased it but I am not sure it fits what you have done. In the tex
+  file, your sentence is commented -- so you can check against the original
+  version.}
+% By activating the so called "hand-off"-signal of the identity element, a signal-handler-function is called every time the element receives a new buffer. In this function, computation of how long time each frame takes to be processed is made, which is used to compute the matching function.
+A further stage is added to the pipeline, that can be activated via a
+``hand-off'' signal. This stage takes care of computing the time to
+process each frame, therefore retrieving the matching function, described by
+Equation~\eqref{eq:matchingfunctiongeneral}. 
+%
+After the matching function is computed, it is possible to calculate a new
+service level for the application and to notify the resource manager. The
+computed service level is then used to set the desired bit-rate in the 
+bit-rate controller.
 
-The bit-rate controller is a controller which aims to keep a certain bit-rate, independent on how the imagery looks. If the scenery becomes more complex this will increase the bit-rate. There are two ways to cope with this, either the image quality or the frame rate is reduced by the controller. This will decrease the bit-rate to the desired level. Which strategy is used can be decided by setting the bit-rate priority field in \emph{video.c}. The image quality is adjusted by changing the amount of compression done to the image.
+The bit-rate represents the amount of data that flows through the
+application, measured in kbit per second. A higher bit-rate results in an
+improved image quality, since more data is transmitted per frame. This is
+obtained at the cost of higher computation time. When resources are limited,
+the bit rate can be reduced allowing to restore a higher frame rate.
 
+The bit-rate controller tries to match a specific bit-rate, despite how
+the frame looks like. When the scenery becomes more complex, the bit-rate
+will suddenly rise. There are two ways to cope with this: either the image
+quality is reduced (by acting on the compression rate of the frame) or 
+the frame rate is lowered. When one of these two actions is applied, the 
+bit-rate will adjust to the desired level. The choice of the strategy to 
+use is decided by setting the bit-rate priority field in \texttt{video.c}.
 
 \begin{framed}
 	\begin{flushleft}	
-		\emph{\textbf{{void setup\_sl\_adapt(float service\_level, double epsilon, double weight, double deadline\_seconds)}}}
-		Sets up deadline for computing the matching function and sets up the IPC with the resource management.
+		\emph{\textbf{{void setup\_sl\_adapt \newline
+    (float service\_level, double epsilon, double weight, double deadline\_seconds)}}} \newline
+		Sets up deadline for computing the matching function and sets up the 
+    Inter-Process Communication with the resource management.
 		\begin{itemize}
 		\item service\_level: Initial service level.
 		\item epsilon: Constant which specifies service level adaptation rate.
-		\item weight: Determines how the much of the adaptation will be done by altering the service level or the changing the amount of resources.
-		\item deadline\_seconds: This deadline will correspond to the desired frame rate.
+		\item weight: Determines how the much of the adaptation will be done 
+      by altering the service level or the changing the amount of resources.
+		\item deadline\_seconds: This deadline will correspond to the 
+      desired frame rate.
 		\item Return value: None.
 	\end{itemize}
 	\end{flushleft}
@@ -1461,48 +1503,71 @@ The bit-rate controller is a controller which aims to keep a certain bit-rate, i
 \begin{framed}
 	\begin{flushleft}	
 		\emph{\textbf{{void sl\_adapt()}}}
-		Performs the service level adaptation, notifies the resource manager and writes some logging.
+		Performs the service level adaptation, notifies the resource manager 
+    and writes some logging.
 		\begin{itemize}
 		\item Return value: None.
 		\end{itemize}
 		\end{flushleft}
 \end{framed}
 
-The function which initiates the video pipeline is called \emph{cache\_video}, located in \emph{video.c} and is described below. The function is quite large but described is only what is relevant for this thesis.
+The function which initiates the video pipeline is called 
+\texttt{cache\_video} and is located in \texttt{video.c}. The function code
+is quite complex but here we describe only what the features that are
+relevant for this thesis.
+
 \begin{lstlisting}
 static GstElement *
-cache_video (gpointer key, Props * props, gpointer * user_data)
-{
-  ...
+cache_video (gpointer key, Props * props, 
+  gpointer * user_data) {
+  // Initialization and variable definitions
 \end{lstlisting}
-At first all the different elements for the pipeline is defined, including the identity element, which is called \emph{gtrm\_sl\_adapt}. A call to \emph{setup\_sl\_adapt} sets up the what is needed for the service level adaptation.
+
+First, all the different elements belonging to the pipeline are defined,
+including the newly introduced identity element, which is called 
+\texttt{gtrm\_sl\_adapt}. A call to \texttt{setup\_sl\_adapt} sets
+the variables needed for the service level adaptation.
+
 \begin{lstlisting}
   GstElement *gtrm_sl_adapt = NULL;
-  ...
-  setup_sl_adapt (service_level, epsilon, weight, deadline_seconds);
-  ...
+  setup_sl_adapt (service_level, epsilon, 
+    weight, deadline_seconds);
 \end{lstlisting}
-The identity element is now created by the following calls and the \emph{hand-off-signal} of the element is enabled and set up.
+
+The identity element is created by the following calls and the 
+\texttt{hand-off-signal} of the element is enabled and set up.
+
 \begin{lstlisting}
-  gtrm_sl_adapt = gst_element_factory_make ("identity", "gtrm");
-  g_object_set (G_OBJECT (gtrm_sl_adapt), "signal-handoffs", TRUE, NULL);
-  g_signal_connect (gtrm_sl_adapt, "handoff", G_CALLBACK (gtrm_sl_cb), src);
-  ...
+  gtrm_sl_adapt = gst_element_factory_make 
+    ("identity", "gtrm");
+  g_object_set (G_OBJECT (gtrm_sl_adapt), 
+    "signal-handoffs", TRUE, NULL);
+  g_signal_connect (gtrm_sl_adapt, "handoff", 
+    G_CALLBACK (gtrm_sl_cb), src);
 \end{lstlisting}
-The last thing to be done is to actually insert the element into the pipeline, which can be done by adding the element to the parameters of the following function-calls.
+
+Finally, the element must be inserted into the pipeline. This is obtained
+via the following calls.
+
 \begin{lstlisting}
-    gst_bin_add_many (GST_BIN (p), src, gtrm_sl_adapt, convert, caps_filter, sink, NULL);
-    ...
-    gst_element_link_many (src, gtrm_sl_adapt, convert, caps_filter, sink, NULL);
-    ...
+  gst_bin_add_many(GST_BIN (p), src, gtrm_sl_adapt, 
+    convert, caps_filter, sink, NULL);
+  // More parameter definition here
+  gst_element_link_many (src, gtrm_sl_adapt, convert, 
+    caps_filter, sink, NULL);
 }
 \end{lstlisting}
 
-The callback function consists of a single call to \emph{sl\_adapt()}, which is defined in another file called \emph{sl\_adapt.c}. This adaptation looks more or less identical to that in the test application described above.
+The callback function for the element consists of a single call 
+to \texttt{sl\_adapt()}, which is defined in \texttt{sl\_adapt.c}. 
+This adaptation looks more or less identical to that in the test 
+application described in Section~\ref{sec:servicelevelupdatesection} and
+in Equations~\eqref{eq:servicelevelsimple} 
+and~\eqref{eq:servicelevelnotsimple}.
+
 \begin{lstlisting}
-static void
-gtrm_sl_cb (GstElement * identity, GstBuffer * buf, GstElement * src)
-{
+static void gtrm_sl_cb (GstElement * identity, 
+  GstBuffer * buf, GstElement * src) {
   sl_adapt();
 }
 \end{lstlisting}
