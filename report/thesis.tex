@@ -153,7 +153,7 @@ to maximize their profit by finishing jobs that arrive according to a
 Poisson process. Grosu and Chronopoulos~\cite{Gro05} made similar work with 
 load balancing strategies. The load is distributed amongst different 
 competing players which would hopefully reach a common state which would 
-benefit all the players the most. However, the is no cooperation on the
+benefit all the players the most. However, there is no cooperation on the
 application side to reach a consensus.
 
 Many resource managers are feedback oriented. The first resource managers
@@ -304,7 +304,7 @@ computation.
 
 \section{Systemd and Cgroups}
 
-Systemd [sysd] is a daemon for Linux, that executes system management
+Systemd ~\cite{sysd1}~\cite{sysd2} is a daemon for Linux, that executes system management
 operations. It is the first process that starts during boot, and thus it is
 given the PID 1. Systemd implements a lot of features for increased
 performance and system management over previous start up processes, like
@@ -438,7 +438,7 @@ This section introduces ...
 
 \subsection{Sockets}
 The communication between applications and \texttt{systemd} is obtained
-through sockets. The RM runs in the \texttt{systemd} main loop, therefore
+through sockets ~\cite{socket}. The RM runs in the \texttt{systemd} main loop, therefore
 sockets are used to send data between the RM and the applications.
 
 Sockets are the endpoints for \emph{inter-process communication} (IPC) 
@@ -474,7 +474,7 @@ installed, although the P3367 runs a more updated version of it.
 This is a small camera, connected to the network either wired or wireless. 
 It supports multiple H.264 streams and Motion JPEG running at a maximum
 resolution of 800x600 at 30 frames per second. It has two audio streaming
-channels, which means that it can both record and play audio clips. 
+channels, which means that it can both record and play audio clips. ~\cite{m1033} 
 
 \begin{figure}[h]
     \centering
@@ -491,7 +491,7 @@ using the collected data, for example some motion detection application.
 
 \subsection{Axis P3367}
 
-The Axis P3367 is a fixed dome network camera capable of multiple H.264
+The Axis P3367 ~\cite{p3367} is a fixed dome network camera capable of multiple H.264
 streams as well as Motion JPEG streams. It supports various frame rates and
 resolutions up to 5 Megapixel at 12 frames per second, it also supports 
 HDTV 1080p at 30 frames per second and has two way audio streaming 
@@ -507,7 +507,7 @@ capabilities.
 
 The power is supplied using Power over Ethernet, therefore the camera does 
 not need a separate power supply and is powered directly through the network
-cable. It features an ARTPEC-4 system-on-chip, developed by Axis, which
+cable. It features an ARTPEC-4 ~\cite{artpec-4} system-on-chip, developed by Axis, which
 contains a single-core CPU running at 400 MHz and a co-processor dedicated
 to video analytics.
 
@@ -1262,6 +1262,7 @@ the initial shared memory approach used by \texttt{jobsignaler}.
 // because irrelevant [...]
 uint id;
 _application_h* myself;
+...	
 
 int main (int argc, char* argv[]) {
 	// parsing information from char* argv[].
@@ -1634,6 +1635,7 @@ If no such file is created, by default, \texttt{systemd} defines a slice
 that all services will belong to. Any service file in the 
 \texttt{/etc/systemd/system} folder overrides a service file for the 
 same application declared somewhere else. An example of such files follows.
+
 
 \subsubsection{gtrm.slice}
 \begin{verbatim}
@@ -2163,8 +2165,7 @@ Used to setup the socket, event source and file descriptor for the resource mana
 \begin{itemize}
 \item m: Reference to the manager.
 \item Return value: Zero if function ran correctly, otherwise it is set to the corresponding error number.
-\end{itemize}CPUShares=1024
-
+\end{itemize}
 
 \subsection{double gtrm\_lib\_get\_performance\_number(\_application\_h* a, int job\_type)}
 Calculates the peformance (matching function) by averaging the performance of the last ten jobs of a specified type.
@@ -2236,19 +2237,3 @@ that will be performed each job.
 
 
 \end{document}
-
-%KÄLLOR: 
-%[sysd] 	http://www.freedesktop.org/wiki/Software/systemd/
-%		http://0pointer.de/blog/projects/systemd.html
-%[cgropus]	https://www.kernel.org/doc/Documentation/cgroups/cgroups.txt
-%[sysd-notify]	http://www.freedesktop.org/software/systemd/man/systemd-notify.html
-%[socket]      	http://infohost.nmt.edu/~eweiss/222_book/222_book/0201433079/ch16lev1sec2.html
-%[p3367]	http://www.axis.com/files/manuals/um_p3367v_49013_en_1211.pdf
-%[m1033]	
-%[artpec-4]	http://www.axis.com/corporate/press/se/releases/viewstory.php?case_id=2374
-%[gst]		http://gstreamer.freedesktop.org/
-%		http://docs.gstreamer.com/display/GstSDK/Tutorials
-%[sockets]	http://beej.us/guide/bgnet/output/html/multipage/theory.html
-%		http://pic.dhe.ibm.com/infocenter/zvm/v6r2/index.jsp?topic=/com.ibm.zos.r12.cbcpx01/ovsock.htm
-%[epoll]	http://en.wikipedia.org/wiki/Epoll
-
