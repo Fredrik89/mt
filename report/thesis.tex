@@ -1891,8 +1891,8 @@ The camera is split into two different top level slices, the gtrm.slice, contain
 
 
 
-Both gtrm.slice and system.slice have been given $CPUShares = 1024$ meaning that the cpu resources are split 50/50 between the two slices. The test applications takes 10 arguments when started, described in the box below, that will be varied between different test. By varying the weight parameter from 0 to 1 the applications can be set somewhere between the extremes of only adapting through resource allocation or only adapt through SL adaptation.
-By varying the a\_cpu and b\_cpu the speed that the cpu requirement changes due to changes in SL varies. The epsilon makes the SL adaptation slower or faster.
+The system.slice have been given $CPUShares = 1024$ and the gtrm.slice 256 meaning that the cpu resources are split 4/5 to 1/5 between the two slices. The test applications takes 10 arguments when started, described in the box below, that will be varied between different test. By varying the weight parameter from 0 to 1 the applications can be set somewhere between the extremes of only adapting through resource allocation or only adapt through SL adaptation.
+By varying the a\_cpu and b\_cpu the speed that the cpu requirement changes due to changes in SL varies. The epsilon makes the SL adaptation slower or faster. All services are given an initial 100 CPUShares to be able to send their first message to systemd relatively fast.
 
 
 \begin{framed}
@@ -1922,30 +1922,46 @@ Sequence number two launches the same applications as in sequence number one but
 
 
 \subsection{Test 1}
-The first test uses the following applications.
 
-%\begin{comment}
-\begin{verbatim}
+Here four applications are started in roughly 10 seconds intervals. The applications are started with the settings shown in table \ref{tab:settings_test1}
+The result are shown in figures ~\ref{fig:test1_vp} to ~\ref{fig:test1_f}.
+\begin{table}[h]
+  \centering
+  \begin{tabular}{|c|c|c|c|c|c|c|}
+ 	\hline 
+   \emph{app} & $SL_{t=0}$ & \textbf{$a_{cpu}$} & \textbf{$b_{cpu}$} & \textbf{$\epsilon$} & \emph{weight} & \emph{Deadline} \\ \hline
+	app1 & 300 & 10 & 0 & 0.6 & 0.5 &0.04  \\ \hline
+	app1 & 300 & 20 & 0 & 0.6 & 0.5 &0.04  \\ \hline
+	app1 & 300 & 10 & 0 & 0.6 & 0.1 &0.04  \\ \hline
+	app1 & 300 & 10 & 0 & 0.6 & 0.1 &0.04  \\ \hline        
+  \end{tabular}
+  \caption{Settings for the apps in seq2 test1}
+  \label{tab:settings_test1}
+\end{table}
 
-|-gtrm.slice
-  |-gtrm4.service
-  | -4574 /mnt/flash/test-gtrm-app 50 10 0 0 0 0.1 0.5 0.04
-  |-gtrm.service
-  | -4573 /mnt/flash/test-gtrm-app 50 10 0 0 0 0.6 0.5 0.04
-  |-gtrm2.service
-  | -4572 /mnt/flash/test-gtrm-app 50 10 0 0 0 0.6 0.5 0.04
-  |-trm3.service
-    -4571 /mnt/flash/test-gtrm-app 50 10 0 0 0 0.1 0.5 0.04
-\end{verbatim}
-%\end{comment}
 
-\subsubsection{Test Sequence 1}
 
-%insert result
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test1/vp"}
+  \caption{The virtual platforms for the apps in test1 seq2}
+  \label{fig:test1_vp}
+\end{figure}
 
-\subsubsection{Test Sequence 2}
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test1/sl"}
+  \caption{The SL for the apps in test1 seq2}
+  \label{fig:test1_sl}
+\end{figure}
 
-%insert result
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test1/f"}
+  \caption{The performance for the apps in test1 seq2}
+  \label{fig:test1_f}
+\end{figure}
+
 
 \subsection{Test 2}
 The second test uses the following applications.
@@ -2048,7 +2064,19 @@ Writes information about the resource management to a log file, which can then b
 
 \section{manager.c/h}
 One of the main files in systemd and is for example responsible for inter process communication. The following fields are added to the \emph{Manager} struct in manager.h:
-\begin{itemize}
+\begin{itemize}\begin{figure}[t]
+\centering
+\begin{tabular}{|c|c|c|} \hline
+\textbf{Name} & \textbf{CPUShares} &  \textbf{\% of CPU} \\ \hline \hline
+CPU & 1 & 100 \\ \hline
+Slice 1 & 400 & 80 \\ \hline
+Slice 2 & 100 & 20 \\ \hline
+Service 1 & 200 & $2/3 * 80 = 53$ \\ \hline
+Service 2 & 100 & $1/3 * 80 = 27$\\ \hline
+\end{tabular}
+\label{fig:ctable}
+\caption{Table over assigned CPU for the different units.}
+\end{figure}
 \item gtrm\_socket: String that represent the socket used by GTRM.
 \item gtrm\_fd: A file descriptor, which is an integer, for communicating with GTRM.
 \item gtrm\_event\_source: Used to determine the source of an event and how this event is supposed to be handled.
