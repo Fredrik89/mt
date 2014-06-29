@@ -2008,33 +2008,97 @@ The result is shown in figures ~\ref{fig:test2_vp} to ~\ref{fig:test2_f}.
 
 
 
-\begin{comment}
 
-\subsection{Test 3: 4 applications with SL adaptation and weights set to 0)
-Four applications are started as in test1 but with all the weights set to 0
+\subsection{Test 3: 4 applications with SL adaptation and weights set to 0}
+Four applications are started as in test1 but with all the weights set to 0.
 With all weights set to zero the virtual platform are not expected to change.
 The result is shown in figures ~\ref{fig:test3_vp} to ~\ref{fig:test3_f}. 
 
 \begin{figure}[!H]
   \centering
-  \includegraphics{"tools/plot/logs/test2/vp"}
+  \includegraphics{"tools/plot/logs/test3/vp"}
   \caption{The virtual platforms for the apps in test3}
-  \label{fig:test1_vp}
+  \label{fig:test3_vp}
 \end{figure}
 
 \begin{figure}[!H]
   \centering
-  \includegraphics{"tools/plot/logs/test2/sl"}
+  \includegraphics{"tools/plot/logs/test3/sl"}
   \caption{The SL for the apps in test3}
-  \label{fig:test1_sl}
+  \label{fig:test3_sl}
 \end{figure}
 
 \begin{figure}[!H]
   \centering
-  \includegraphics{"tools/plot/logs/test2/f"}
+  \includegraphics{"tools/plot/logs/test3/f"}
   \caption{The performance for the apps in test3}
-  \label{fig:test1_f}
+  \label{fig:test3_f}
 \end{figure}
+
+\subsection{Test 4: 4 applications with SL and CPU adaptation and weights set to 1}
+Four applications are started as in test1 but with all the weights set to 1.
+With all weights set to one most of the adaptation is expected to be done by varying the SL.
+The result is shown in figures ~\ref{fig:test4_vp} to ~\ref{fig:test4_f}. 
+
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test3/vp"}
+  \caption{The virtual platforms for the apps in test4}
+  \label{fig:test4_vp}
+\end{figure}
+
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test4/sl"}
+  \caption{The SL for the apps in test4}
+  \label{fig:test4_sl}
+\end{figure}
+
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test4/f"}
+  \caption{The performance for the apps in test4}
+  \label{fig:test4_f}
+\end{figure}
+
+
+\begin{comment}
+
+\subsection{Test 5: 4 applications with both SL and cpu adaptation.}
+Four applications are started one by one with the settings in table
+With all weights set to one most of the adaptation is expected to be done by varying the SL.
+The result is shown in figures ~\ref{fig:test4_vp} to ~\ref{fig:test4_f}. 
+
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test3/vp"}
+  \caption{The virtual platforms for the apps in test4}
+  \label{fig:test4_vp}
+\end{figure}
+
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test4/sl"}
+  \caption{The SL for the apps in test4}
+  \label{fig:test4_sl}
+\end{figure}
+
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test4/f"}
+  \caption{The performance for the apps in test4}
+  \label{fig:test4_f}
+\end{figure}
+
+
+
+
+
+
+
+
+
+
 
 \subsection{Test 4: 4 applications with SL and CPU adaptation and weights set to 1)
 Four applications are started as in test1 but with all the weights set to 1

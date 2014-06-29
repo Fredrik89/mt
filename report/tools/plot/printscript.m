@@ -3,7 +3,7 @@
 
 
 
-cd logs/test2
+cd logs/test4
 
 
 
