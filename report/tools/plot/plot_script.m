@@ -7,7 +7,7 @@
 
 
 %TEST="test3"
-NO_OF_PLOTS = 4
+NO_OF_PLOTS = 5
 
 
 
@@ -25,7 +25,7 @@ sl_handle = figure
 
 close all
 
-my_colors = ["b","r","g","m"]
+my_colors = ["b","r","g","m","k"]
 
 
 

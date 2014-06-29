@@ -3,7 +3,7 @@
 
 
 
-cd logs/test4
+cd logs/test2
 
 
 
@@ -17,7 +17,7 @@ set(h,'PaperOrientation','portrait');
 set(h,'PaperSize',[H,W])
 set(h,'PaperPosition',[0,0,W,H])
 
-print -dpng vp.png
+print -dpng vp.png	
 
 
 
