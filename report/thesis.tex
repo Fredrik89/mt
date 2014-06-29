@@ -1982,6 +1982,10 @@ The second test uses the following applications.
 \chapter{Conclusion and Further Work}
 \label{chp:conclusion}
 
+\section{Conclusions}
+From the results and the work carried out during this thesis, it can be concluded that the GTRM, can be integrated into systemd and run on an embedded Linux system as an Axis camera. This can be concluded from the completion and evaluation of the different steps of the implementation. First of all the IPC was succesfully converted from shared memory to socket communication. This was necessary because of various reasons. The move from shared memory also required a new data structure for the applications. A hashmap, for which an implementation included by systemd was a natural choice. Since we keep track of each application by their PID this would serve perfectly as the key in the data-structue and its constant time-complexity would not degrade performance notably. This implementation also included macros for iterating through the hashmap, besides all the normal functions for adding and retrieving elements, so incorporating this data structure was made painlessly. The resource management loop could be inserted into the main loop of systemd and performed as expected. By transistioning to CPU-shares from cpu.quota and cpu.period, meant the risk of causing a kernel panic by assigning more resource than available
+
+
 
 %\printbibliography  %% Comment if you don't want to use bibtex
 
