@@ -2130,23 +2130,66 @@ The result is shown in figures ~\ref{fig:test3_vp} to ~\ref{fig:test3_f}.
 
 %insert result
 
-\chapter{Conclusion and Further Work}
+\chapter{Conclusion and Future Work}
 \label{chp:conclusion}
 
-\section{Conclusions}
-From the results and the work carried out during this thesis, it can be concluded that the GTRM, can be integrated into systemd and run on an embedded Linux system as an Axis camera. This can be concluded from the completion and evaluation of the different steps of the implementation. First of all the IPC was succesfully converted from shared memory to socket communication. This was necessary because of various reasons. Implementation of this IPC was fairly easy since the "Notify"-feature served as a "template" to the IPC for the resource manager. However it was concluded that this code was harder to follow and debug, compared to code completely written from scratch. The end result worked well and was of course better integrated into systemds way of doing things than the alternatives.
+This thesis implemented a Game Theoretic Resource Manager (GTRM) on Axis
+cameras, to distrubute the CPU among multiple running applications that can
+be adaptive in nature and vary their service level and the required
+computation, together with the quality of the offered service.
 
-The move from shared memory also required a new data structure for the applications. A hashmap, for which an implementation was included by systemd was a natural choice. Since we keep track of each application by their PID this serves perfectly as the key in the data-structue and its constant time-complexity would not degrade performance notably. This hashmap-implementation also included macros for iterating through the hashmap, besides all the normal functions for adding and retrieving elements, which made incorporating this data structure painless. 
+\section{Conclusion}
 
-The resource management loop was inserted into the main loop of systemd and performed as expected. By changing to CPU-shares from cpu.quota and cpu.period, the risk of causing a kernel panic by assigning more resource than available was elliminated. Since the assignment of CPU-shares is done inside of systemd without the need of communcation over DBus, it does not require a significant amount of time. But if DBus messaging had been required to set the CPU-shares, it is possible that this could not be done fast enough.
+The provided implementation demonstrated that the GTRM can be integrated into
+\texttt{systemd} and run in an Axis camera. To this end, many steps have been
+followed. First of all the Inter-Process Communication of the original GTRM
+was succesfully converted from shared memory to socket communication. The
+conversion was necessary to realize the integration with the camera
+framework. The implementation of the socket-based IPC resembled the
+code of the ``Notify'' feature, already included in the operating system.
+However, the resulting code was harder to understand and debug, compared to
+code completely written from scratch. The final result worked well and was
+well integrated into \texttt{systemd}.
 
-\section{Further work}
-It still remains to make the service level adaptation fully working on the video streaming, and this would be the main focus of further work. System performance will be further improved for each application that can be managed by the GTRM. Thus implementing matching function calculation and service level adaptation to all the applications running on the system would be the ultimate solution to the resource managment and prioritization problem. This would also eliminate the need for different cgroup slices, since all the applications would be running in the same slice.
+The transition from shared memory to socket usage also required a new data
+structure for the applications. A hashmap was a natural choice. The
+applications PIDs were the natural choice to be used for the hashmap keys.
+The constant time-complexity of the data access provided by a hashmap does not
+negatively impact on the GTRM performance. The provided implementation also
+included macros for iterating through the hashmap, together with all the
+normal functions for adding and retrieving elements. 
 
-The system itself is in need of further testing to track down bugs and memory leaks, if any. Further work would consist of taking this rough prototype and develop a more refined product. This project is well integrated into Axis' version control and could easily be applied as a patch to future products but it could also be of interest to share this work with the systemd open source community.
+The resource management loop was inserted into the main loop of 
+\texttt{systemd} and performed as expected. By changing to CPU-shares from
+\texttt{cpu.quota} and \texttt{cpu.period}, the risk of causing a kernel 
+panic by assigning more resource than available was eliminated. Since the
+assignment of CPU-shares is done inside \texttt{systemd}, without the need of
+communication over DBus, it does not require a significant amount of time.
 
+\martina{What do the results show? Beside the fact that it is usable?
+  Is there something that was expected and is not working in the way you
+  thought? Is there something that was not expected and happened?}
 
-%\printbibliography  %% Comment if you don't want to use bibtex
+\section{Future work}
+
+The work done in this thesis should be extended completing the implementation
+of a service level aware video streaming application. The performance of
+the system can be further improved when more applications are using the
+service level framework, therefore every application that can be ported to
+the idea of service levels and varying quality should be improved.
+Implementing the matching function calculation and the service level
+adaptation would be the ultimate solution to the resource management and
+prioritization problem. This would also eliminate the need for the static
+cgroup slice, since all the applications would be running in the same slice,
+managed by the GTRM.
+
+The system itself is in need of further testing to track down bugs and
+memory leaks, if any. Future work would consist of taking this rough
+prototype and develop a more refined product. This project is well 
+integrated into Axis' version control and could easily be applied as a 
+patch to future products. Also, it could be of interest to share this 
+work with the \texttt{systemd} open source community.
+
 
 \bibliographystyle{plain}
 \bibliography{mybib}
