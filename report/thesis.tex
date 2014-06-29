@@ -1989,6 +1989,10 @@ The move from shared memory also required a new data structure for the applicati
 
 The resource management loop was inserted into the main loop of systemd and performed as expected. By changing to CPU-shares from cpu.quota and cpu.period, the risk of causing a kernel panic by assigning more resource than available was elliminated. Since the assignment of CPU-shares is done inside of systemd without the need of communcation over DBus, it does not require a significant amount of time. But if DBus messaging had been required to set the CPU-shares, it is possible that this could not be done fast enough.
 
+\section{Further work}
+It still remains to make the service level adaptation fully working on the video streaming, and this would be the main focus of further work. System performance will be further improved for each application that can be managed by the GTRM. Thus implementing matching function calculation and service level adaptation to all the applications running on the system would be the ultimate solution to the resource managment and prioritization problem. This would also eliminate the need for different cgroup slices, since all the applications would be running in the same slice.
+
+The system itself is in need of further testing to track down bugs and memory leaks, if any. Further work would consist of taking this rough prototype and develop a more refined product. This project is well integrated into Axis' version control and could easily be applied as a patch to future products but it could also be of interest to share this work with the systemd open source community.
 
 
 %\printbibliography  %% Comment if you don't want to use bibtex
