@@ -6,7 +6,7 @@
 
 
 
-TEST="test1"
+%TEST="test3"
 NO_OF_PLOTS = 4
 
 
