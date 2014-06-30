@@ -1,0 +1,7 @@
+[Unit]
+
+[Service]
+ExecStart=/mnt/flash/test-gtrm-app 50 20 0 0 0 0.01 0.2 0.04
+CPUShares=100
+Slice=gtrm.slice
+

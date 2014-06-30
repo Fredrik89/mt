@@ -3,7 +3,7 @@
 
 
 
-cd logs/test5
+cd logs/test6
 
 
 h=v_handle

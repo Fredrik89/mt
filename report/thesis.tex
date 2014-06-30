@@ -1935,7 +1935,7 @@ To test the system, several applications are run with different parameters.
 
 In the test all the applications are launched at the same time. The applications are expected to converge to a matching function close to or equal to zero, with a service level that will stabilize over time. It also expected that the resource manager will initially assign all the applications the same amount of resources. As their demands and adaptation rates vary, the applications service level and virtual platforms does not have to converge identically, but if the system works as intended they should all end up with a performance close to zero.
 
-The tests are performed by starting the services one by one. Every time an application is added the system is expected to reset the virtual platforms, assigning each application the same amount of resources. After that the system will then manage the resources and service level until all the applications are satisfied with their performance.
+The tests are performed by starting the services one by one. Every time an application is added the system is expected to reset the virtual platforms, assigning each application the same amount of resources. After that the system will then manage the resources and service level until all the applications are satisfied with their performance. After the tests were done it was discovered that all values for virtual platforms had been scaled by multiplying them with 0.9. This does not affect the algorithm since it corresponds to scaling the total amount of CPUShares with a factor 0.9. However it might good to keep in mind when looking at plot 6.
 
 
 
@@ -1992,7 +1992,59 @@ The result is shown in figures ~\ref{fig:test2_vp} to ~\ref{fig:test2_f}.
   \label{fig:test2_vp}
 \end{figure}
 
+
+
+\subsection{Test 5: 4 applications with both SL and CPU adaptation.}
+Four applications are started one by one with the settings in table \ref{tab:settings_test5}
+According to proposition 3.2 in "A Game-Theoretic Resource Manager for RT Applications" \cite{gtrm};
+given that the service level is large enough, the normalized virtual platforms will tend to the values given by:
+
+
+  \begin{eqnarray}	\label{eq:SpecialStationaryPoint}
+    \tv_i^* \to \frac{\lambda_i}{\sum_{j=1}^{n}\lambda_j},
+  \end{eqnarray}
+
+
+
+
 \begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test5/vp"}
+  \caption{The virtual platforms for the apps in test5}
+  \label{fig:test5_vp}
+\end{figure}
+
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test5/sl"}
+  \caption{The SL for the apps in test5}
+  \label{fig:test5_sl}
+\end{figure}
+
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test5/f"}
+  \caption{The performance for the apps in test5}
+  \label{fig:test5_f}
+\end{figure}
+
+
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{|c|c|c|c|c|c|c|}
+ 	\hline 
+   \emph{app} & $SL_{t=0}$ & \textbf{$a_{cpu}$} & \textbf{$b_{cpu}$} & \textbf{$\epsilon$} & \emph{weight} & \emph{Deadline} \\ \hline
+	app1 & 75 & 0 & 10 & 0.06 & 0.2 &0.04  \\ \hline
+	app2 & 75 & 0 & 10 & 0.06 & 0.4 &0.04  \\ \hline
+	app3 & 75 & 0 & 10 & 0.01 & 0.6 &0.04  \\ \hline
+	app4 & 75 & 0 & 10 & 0.01 & 0.8 &0.04  \\ \hline        
+  \end{tabular}
+  \caption{Settings for the apps in test5}
+  \label{tab:settings_test5}
+\end{table}
+
+\begin{figure}
   \centering
   \includegraphics{"tools/plot/logs/test2/sl"}
   \caption{The SL for the apps in test2}
@@ -2024,8 +2076,8 @@ The result is shown in figures ~\ref{fig:test2_vp} to ~\ref{fig:test2_f}.
 
 
 \subsection{Test 3: 4 applications with SL adaptation and weights set to 0}
-Four applications are started as in test1 but with all the weights set to 0.
-With all weights set to zero the virtual platform are not expected to change.
+Four applications are started as in test1 but now with all the weights set to 0.
+With all weights set to zero the virtual platforms are not expected to change.
 The result is shown in figures ~\ref{fig:test3_vp} to ~\ref{fig:test3_f}. 
 
 \begin{figure}[!H]
@@ -2075,7 +2127,7 @@ The result is shown in figures ~\ref{fig:test4_vp} to ~\ref{fig:test4_f}.
   \label{fig:test4_f}
 \end{figure}
 
-
+\clearpage
 
 \subsection{Test 5: 4 applications with both SL and CPU adaptation.}
 Four applications are started one by one with the settings in table \ref{tab:settings_test5}
@@ -2088,21 +2140,11 @@ given that the service level is large enough, the normalized virtual platforms w
   \end{eqnarray}
 
 
-\begin{comment}
-\end{comment}
-
 \begin{figure}[!H]
   \centering
   \includegraphics{"tools/plot/logs/test5/vp"}
   \caption{The virtual platforms for the apps in test5}
   \label{fig:test5_vp}
-\end{figure}
-
-\begin{figure}[!H]
-  \centering
-  \includegraphics{"tools/plot/logs/test5/sl"}
-  \caption{The SL for the apps in test5}
-  \label{fig:test5_sl}
 \end{figure}
 
 \begin{figure}[!H]
@@ -2114,7 +2156,7 @@ given that the service level is large enough, the normalized virtual platforms w
 
 
 
-\begin{table}[h]
+\begin{table}
   \centering
   \begin{tabular}{|c|c|c|c|c|c|c|}
  	\hline 
@@ -2129,17 +2171,54 @@ given that the service level is large enough, the normalized virtual platforms w
 \end{table}
 
 
+\subsection{Test 6: 3 applications with both SL and CPU adaptation and 2 without SL adaptation}
+Five applications are started one by one with the settings in table \ref{tab:settings_test6}
+
+
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test6/vp"}
+  \caption{The virtual platforms for the apps in test6}
+  \label{fig:test6_vp}
+\end{figure}
+
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test6/sl"}
+  \caption{The SL for the apps in test6}
+  \label{fig:test6_sl}
+\end{figure}
+
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test6/f"}
+  \caption{The performance for the apps in test6}
+  \label{fig:test6_f}
+\end{figure}
+
+
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{|c|c|c|c|c|c|c|}
+ 	\hline 
+   \emph{app} & $SL_{t=0}$ & \textbf{$a_{cpu}$} & \textbf{$b_{cpu}$} & \textbf{$\epsilon$} & \emph{weight} & \emph{Deadline} \\ \hline
+	app1 & 50 & 0  & 30 & - 	  & 0.5 &0.04  \\ \hline
+	app2 & 50 & 20 & 0  & 0.01  & 0.5 &0.04  \\ \hline
+	app3 & 50 & 0  & 30 & - 	  & 0.2 &0.04  \\ \hline
+	app4 & 50 & 20 & 0  & 0.01  & 0.2 &0.04  \\ \hline
+	app5 & 50 & 10 & 0  & 0.002 & 0.8 &0.04  \\ \hline                
+  \end{tabular}
+  \caption{Settings for the apps in test6}
+  \label{tab:settings_test6}
+\end{table}
+
 
 
 \begin{comment}
+\end{comment}
 
-
-
-
-
-
-
-
+\begin{comment}
 
 
 \subsection{Test 4: 4 applications with SL and CPU adaptation and weights set to 1)
