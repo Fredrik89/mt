@@ -1866,14 +1866,12 @@ It is also desirable to test if the system can fulfill the previously described 
 
 \end{comment}
 
-
+\section{Testing}
 
 The first part of the testing is done by starting and stopping different test-applications on the Axis P3367 camera, running on the gtrm-slice.
 The slices and services are started and stopped with the command line tool systemctl \cite{systemctl}.
 
 The camera is split into two different top level slices, the gtrm.slice, containing the test services, and the system.slice that contains all other services. The command line tool systemd-cgls shows the layout of the service/slice tree:
-
-
 
 \begin{figure}[h]
     \centering
@@ -1888,8 +1886,6 @@ The camera is split into two different top level slices, the gtrm.slice, contain
     \caption{The last lines of the output from systemd-cgls}
     \label{fig:systemd-cgls2}
 \end{figure}
-
-
 
 Both gtrm.slice and system.slice have been given $CPUShares = 1024$ meaning that the cpu resources are split 50/50 between the two slices. The test applications takes 10 arguments when started, described in the box below, that will be varied between different test. By varying the weight parameter from 0 to 1 the applications can be set somewhere between the extremes of only adapting through resource allocation or only adapt through SL adaptation.
 By varying the a\_cpu and b\_cpu the speed that the cpu requirement changes due to changes in SL varies. The epsilon makes the SL adaptation slower or faster.
@@ -1920,24 +1916,28 @@ In the first sequence all the applications are launched at the same time. The ap
 
 Sequence number two launches the same applications as in sequence number one but one after each other with some delay between them. Every time an application is added the system is expected to reset the virtual platforms, assigning each application the same amount of resources. After that the system will then manage the resources and service level until all the applications are satisfied with their performance.
 
-
+\section{Results}
 \subsection{Test 1}
-The first test uses the following applications.
+The first test uses the applications specified in table ~\ref{tab:test1apps}.
 
-%\begin{comment}
-\begin{verbatim}
-
-|-gtrm.slice
-  |-gtrm4.service
-  | -4574 /mnt/flash/test-gtrm-app 50 10 0 0 0 0.1 0.5 0.04
-  |-gtrm.service
-  | -4573 /mnt/flash/test-gtrm-app 50 10 0 0 0 0.6 0.5 0.04
-  |-gtrm2.service
-  | -4572 /mnt/flash/test-gtrm-app 50 10 0 0 0 0.6 0.5 0.04
-  |-trm3.service
-    -4571 /mnt/flash/test-gtrm-app 50 10 0 0 0 0.1 0.5 0.04
-\end{verbatim}
-%\end{comment}
+\begin{table}[h]
+\centering
+\begin{tabular}{ccccccc}
+\hline
+ & $a^\mathsf{cpu}_i$ & $b^\mathsf{cpu}_i$
+ & $a^\mathsf{mem}_i$ & $b^\mathsf{mem}_i$
+ & $\epsilon_i$ & $\lambda_i$ \\
+\hline
+$\mathsf{app}_1$ & 0 & 1000 & 0 & 0 & - & 0.5 \\
+$\mathsf{app}_2$ & 1000 & 0 & 0 & 0 & 0.1 & 0.5 \\
+$\mathsf{app}_3$ & 0 & 1000 & 0 & 0 & - & 0.2 \\
+$\mathsf{app}_4$ & 1000 & 0 & 0 & 0 & 0.1 & 0.2 \\
+$\mathsf{app}_5$ & 100 & 0 & 0 & 0 & 0.01 & 0.8 \\
+\hline
+\end{tabular}
+\caption{Applications used in Test 1.}
+\label{tab:test1apps}
+\end{table}
 
 \subsubsection{Test Sequence 1}
 
@@ -1948,7 +1948,27 @@ The first test uses the following applications.
 %insert result
 
 \subsection{Test 2}
-The second test uses the following applications.
+The second test uses applications specified in table ~\ref{tab:test2apps}.
+
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ccccccc}
+\hline
+ & $a^\mathsf{cpu}_i$ & $b^\mathsf{cpu}_i$
+ & $a^\mathsf{mem}_i$ & $b^\mathsf{mem}_i$
+ & $\epsilon_i$ & $\lambda_i$ \\
+\hline
+$\mathsf{app}_1$ & 0 & 1000 & 0 & 0 & - & 0.5 \\
+$\mathsf{app}_2$ & 1000 & 0 & 0 & 0 & 0.1 & 0.5 \\
+$\mathsf{app}_3$ & 0 & 1000 & 0 & 0 & - & 0.2 \\
+$\mathsf{app}_4$ & 1000 & 0 & 0 & 0 & 0.1 & 0.2 \\
+$\mathsf{app}_5$ & 100 & 0 & 0 & 0 & 0.01 & 0.8 \\
+\hline
+\end{tabular}
+\caption{Applications used in Test 2.}
+\label{tab:test2apps}
+\end{table}
 
 %\begin{comment}
 \begin{verbatim}
