@@ -15,14 +15,13 @@
 \usepackage{todonotes}
 \usepackage{framed}
 
-
 \usepackage{nicefrac}
 \usepackage{amsmath} % assumes amsmath package installed
 
 \newcommand{\martina}[1]
   {\todo[inline,color=red!30,caption={}]{\textbf{Martina:} #1}}
 
-\newcommand{\newstuff}[1]
+\newcommand{\newstuff}[1]%
   {\todo[inline,color=green!30,caption={}]{\textbf{New stuff:} #1}}
 \newcommand{\tv}{\tilde{v}}
 
@@ -2370,8 +2369,7 @@ work with the \texttt{systemd} open source community.
 
 \appendix
 
-\chapter{Source Code Overview}\newcommand{\martina}[1]
-  {\todo[inline,color=red!30,caption={}]{\textbf{Martina:} #1}}
+\chapter{Source Code Overview}
 In this section follows an overview of the header and source files used in the system and their attributes.
 
 \section{gtrm\_lib.c/h}
