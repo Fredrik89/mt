@@ -77,8 +77,8 @@ given resources and their computing requirements. This service level
 adaptation scheme is partially implemented for the streaming service on the
 camera and for some test services, performing mathematical operations. The
 resource manager is incorporated into \texttt{systemd}, and uses 
-\texttt{cgroups}~\cite{cgroups} to distribute the computing capacity.
-\martina{Add one sentence to summarize the results.}
+\texttt{cgroups}~\cite{cgroups} to distribute the computing capacity. The result is a fully operational resource manager, capable of managing and prioritizing resources as intended on the embedded system. However the work with adapting the video quality adaptation is still left to be completed.
+\fixed{Add one sentence to summarize the results.}
 
 
 \chapter*{Acknowledgements}
@@ -257,7 +257,41 @@ the application is always presenting valid result in time but with varying
 quality, as a trade-off. This adaptation is done by the application itself,
 without the resource management policy interfering with it.
 
-\martina{You should write a paragraph with an example on how the service
+There are of course many possible ways of adjusting the service level, two of them were considered.
+In the first case, the application only considers information that are
+internally available, while in the second case, the application receives
+"hints" from GTRM and follows those hints.
+
+The \emph{independent adaptation} simply multiplies the current service level,
+the matching function and a constant scale factor $\epsilon$. This adaptation
+decreases the service level if the performance is negative and increases it 
+if the matching function is positive. The scaling factor $\epsilon$ slows 
+down the adaption rate to avoid instability. 
+
+\begin{equation}
+sl_i(t+1)= sl_i(t) + \epsilon*(f_i(t)*sl_i(t))
+\end{equation}
+
+The \emph{coordinated adaptation} follows a suggestion given by the resource
+manager, that includes also the variation of the resource allocation. In fact,
+the resource manager sends to the application a \emph{performance multiplier}
+$PM_i$ that is used as an estimation of how much the service levels should
+change to match the current allocation, that is unknown on the application
+side.
+
+The performance multiplier $PM_i$ is computed as
+\begin{equation}
+PM_i = (1+f_i) \cdot (vp_i(i+1)/vp(i))
+\end{equation}
+and the applications sets the new service level as
+\begin{equation}
+sl_i(t+1) = sl_i(t) + (\epsilon \cdot sl_i(t) \cdot PM_i).
+\end{equation}
+
+The test applications used in this thesis simply makes some random computations in an infinite loop to demand and make use of resources. In this case each iteration corresponds to one "job", but a job could for example be the processing of an image frame done by an image processing application. The quality of service for these applications is the amount of computations done each iteration, thus a higher service level means more computations done each iteration. One could also model the service level the other way around, meaning we have a fixed amount of computations done each iteration, thus increasing the service level would instead increase the amount of computational iterations.
+
+
+\fixed{You should write a paragraph with an example on how the service
   level is adjusted. For example, when you take the \emph{test application}
   what is the service level? Is it the same as the test application of
   the original GTRM? If so, write it and write \textbf{how} the adaptation
@@ -266,6 +300,7 @@ without the resource management policy interfering with it.
   the matching function as well (if it does it) --- in the original GTRM
   contribution it was using the performance multiplier, which is a variation
   with respect to the original performance measurement.}
+\newstuff{moved text from implementation}
 
 \subsection{Resource Management}
 
@@ -279,15 +314,47 @@ applications. Here ``resources'' could refer to something rather than CPU,
 such as memory or network bandwidth, depending on what is allocated in the
 system.
 
-\martina{Write the equations for the resource adaptation. Take them from the
+The resource update changes the virtual platforms allocated to each running
+application. It follows the algorithm described in 
+``A Game-Theoretic Resource Manager for RT Applications''~\cite[page 4]{gtrm}.
+
+\begin{quotation}
+	[...] the RM assigns resources according to the rule:
+	\begin{enumerate}
+	\item it measures the performance\footnote{As stated in its definition, 
+    $f_i$ is a function of the service level $s_i$ and the virtual platform 
+    $v_i$. However, here we intentionally hide this dependency and report 
+    only the dependency on time $t$, since the RM only measures a value 
+    over time.} $f_i(t)$;  
+	\item it updates the virtual platform $\tilde{v}_{i}$ as follows:
+		\begin{multline}
+		  \tilde{v}_i(t+1) = \tilde{v}_i(t) + 
+                         \epsilon_{ RM}(t)\Big(- \lambda_i f_i(t) + 
+                         \sum_{j=1}^n \lambda_j f_j(t) \tilde{v}_i(t)\Big),
+		  \label{eq:RecursionForResources}
+		\end{multline}
+		where $\epsilon_{ RM}(t)$ is a step-size sequence;
+	\item it computes the original value of bandwidth by 
+    $$v_i(t+1) = m \tilde{v}_i(t+1),$$
+	\item it updates the time $t\leftarrow t+1$ and repeats.
+	\end{enumerate}
+\end{quotation}
+
+Here $\tilde{v}$ is the normalized virtual platform and $m$ is the number
+of computing elements. This means that the computed resource allocation $v$
+represents the percentage of the total resources allocated to the application
+and is converted into the actual value during the third step of the
+algorithm. CPUShares are used here in place of bandwidth, which is independent on the amount of CPU cores for instance. This means that the resource manager does not have to compensate nor keep track of the amount of CPU-cores of the system, as opposed to the bandwidth implementation.
+
+\fixed{Can you comment a bit on what is the difference between CPUShares
+  and bandwidth? From what I understand, it makes a difference in the
+  multicore case.}
+
+\fixed{Write the equations for the resource adaptation. Take them from the
   ECRTS paper. Describe when the resouce manager acts. Is it every second?
   Are there events that triggers it? For example, when a new application is
   introduced, what happens?}
 
-\begin{equation}
-adaptation
-\label{eq:resourceadaptation}
-\end{equation}
 
 \subsection{Decoupling}
 
@@ -580,79 +647,6 @@ non-service level aware applications. The matching function is updated as
 the average of the measured value for the last ten jobs.
 \newstuff{Resource management in this paper is restricted to cpu, cgroups have a controller to handle memory management as well, the \emph{memory} controller, 
 which is not installed on the camera.}
-
-
-\section{Adaptation}
-
-\subsection{Service Level update}
-In the following we discuss to possible ways of adjusting the service level.
-In the first case, the application only considers information that are
-internally available, while in the second case, the application receives
-hint from GTRM and follows those hints.
-
-The \emph{independent adaptation} simply multiplies the current service level,
-the matching function and a constant scale factor $\epsilon$. This adaptation
-decreases the service level if the performance is negative and increases it 
-if the matching function is positive. The scaling factor $\epsilon$ slows 
-down the adaption rate to avoid instability. 
-
-\begin{equation}
-sl_i(t+1)= sl_i(t) + \epsilon*(f_i(t)*sl_i(t))
-\end{equation}
-
-The \emph{coordinated adaptation} follows a suggestion given by the resource
-manager, that includes also the variation of the resource allocation. In fact,
-the resource manager sends to the application a \emph{performance multiplier}
-$PM_i$ that is used as an estimation of how much the service levels should
-change to match the current allocation, that is unknown on the application
-side.
-
-The performance multiplier $PM_i$ is computed as
-\begin{equation}
-PM_i = (1+f_i) \cdot (vp_i(i+1)/vp(i))
-\end{equation}
-and the applications sets the new service level as
-\begin{equation}
-sl_i(t+1) = sl_i(t) + (\epsilon \cdot sl_i(t) \cdot PM_i).
-\end{equation}
-
-\subsection{Resource Allocation update}
-
-The resource update changes the virtual platforms allocated to each running
-application. It follows the algorithm described in 
-``A Game-Theoretic Resource Manager for RT Applications''~\cite[page 4]{gtrm}.
-
-\begin{quotation}
-	[...] the RM assigns resources according to the rule:
-	\begin{enumerate}
-	\item it measures the performance\footnote{As stated in its definition, 
-    $f_i$ is a function of the service level $s_i$ and the virtual platform 
-    $v_i$. However, here we intentionally hide this dependency and report 
-    only the dependency on time $t$, since the RM only measures a value 
-    over time.} $f_i(t)$;  
-	\item it updates the virtual platform $\tilde{v}_{i}$ as follows:
-		\begin{multline}
-		  \tilde{v}_i(t+1) = \tilde{v}_i(t) + 
-                         \epsilon_{ RM}(t)\Big(- \lambda_i f_i(t) + 
-                         \sum_{j=1}^n \lambda_j f_j(t) \tilde{v}_i(t)\Big),
-		  \label{eq:RecursionForResources}
-		\end{multline}
-		where $\epsilon_{ RM}(t)$ is a step-size sequence;
-	\item it computes the original value of bandwidth by 
-    $$v_i(t+1) = m \tilde{v}_i(t+1),$$
-	\item it updates the time $t\leftarrow t+1$ and repeats.
-	\end{enumerate}
-\end{quotation}
-
-Here $\tilde{v}$ is the normalized virtual platform and $m$ is the number
-of computing elements. This means that the computed resource allocation $v$
-represents the percentage of the total resources allocated to the application
-and is converted into the actual value during the third step of the
-algorithm. CPUShares are used here in place of bandwidth.
-
-\martina{Can you comment a bit on what is the difference between CPUShares
-  and bandwidth? From what I understand, it makes a difference in the
-  multicore case.}
 
 \section{Inter-Process Communication}
 
