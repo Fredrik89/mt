@@ -28,7 +28,7 @@
   {\todo[inline,color=blue!30,caption={}]{\textbf{Fixed:} #1}}  
   
 \newcommand{\tv}{\tilde{v}}
-
+\definecolor{red}{rgb}{1,0,0}
 
 \newtheorem{proposition}{Proposition}[section]
 
@@ -312,8 +312,18 @@ sl_i(t+1) = sl_i(t) + (\epsilon \cdot sl_i(t) \cdot PM_i).
 
 \subsection{The test application}
 The test application from \cite{gtrm} has been adapted to work with the implementation in this paper. Below follows an explanation of how it works to provide an example of how an application could implement SL adaptation and be managed by the GTRM.
+The applications considered in this paper typically has a periodic task to perform , here called job, with a associated soft deadline.
+The test application has a linear relationship between the SL and the time it takes for the CPU/CPUs to perform a job described by equation \ref{eq:cputime}. 
 
- 
+\begin{equation}
+C_{cpu} = a_{cpu}*SL + b_{cpu}
+\label{eq:cputime}
+\end{equation} 
+Where $C_{cpu}$ is the number of times a random number is generated which should be proportional to time it takes the CPU/CPUS to perform the job.
+The SL adaptation is  performed every \textcolor{red}{???} job. The average performance of the last ten jobs are then sent to the RM and the SL adaptation is made as described in the previous section. See the sequence diagram  \ref{fig:sdiag} for the application loop.
+
+
+
 
 \subsection{Resource Management}
 
