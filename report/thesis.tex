@@ -1953,7 +1953,7 @@ The result is shown in figures ~\ref{fig:test1_vp} to ~\ref{fig:test1_f}.
 	app3 & 75 & 10 & 0 & 0.01 & 0.5 &0.04  \\ \hline
 	app4 & 75 & 10 & 0 & 0.01 & 0.5 &0.04  \\ \hline        
   \end{tabular}
-  \caption{Settings for the apps in seq2 test1}
+  \caption{Settings for the apps in test1}
   \label{tab:settings_test1}
 \end{table}
 
@@ -1962,21 +1962,21 @@ The result is shown in figures ~\ref{fig:test1_vp} to ~\ref{fig:test1_f}.
 \begin{figure}[!H]
   \centering
   \includegraphics{"tools/plot/logs/test1/vp"}
-  \caption{The virtual platforms for the apps in test1 seq2}
+  \caption{The virtual platforms for the apps in test1}
   \label{fig:test1_vp}
 \end{figure}
 
 \begin{figure}[!H]
   \centering
   \includegraphics{"tools/plot/logs/test1/sl"}
-  \caption{The SL for the apps in test1 seq2}
+  \caption{The SL for the apps in test1}
   \label{fig:test1_sl}
 \end{figure}
 
 \begin{figure}[!H]
   \centering
   \includegraphics{"tools/plot/logs/test1/f"}
-  \caption{The performance for the apps in test1 seq2}
+  \caption{The performance for the apps in test1}
   \label{fig:test1_f}
 \end{figure}
 
@@ -2231,7 +2231,19 @@ The result is shown in figures ~\ref{fig:test3_vp} to ~\ref{fig:test3_f}.
 
 \end{comment}
 
-\chapter{Conclusion and Future Work}
+\chapter{Discussion, Conclusion and Future Work}
+
+\section{Discussion on the results}
+\subsection test1
+See plots \ref{fig:test1_vp} to \ref{fig:test1_f} and table \ref{tab:settings_test1}.
+The plots behaves on the whole as expected from the settings in Table \ref{tab:settings_test1}.
+The mean of the noisy performance converges to zero which corresponds to each application finding a pairing of SL and virtual platform (VP). In the plot a higher/lower SL gives a higher/lower Virtual platform. The SL/VP combination
+for app2 becomes different since the $a_{cpu}$ is twice that of the other apps resulting in a half as big SL compared to what it would have been otherwise. The VP resets after a new app has been started as it should. Th SL converges slower than app1/2 because of the lower epsilon.
+
+
+
+
+
 \label{chp:conclusion}
 
 This thesis implemented a Game Theoretic Resource Manager (GTRM) on Axis
