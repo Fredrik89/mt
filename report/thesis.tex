@@ -1994,55 +1994,7 @@ The result is shown in figures ~\ref{fig:test2_vp} to ~\ref{fig:test2_f}.
 
 
 
-\subsection{Test 5: 4 applications with both SL and CPU adaptation.}
-Four applications are started one by one with the settings in table \ref{tab:settings_test5}
-According to proposition 3.2 in "A Game-Theoretic Resource Manager for RT Applications" \cite{gtrm};
-given that the service level is large enough, the normalized virtual platforms will tend to the values given by:
 
-
-  \begin{eqnarray}	\label{eq:SpecialStationaryPoint}
-    \tv_i^* \to \frac{\lambda_i}{\sum_{j=1}^{n}\lambda_j},
-  \end{eqnarray}
-
-
-
-
-\begin{figure}[!H]
-  \centering
-  \includegraphics{"tools/plot/logs/test5/vp"}
-  \caption{The virtual platforms for the apps in test5}
-  \label{fig:test5_vp}
-\end{figure}
-
-\begin{figure}[!H]
-  \centering
-  \includegraphics{"tools/plot/logs/test5/sl"}
-  \caption{The SL for the apps in test5}
-  \label{fig:test5_sl}
-\end{figure}
-
-\begin{figure}[!H]
-  \centering
-  \includegraphics{"tools/plot/logs/test5/f"}
-  \caption{The performance for the apps in test5}
-  \label{fig:test5_f}
-\end{figure}
-
-
-
-\begin{table}[h]
-  \centering
-  \begin{tabular}{|c|c|c|c|c|c|c|}
- 	\hline 
-   \emph{app} & $SL_{t=0}$ & \textbf{$a_{cpu}$} & \textbf{$b_{cpu}$} & \textbf{$\epsilon$} & \emph{weight} & \emph{Deadline} \\ \hline
-	app1 & 75 & 0 & 10 & 0.06 & 0.2 &0.04  \\ \hline
-	app2 & 75 & 0 & 10 & 0.06 & 0.4 &0.04  \\ \hline
-	app3 & 75 & 0 & 10 & 0.01 & 0.6 &0.04  \\ \hline
-	app4 & 75 & 0 & 10 & 0.01 & 0.8 &0.04  \\ \hline        
-  \end{tabular}
-  \caption{Settings for the apps in test5}
-  \label{tab:settings_test5}
-\end{table}
 
 \begin{figure}
   \centering
@@ -2234,11 +2186,19 @@ The result is shown in figures ~\ref{fig:test3_vp} to ~\ref{fig:test3_f}.
 \chapter{Discussion, Conclusion and Future Work}
 
 \section{Discussion on the results}
-\subsection test1
-See plots \ref{fig:test1_vp} to \ref{fig:test1_f} and table \ref{tab:settings_test1}.
+\subsection{Test 1}
+See the plots \ref{fig:test1_vp} to \ref{fig:test1_f} and table \ref{tab:settings_test1}.
 The plots behaves on the whole as expected from the settings in Table \ref{tab:settings_test1}.
 The mean of the noisy performance converges to zero which corresponds to each application finding a pairing of SL and virtual platform (VP). In the plot a higher/lower SL gives a higher/lower Virtual platform. The SL/VP combination
 for app2 becomes different since the $a_{cpu}$ is twice that of the other apps resulting in a half as big SL compared to what it would have been otherwise. The VP resets after a new app has been started as it should. Th SL converges slower than app1/2 because of the lower epsilon.
+
+\subsection{Test 2} 
+See the plots \ref{fig:test2_vp} to \ref{fig:test2_f} and table \ref{tab:settings_test2}.
+This test behaves alot like the previous one but with one difference in how the SL/VL combinations converge. The main point of this test is to see how the weight affects the VP:s convergence points.
+As can be seen in fig \ref{fig:test2_vp}, the applications with higher weights are assigned a higher VP which is in accordance with the theory.
+
+\subsection{test3}
+
 
 
 
@@ -2247,7 +2207,7 @@ for app2 becomes different since the $a_{cpu}$ is twice that of the other apps r
 \label{chp:conclusion}
 
 This thesis implemented a Game Theoretic Resource Manager (GTRM) on Axis
-cameras, to distrubute the CPU among multiple running applications that can
+cameras, to distribute the CPU among multiple running applications that can
 be adaptive in nature and vary their service level and the required
 computation, together with the quality of the offered service.
 
