@@ -1866,7 +1866,7 @@ It is also desirable to test if the system can fulfill the previously described 
 
 \end{comment}
 
-\section{Testing}
+
 
 The first part of the testing is done by starting and stopping different test-applications on the Axis P3367 camera, running on the gtrm-slice.
 The slices and services are started and stopped with the command line tool systemctl \cite{systemctl}.
@@ -1887,8 +1887,10 @@ The camera is split into two different top level slices, the gtrm.slice, contain
     \label{fig:systemd-cgls2}
 \end{figure}
 
-Both gtrm.slice and system.slice have been given $CPUShares = 1024$ meaning that the cpu resources are split 50/50 between the two slices. The test applications takes 10 arguments when started, described in the box below, that will be varied between different test. By varying the weight parameter from 0 to 1 the applications can be set somewhere between the extremes of only adapting through resource allocation or only adapt through SL adaptation.
-By varying the a\_cpu and b\_cpu the speed that the cpu requirement changes due to changes in SL varies. The epsilon makes the SL adaptation slower or faster.
+
+
+The system.slice have been given $CPUShares = 1024$ and the gtrm.slice 256 meaning that the cpu resources are split 4/5 to 1/5 between the two slices. The test applications takes 10 arguments when started, described in the box below, that will be varied between different test. By varying the weight parameter from 0 to 1 the applications can be set somewhere between the extremes of only adapting through resource allocation or only adapt through SL adaptation.
+By varying the a\_cpu and b\_cpu the speed that the cpu requirement changes due to changes in SL varies. The epsilon makes the SL adaptation slower or faster. All services are given an initial 100 CPUShares to be able to send their first message to systemd relatively fast.
 
 
 \begin{framed}
@@ -1910,84 +1912,262 @@ By varying the a\_cpu and b\_cpu the speed that the cpu requirement changes due 
 	\end{flushleft}
 \end{framed}	
 
-To test the system, several applications are run with different parameters, according to two different test sequences.
 
-In the first sequence all the applications are launched at the same time. The applications are expected to converge to a matching function close to or equal to zero, with a service level that will stabilize over time. It also expected that the resource manager will initially assign all the applications the same amount of resources. As their demands and adaptation rates vary, the applications service level and virtual platforms does not have to converge identically, but if the system works as intended they should all end up with a performance close to zero.
 
-Sequence number two launches the same applications as in sequence number one but one after each other with some delay between them. Every time an application is added the system is expected to reset the virtual platforms, assigning each application the same amount of resources. After that the system will then manage the resources and service level until all the applications are satisfied with their performance.
 
-\section{Results}
-\subsection{Test 1}
-The first test uses the applications specified in table ~\ref{tab:test1apps}.
+To test the system, several applications are run with different parameters.
 
+In the test all the applications are launched at the same time. The applications are expected to converge to a matching function close to or equal to zero, with a service level that will stabilize over time. It also expected that the resource manager will initially assign all the applications the same amount of resources. As their demands and adaptation rates vary, the applications service level and virtual platforms does not have to converge identically, but if the system works as intended they should all end up with a performance close to zero.
+
+The tests are performed by starting the services one by one. Every time an application is added the system is expected to reset the virtual platforms, assigning each application the same amount of resources. After that the system will then manage the resources and service level until all the applications are satisfied with their performance.
+
+
+
+\subsection{Test 1: 4 applications with both SL and cpu adaptation, same weights}
+
+Here four applications are started in roughly 10 seconds intervals. The applications are started with the settings shown in table \ref{tab:settings_test1}
+The result is shown in figures ~\ref{fig:test1_vp} to ~\ref{fig:test1_f}. 
 \begin{table}[h]
-\centering
-\begin{tabular}{ccccccc}
-\hline
- & $a^\mathsf{cpu}_i$ & $b^\mathsf{cpu}_i$
- & $a^\mathsf{mem}_i$ & $b^\mathsf{mem}_i$
- & $\epsilon_i$ & $\lambda_i$ \\
-\hline
-$\mathsf{app}_1$ & 0 & 1000 & 0 & 0 & - & 0.5 \\
-$\mathsf{app}_2$ & 1000 & 0 & 0 & 0 & 0.1 & 0.5 \\
-$\mathsf{app}_3$ & 0 & 1000 & 0 & 0 & - & 0.2 \\
-$\mathsf{app}_4$ & 1000 & 0 & 0 & 0 & 0.1 & 0.2 \\
-$\mathsf{app}_5$ & 100 & 0 & 0 & 0 & 0.01 & 0.8 \\
-\hline
-\end{tabular}
-\caption{Applications used in Test 1.}
-\label{tab:test1apps}
+  \centering
+  \begin{tabular}{|c|c|c|c|c|c|c|}
+ 	\hline 
+   \emph{app} & $SL_{t=0}$ & \textbf{$a_{cpu}$} & \textbf{$b_{cpu}$} & \textbf{$\epsilon$} & \emph{weight} & \emph{Deadline} \\ \hline
+	app1 & 75 & 10 & 0 & 0.06 & 0.5 &0.04  \\ \hline
+	app2 & 75 & 20 & 0 & 0.06 & 0.5 &0.04  \\ \hline
+	app3 & 75 & 10 & 0 & 0.01 & 0.5 &0.04  \\ \hline
+	app4 & 75 & 10 & 0 & 0.01 & 0.5 &0.04  \\ \hline        
+  \end{tabular}
+  \caption{Settings for the apps in seq2 test1}
+  \label{tab:settings_test1}
 \end{table}
 
-\subsubsection{Test Sequence 1}
 
-%insert result
 
-\subsubsection{Test Sequence 2}
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test1/vp"}
+  \caption{The virtual platforms for the apps in test1 seq2}
+  \label{fig:test1_vp}
+\end{figure}
 
-%insert result
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test1/sl"}
+  \caption{The SL for the apps in test1 seq2}
+  \label{fig:test1_sl}
+\end{figure}
 
-\subsection{Test 2}
-The second test uses applications specified in table ~\ref{tab:test2apps}.
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test1/f"}
+  \caption{The performance for the apps in test1 seq2}
+  \label{fig:test1_f}
+\end{figure}
 
+
+\subsection{Test 2: 4 applications with both SL and CPU adaptation, different weights}
+
+Four applications are started just as in test1 with the difference that they have different weights, see table \ref{tab:settings_test2}
+The result is shown in figures ~\ref{fig:test2_vp} to ~\ref{fig:test2_f}. 
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test2/vp"}
+  \caption{The virtual platforms for the apps in test2}
+  \label{fig:test2_vp}
+\end{figure}
+
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test2/sl"}
+  \caption{The SL for the apps in test2}
+  \label{fig:test2_sl}
+\end{figure}
+
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test2/f"}
+  \caption{The performance for the apps in test2}
+  \label{fig:test2_f}
+\end{figure}
 
 \begin{table}[h]
-\centering
-\begin{tabular}{ccccccc}
-\hline
- & $a^\mathsf{cpu}_i$ & $b^\mathsf{cpu}_i$
- & $a^\mathsf{mem}_i$ & $b^\mathsf{mem}_i$
- & $\epsilon_i$ & $\lambda_i$ \\
-\hline
-$\mathsf{app}_1$ & 0 & 1000 & 0 & 0 & - & 0.5 \\
-$\mathsf{app}_2$ & 1000 & 0 & 0 & 0 & 0.1 & 0.5 \\
-$\mathsf{app}_3$ & 0 & 1000 & 0 & 0 & - & 0.2 \\
-$\mathsf{app}_4$ & 1000 & 0 & 0 & 0 & 0.1 & 0.2 \\
-$\mathsf{app}_5$ & 100 & 0 & 0 & 0 & 0.01 & 0.8 \\
-\hline
-\end{tabular}
-\caption{Applications used in Test 2.}
-\label{tab:test2apps}
+  \centering
+  \begin{tabular}{|c|c|c|c|c|c|c|}
+ 	\hline 
+   \emph{app} & $SL_{t=0}$ & \textbf{$a_{cpu}$} & \textbf{$b_{cpu}$} & \textbf{$\epsilon$} & \emph{weight} & \emph{Deadline} \\ \hline
+	app1 & 75 & 10 & 0 & 0.06 & 0.2 &0.04  \\ \hline
+	app2 & 75 & 20 & 0 & 0.06 & 0.4 &0.04  \\ \hline
+	app3 & 75 & 10 & 0 & 0.01 & 0.6 &0.04  \\ \hline
+	app4 & 75 & 10 & 0 & 0.01 & 0.8 &0.04  \\ \hline        
+  \end{tabular}
+  \caption{Settings for the apps in test2}
+  \label{tab:settings_test2}
 \end{table}
 
-%\begin{comment}
-\begin{verbatim}
-\end{verbatim}
-%\end{comment}
 
-\subsubsection{Test Sequence 1}
 
-%insert result
 
-\subsubsection{Test Sequence 2}
+\subsection{Test 3: 4 applications with SL adaptation and weights set to 0}
+Four applications are started as in test1 but with all the weights set to 0.
+With all weights set to zero the virtual platform are not expected to change.
+The result is shown in figures ~\ref{fig:test3_vp} to ~\ref{fig:test3_f}. 
 
-%insert result
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test3/vp"}
+  \caption{The virtual platforms for the apps in test3}
+  \label{fig:test3_vp}
+\end{figure}
 
-\chapter{Conclusion and Further Work}
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test3/sl"}
+  \caption{The SL for the apps in test3}
+  \label{fig:test3_sl}
+\end{figure}
+
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test3/f"}
+  \caption{The performance for the apps in test3}
+  \label{fig:test3_f}
+\end{figure}
+
+\subsection{Test 4: 4 applications with SL and CPU adaptation and weights set to 1}
+Four applications are started as in test1 but with all the weights set to 1.
+With all weights set to one most of the adaptation is expected to be done by varying the SL.
+The result is shown in figures ~\ref{fig:test4_vp} to ~\ref{fig:test4_f}. 
+
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test4/vp"}
+  \caption{The virtual platforms for the apps in test4}
+  \label{fig:test4_vp}
+\end{figure}
+
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test4/sl"}
+  \caption{The SL for the apps in test4}
+  \label{fig:test4_sl}
+\end{figure}
+
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test4/f"}
+  \caption{The performance for the apps in test4}
+  \label{fig:test4_f}
+\end{figure}
+
+
+\begin{comment}
+
+\subsection{Test 5: 4 applications with both SL and cpu adaptation.}
+Four applications are started one by one with the settings in table
+With all weights set to one most of the adaptation is expected to be done by varying the SL.
+The result is shown in figures ~\ref{fig:test4_vp} to ~\ref{fig:test4_f}. 
+
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test3/vp"}
+  \caption{The virtual platforms for the apps in test4}
+  \label{fig:test4_vp}
+\end{figure}
+
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test4/sl"}
+  \caption{The SL for the apps in test4}
+  \label{fig:test4_sl}
+\end{figure}
+
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test4/f"}
+  \caption{The performance for the apps in test4}
+  \label{fig:test4_f}
+\end{figure}
+
+
+
+
+
+
+
+
+
+
+
+\subsection{Test 4: 4 applications with SL and CPU adaptation and weights set to 1)
+Four applications are started as in test1 but with all the weights set to 1
+With all weights set to zero the virtual platform .
+The result is shown in figures ~\ref{fig:test3_vp} to ~\ref{fig:test3_f}. 
+
+
+\subsection{Test 4: }
+
+\end{comment}
+
+\chapter{Conclusion and Future Work}
 \label{chp:conclusion}
 
+This thesis implemented a Game Theoretic Resource Manager (GTRM) on Axis
+cameras, to distrubute the CPU among multiple running applications that can
+be adaptive in nature and vary their service level and the required
+computation, together with the quality of the offered service.
 
-%\printbibliography  %% Comment if you don't want to use bibtex
+\section{Conclusion}
+
+The provided implementation demonstrated that the GTRM can be integrated into
+\texttt{systemd} and run in an Axis camera. To this end, many steps have been
+followed. First of all the Inter-Process Communication of the original GTRM
+was succesfully converted from shared memory to socket communication. The
+conversion was necessary to realize the integration with the camera
+framework. The implementation of the socket-based IPC resembled the
+code of the ``Notify'' feature, already included in the operating system.
+However, the resulting code was harder to understand and debug, compared to
+code completely written from scratch. The final result worked well and was
+well integrated into \texttt{systemd}.
+
+The transition from shared memory to socket usage also required a new data
+structure for the applications. A hashmap was a natural choice. The
+applications PIDs were the natural choice to be used for the hashmap keys.
+The constant time-complexity of the data access provided by a hashmap does not
+negatively impact on the GTRM performance. The provided implementation also
+included macros for iterating through the hashmap, together with all the
+normal functions for adding and retrieving elements. 
+
+The resource management loop was inserted into the main loop of 
+\texttt{systemd} and performed as expected. By changing to CPU-shares from
+\texttt{cpu.quota} and \texttt{cpu.period}, the risk of causing a kernel 
+panic by assigning more resource than available was eliminated. Since the
+assignment of CPU-shares is done inside \texttt{systemd}, without the need of
+communication over DBus, it does not require a significant amount of time.
+
+\martina{What do the results show? Beside the fact that it is usable?
+  Is there something that was expected and is not working in the way you
+  thought? Is there something that was not expected and happened?}
+
+\section{Future work}
+
+The work done in this thesis should be extended completing the implementation
+of a service level aware video streaming application. The performance of
+the system can be further improved when more applications are using the
+service level framework, therefore every application that can be ported to
+the idea of service levels and varying quality should be improved.
+Implementing the matching function calculation and the service level
+adaptation would be the ultimate solution to the resource management and
+prioritization problem. This would also eliminate the need for the static
+cgroup slice, since all the applications would be running in the same slice,
+managed by the GTRM.
+
+The system itself is in need of further testing to track down bugs and
+memory leaks, if any. Future work would consist of taking this rough
+prototype and develop a more refined product. This project is well 
+integrated into Axis' version control and could easily be applied as a 
+patch to future products. Also, it could be of interest to share this 
+work with the \texttt{systemd} open source community.
+
 
 \bibliographystyle{plain}
 \bibliography{mybib}

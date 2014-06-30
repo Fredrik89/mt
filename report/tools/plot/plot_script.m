@@ -6,7 +6,14 @@
 
 
 
- T=dlmread("logs/gtrm.log",",\t");
+%TEST="test3"
+NO_OF_PLOTS = 5
+
+
+
+
+
+ T=dlmread(sprintf("logs/%s/gtrm.log",TEST),",\t");
  T_start=T;
  T2=T;
  
@@ -16,21 +23,17 @@ f_handle = figure
 sl_handle = figure
 
 
-
 close all
 
+my_colors = ["b","r","g","m","k"]
 
 
-my_colors = ["b","r","g","y"]
 
 
-
-NO_OF_PLOTS = 4
-
-my_legend = cell(NO_OF_PLOTS,1)
+my_legend = cell(NO_OF_PLOTS,1);
 	
 for i=1:NO_OF_PLOTS	
-	my_legend(i,1) = sprintf("app%d",i) 	
+	my_legend(i,1) = sprintf("app%d",i) 	;
 end
  
 
@@ -41,10 +44,14 @@ for i =1:NO_OF_PLOTS
 		break
 	endif
 	
+	
+	
 	%pick out the first pid
 	indeces= find(T2(:,2)==T2(1,2));
 		
-	log_name = sprintf("logs/%d.log",T2(1,2))
+		
+
+	log_name = sprintf("logs/%s/%d.log",TEST,T2(1,2));
 		
 	T=T2(indeces,:);
 	
@@ -76,7 +83,9 @@ for i =1:NO_OF_PLOTS
 			
 	figure(f_handle)
 	hold on
-	plot(T(:,1),T(:,4),my_colors(i))
+	
+	
+	plot(T(:,1),T(:,4),sprintf("%s",my_colors(i)))
 	title('performance')
 	legend(my_legend)
 	axis("tight");
