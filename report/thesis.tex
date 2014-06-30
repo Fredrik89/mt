@@ -15,10 +15,26 @@
 \usepackage{todonotes}
 \usepackage{framed}
 
+
+\usepackage{nicefrac}
+\usepackage{amsmath} % assumes amsmath package installed
+
 \newcommand{\martina}[1]
   {\todo[inline,color=red!30,caption={}]{\textbf{Martina:} #1}}
+\newcommand{\tv}{\tilde{v}}
+
+
+\newtheorem{proposition}{Proposition}[section]
+
+
+
 
 \begin{document}
+
+\begin{equation}
+ f_i = \frac{D_iv_i}{\alpha_is_i}-1 = \beta_i\frac{v_i}{s_i}-1,
+ \label{eq:fDefSimple2}
+\end{equation}
 
 \lstset{
   language=C,
@@ -2042,7 +2058,7 @@ The result is shown in figures ~\ref{fig:test4_vp} to ~\ref{fig:test4_f}.
 
 \begin{figure}[!H]
   \centering
-  \includegraphics{"tools/plot/logs/test3/vp"}
+  \includegraphics{"tools/plot/logs/test4/vp"}
   \caption{The virtual platforms for the apps in test4}
   \label{fig:test4_vp}
 \end{figure}
@@ -2060,36 +2076,64 @@ The result is shown in figures ~\ref{fig:test4_vp} to ~\ref{fig:test4_f}.
   \caption{The performance for the apps in test4}
   \label{fig:test4_f}
 \end{figure}
+
+
+
+\subsection{Test 5: 4 applications with both SL and CPU adaptation.}
+Four applications are started one by one with the settings in table \ref{tab:settings_test5}
+According to proposition 3.2 in "A Game-Theoretic Resource Manager for RT Applications" \cite{gtrm};
+given that the service level is large enough, the normalized virtual platforms will tend to the values given by:
+
+
+  \begin{eqnarray}	\label{eq:SpecialStationaryPoint}
+    \tv_i^* \to \frac{\lambda_i}{\sum_{j=1}^{n}\lambda_j},
+  \end{eqnarray}
 
 
 \begin{comment}
-
-\subsection{Test 5: 4 applications with both SL and cpu adaptation.}
-Four applications are started one by one with the settings in table
-With all weights set to one most of the adaptation is expected to be done by varying the SL.
-The result is shown in figures ~\ref{fig:test4_vp} to ~\ref{fig:test4_f}. 
+\end{comment}
 
 \begin{figure}[!H]
   \centering
-  \includegraphics{"tools/plot/logs/test3/vp"}
-  \caption{The virtual platforms for the apps in test4}
-  \label{fig:test4_vp}
+  \includegraphics{"tools/plot/logs/test5/vp"}
+  \caption{The virtual platforms for the apps in test5}
+  \label{fig:test5_vp}
 \end{figure}
 
 \begin{figure}[!H]
   \centering
-  \includegraphics{"tools/plot/logs/test4/sl"}
-  \caption{The SL for the apps in test4}
-  \label{fig:test4_sl}
+  \includegraphics{"tools/plot/logs/test5/sl"}
+  \caption{The SL for the apps in test5}
+  \label{fig:test5_sl}
 \end{figure}
 
 \begin{figure}[!H]
   \centering
-  \includegraphics{"tools/plot/logs/test4/f"}
-  \caption{The performance for the apps in test4}
-  \label{fig:test4_f}
+  \includegraphics{"tools/plot/logs/test5/f"}
+  \caption{The performance for the apps in test5}
+  \label{fig:test5_f}
 \end{figure}
 
+
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{|c|c|c|c|c|c|c|}
+ 	\hline 
+   \emph{app} & $SL_{t=0}$ & \textbf{$a_{cpu}$} & \textbf{$b_{cpu}$} & \textbf{$\epsilon$} & \emph{weight} & \emph{Deadline} \\ \hline
+	app1 & 75 & 0 & 10 & 0.06 & 0.2 &0.04  \\ \hline
+	app2 & 75 & 0 & 10 & 0.06 & 0.4 &0.04  \\ \hline
+	app3 & 75 & 0 & 10 & 0.01 & 0.6 &0.04  \\ \hline
+	app4 & 75 & 0 & 10 & 0.01 & 0.8 &0.04  \\ \hline        
+  \end{tabular}
+  \caption{Settings for the apps in test5}
+  \label{tab:settings_test5}
+\end{table}
+
+
+
+
+\begin{comment}
 
 
 
