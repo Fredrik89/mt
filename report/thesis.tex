@@ -31,10 +31,6 @@
 
 \begin{document}
 
-\begin{equation}
- f_i = \frac{D_iv_i}{\alpha_is_i}-1 = \beta_i\frac{v_i}{s_i}-1,
- \label{eq:fDefSimple2}
-\end{equation}
 
 \lstset{
   language=C,
@@ -2123,6 +2119,46 @@ given that the service level is large enough, the normalized virtual platforms w
 \end{table}
 
 
+\subsection{Test 5b: 4 applications with both SL and CPU adaptation.}
+Test 5 is remade, this time with a much higher $b_{cpu}$.
+A cpu hog application is started on the system.slice in an attempt to limit the noise in performance.
+ The settings for the applications can be seen in table  \ref{tab:settings_test5b}
+
+
+
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test5b/vp"}
+  \caption{The virtual platforms for the apps in test5b}
+  \label{fig:test5b_vp}
+\end{figure}
+
+\begin{figure}[!H]
+  \centering
+  \includegraphics{"tools/plot/logs/test5b/f"}
+  \caption{The performance for the apps in test5b}
+  \label{fig:test5b_f}
+\end{figure}
+
+
+
+\begin{table}
+  \centering
+  \begin{tabular}{|c|c|c|c|c|c|c|}
+ 	\hline 
+   \emph{app} & $SL_{t=0}$ & \textbf{$a_{cpu}$} & \textbf{$b_{cpu}$} & \textbf{$\epsilon$} & \emph{weight} & \emph{Deadline} \\ \hline
+	app1 & 75 & 0 & 120 & 0.06 & 0.2 &0.04  \\ \hline
+	app2 & 75 & 0 & 120 & 0.06 & 0.4 &0.04  \\ \hline
+	app3 & 75 & 0 & 120 & 0.01 & 0.6 &0.04  \\ \hline
+	app4 & 75 & 0 & 120 & 0.01 & 0.8 &0.04  \\ \hline        
+  \end{tabular}
+  \caption{Settings for the apps in test5b}
+  \label{tab:settings_test5b}
+\end{table}
+
+
+
+
 \subsection{Test 6: 3 applications with both SL and CPU adaptation and 2 without SL adaptation}
 Five applications are started one by one with the settings in table \ref{tab:settings_test6}
 
@@ -2168,9 +2204,6 @@ Five applications are started one by one with the settings in table \ref{tab:set
 
 
 \begin{comment}
-\end{comment}
-
-\begin{comment}
 
 
 \subsection{Test 4: 4 applications with SL and CPU adaptation and weights set to 1)
@@ -2207,8 +2240,62 @@ From comparing the two SL plots from test1 ,\ref{fig:test1_sl},and test4, \ref{f
 The VP plot also displays greater difference between the 4 applications than in the test 1 case. Although these changes are small in comparison to the changes in test 3 it can be argued that more of the adaptation is done by varying the VP in test 4 as opposed to in test 1.
 Once again the performance seems a bit noisier compared to the test 1 case indicating an improvement when both SL and VP adaptation is being used.
 
+\subsection{test5}
+See the plots \ref{fig:test5_vp} to \ref{fig:test5_f} and table \ref{tab:settings_test5}.
+In this test only the VP and performance plots are of interest since $a_{cpu}=0$ and hence changes in SL has no effect.
+The VP for the different applications does not seem to converge to the theoretical ones which probably is because of a too small static SL, $b_{cpu}$.
+The effects of this small $b_{cpu}$ can be seen in the performance plot \ref{fig:test5_f} when 25 < t35 where the performance is stuck in the upper half plane indicating that the applications need a higher SL 
+in order to make use of all of their available CPU. After time t = 45 the time between updates of the performance in the RM increases drastically, (the performance plots shows the performance that the RM has received). This is most likely due to a temporary problem with sending messages on DBus which in turn might have been caused by the flood of sent messages due to the high performance.
 
 
+
+
+\subsection {test5b}
+See the plots \ref{fig:test5b_vp} to \ref{fig:test5b_f} and table \ref{tab:settings_test5b}.
+The values that the VP for the different applications converges to, compensated for the scale factor,  together with the theoretical values and the weights are shown in table \ref{tab:VP_test5b}.
+From the table it can be seen that the applications have not reached their theoretical values, however they are not far from them.
+The discrepancy might be explained by all the noise that performance still displays. This noise seems to have been reduced by the cpu hog on the system.slice.
+
+ 
+
+
+%part of test 5b
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{|c|c|c|c|}
+ 	\hline 
+   \emph{app} & \emph{weight} & $VP_{theoretical}$ & $VP_{plot}$  \\ \hline
+	app1 & 0.2 & 0.1 & 	0.17	\\ \hline
+	app2 & 0.4 & 0.2 & 	0.23 \\ \hline
+	app3 & 0.6 & 0.3 & 	0.28 \\ \hline
+	app4 & 0.8 & 0.4 &  0.32 \\ \hline
+  \end{tabular}
+  \caption{Table showing the settings in test5b}
+  \label{tab:VP_test5b}
+\end{table}
+\begin{comment}
+\end{comment}
+
+
+
+
+
+
+
+\subsection{Test 6}
+See the plots \ref{fig:test6_vp} to \ref{fig:test6_f} and table \ref{tab:settings_test6}.
+
+The plots looks as expected.
+That the weights influence how much VP an application gets can be seen in that $VP_{app5}>VP_{app2}>VP_{app4}$. 
+The small $\epsilon$ for app5 makes the SL adaptation very slow.
+
+
+
+
+\begin{comment}
+
+\end{comment}
 
 
 
