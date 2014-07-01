@@ -818,9 +818,10 @@ typedef union epoll_data {
 } epoll_data_t;
 
 
+
 struct epoll_event {
 
->>>>>>> 22d4d926840f4bbc08d8a00d17635a2ec81ac791
+
   uint32_t     events; /* Epoll events */
   epoll_data_t data;   /* User data variable */
 };
@@ -2250,7 +2251,7 @@ functions, despite being noisy, converge to signals with zero mean.
   more or not? You have to show that this experiment is significant in terms
   of what you learn about the system.} 
 
-\subsubsection{Test 2} 
+\subsubsection{Comments on the result.} 
 See the plots \ref{fig:test2_vp} to \ref{fig:test2_f} and table \ref{tab:settings_test2}.
 This test behaves alot like the previous one but with one difference in how the SL/VL combinations converge. The main point of this test is to see how the weight affects the VP:s convergence points.
 As can be seen in fig \ref{fig:test2_vp}, the applications with higher weights are assigned a higher VP which is in accordance with the theory.
@@ -2419,7 +2420,7 @@ for redistribution.
   \includegraphics[width=\textwidth]{"tools/plot/logs/test5b/f"}
   \subcaption{Matching Functions}
   \end{minipage}
-\caption{Results for Test 5 with a higher $b\_cpu$ .}
+\caption{Results for Test 5 with a higher $b\_cpu$.}
 \label{fig:test5b}
 \end{figure}
 
@@ -2442,6 +2443,79 @@ test can be seen in Table~\ref{tab:settings_test5b} while
 Figure~\ref{fig:test5b} shows the matching functions and the virtual
 platforms in this second case.
 
+
+
+\begin{flushleft}
+\emph{Test with a higher $b_{cpu}$,}
+\end{flushleft}
+See the plots \ref{fig:test5b_vp} to \ref{fig:test5b_f} and table \ref{tab:settings_test5b}.
+The values that the VP for the different applications converges to, compensated for the scale factor,  together with the theoretical values and the weights are shown in table \ref{tab:VP_test5b}.
+From the table it can be seen that the applications have not reached their theoretical values, however they are not far from them.
+The discrepancy might be explained by all the noise that performance still displays. This noise seems to have been reduced by the cpu hog on the system.slice.
+
+
+
+\subsection{Test 6: mixed load of applications with and without service 
+  level adaptation}
+
+
+In this last test, five applications are started one by one with the 
+settings shown in Table~\ref{tab:settings_test6}. Figure~\ref{fig:test6}
+depicts the result of the run.
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{|c|c|c|c|c|c|c|}
+  \hline 
+   \emph{app} & $SL_{t=0}$ & \textbf{$a_{cpu}$} & 
+   \textbf{$b_{cpu}$} & \textbf{$\epsilon$} & 
+   \emph{weight} & \emph{Deadline} \\ \hline
+  app1 & 50 & 0  & 30 & -     & 0.5 &0.04  \\ \hline
+  app2 & 50 & 20 & 0  & 0.01  & 0.5 &0.04  \\ \hline
+  app3 & 50 & 0  & 30 & -     & 0.2 &0.04  \\ \hline
+  app4 & 50 & 20 & 0  & 0.01  & 0.2 &0.04  \\ \hline
+  app5 & 50 & 10 & 0  & 0.002 & 0.8 &0.04  \\ \hline                
+  \end{tabular}
+  \caption{Settings for the test applications in Test 6}
+  \label{tab:settings_test6}
+\end{table}
+
+\begin{figure}[th]
+\centering
+  \begin{minipage}{0.49\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{"tools/plot/logs/test6/vp"}
+  \subcaption{Virtual Platforms}
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.49\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{"tools/plot/logs/test6/sl"}
+  \subcaption{Service Levels}
+  \end{minipage}
+  \begin{minipage}{0.49\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{"tools/plot/logs/test6/f"}
+  \subcaption{Matching Functions}
+  \end{minipage}
+\caption{Results for Test 6.}
+\label{fig:test6}
+\end{figure}
+
+\martina{When you comment it, say that the service level shown in the
+  figure has no sense for application 1 and 3, since they don't adapt
+  the computation that they do but it is simply a value. Alternatively,
+  exclude them from the picture. This second alternative will also show
+  better the adaptation of the other service levels.}
+
+
+\chapter{Discussion, Conclusion and Future Work}
+\label{chp:conclusion}
+ 
+
+
+%part of test 5b
+
 \begin{table}[h]
   \centering
   \begin{tabular}{|c|c|c|c|}
@@ -2455,67 +2529,20 @@ platforms in this second case.
   \caption{Table showing the settings in test5b}
   \label{tab:VP_test5b}
 \end{table}
-
-\begin{flushleft}
-\emph{Test with a higher $b_{cpu}$,}
-\end{flushleft}
-See the plots \ref{fig:test5b_vp} to \ref{fig:test5b_f} and table \ref{tab:settings_test5b}.
-The values that the VP for the different applications converges to, compensated for the scale factor,  together with the theoretical values and the weights are shown in table \ref{tab:VP_test5b}.
-From the table it can be seen that the applications have not reached their theoretical values, however they are not far from them.
-The discrepancy might be explained by all the noise that performance still displays. This noise seems to have been reduced by the cpu hog on the system.slice.
-
-\subsection{Test 6: 3 applications with both SL and CPU adaptation and 2 without SL adaptation}
-Five applications are started one by one with the settings in table \ref{tab:settings_test6}
-
-
-\begin{figure}[!H]
-  \centering
-  \includegraphics{"tools/plot/logs/test6/vp"}
-  \caption{The virtual platforms for the apps in test6}
-  \label{fig:test6_vp}
-\end{figure}
-
-\begin{figure}[!H]
-  \centering
-  \includegraphics{"tools/plot/logs/test6/sl"}
-  \caption{The SL for the apps in test6}
-  \label{fig:test6_sl}
-\end{figure}
-
-\begin{figure}[!H]
-  \centering
-  \includegraphics{"tools/plot/logs/test6/f"}
-  \caption{The performance for the apps in test6}
-  \label{fig:test6_f}
-\end{figure}
+\begin{comment}
+\end{comment}
 
 
 
-\begin{table}[h]
-  \centering
-  \begin{tabular}{|c|c|c|c|c|c|c|}
- 	\hline 
-   \emph{app} & $SL_{t=0}$ & \textbf{$a_{cpu}$} & \textbf{$b_{cpu}$} & \textbf{$\epsilon$} & \emph{weight} & \emph{Deadline} \\ \hline
-	app1 & 50 & 0  & 30 & - 	  & 0.5 &0.04  \\ \hline
-	app2 & 50 & 20 & 0  & 0.01  & 0.5 &0.04  \\ \hline
-	app3 & 50 & 0  & 30 & - 	  & 0.2 &0.04  \\ \hline
-	app4 & 50 & 20 & 0  & 0.01  & 0.2 &0.04  \\ \hline
-	app5 & 50 & 10 & 0  & 0.002 & 0.8 &0.04  \\ \hline                
-  \end{tabular}
-  \caption{Settings for the apps in test6}
-  \label{tab:settings_test6}
-\end{table}
 
-
-
-\subsubsection{Comments on the results}
+\subsection{Test 6}
 See the plots \ref{fig:test6_vp} to \ref{fig:test6_f} and table \ref{tab:settings_test6}.
 
 The plots looks as expected.
 That the weights influence how much VP an application gets can be seen in that $VP_{app5}>VP_{app2}>VP_{app4}$. 
 The small $\epsilon$ for app5 makes the SL adaptation very slow.
 
-\chapter{Discussion, Conclusion and Future Work}
+\chapter{Conclusion and Future Work}
 \label{chp:conclusion}
 
 
