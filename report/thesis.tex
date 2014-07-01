@@ -1745,6 +1745,7 @@ GTRM-slice. A service can reserve a minimum percentage of allocated
 resources referring to its parent slice.
 In the Pie chart above the static slice would be guaranteed a minimum of 
 \sfrac{1}{3} of the total resources while the two GTRM services are given 
+
 half of the \sfrac{2}{3} reserved by its parent slice, therefore obtaining
 a minimum of \sfrac{1}{3} of the total available resources each.
 
@@ -2442,6 +2443,14 @@ The small $\epsilon$ for app5 makes the SL adaptation very slow.
 This thesis implemented a Game Theoretic Resource Manager (GTRM) on Axis
 cameras, to distribute the CPU among multiple running applications that can
 be adaptive in nature and vary their service level and the required
+computation, together with the quality of the offered service.
+
+\section{Result discussion}
+
+Overall the plots of the virtual platforms and the service level looks good but the main problem are
+the extremely noisy performances. They do however have zero mean which is why it is deemed as a good enough result.
+There are a couple of possible explanations for the noisy performance ; one being the extra CPU that the gtrm slice receives when the system.slice has
+spare resources to lend. This introduces a disturbance driving the performance up. However when loading the system.slice with a cpu hog no major changes in performance were shown.
 computation, together with the quality of the offered service.
 
 \section{Conclusion}
