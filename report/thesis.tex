@@ -59,6 +59,15 @@
   stringstyle=\color{orange},
 }
 
+%\textcolor{red}{2do:}
+
+\begin{verbatim}
+\end{verbatim}
+
+
+
+
+
 \begin{titlepages}
 \author{Fredrik Johnsson and Olle Svensson}
 \title{Resource management and prioritization in an embedded Linux system}
@@ -96,7 +105,6 @@ We want to thank our supervisors, Umut Tezduyar-Lindskog, Axis and Martina
 Maggio, LTH Department of Control. We would also like to thank engineering 
 manager Pontus Bergendahl, Axis.
 
-\newpage
 
 \tableofcontents
 \newpage
@@ -355,7 +363,7 @@ C_{cpu} = a_{cpu}*SL + b_{cpu}
 \label{eq:cputime}
 \end{equation} 
 Where $C_{cpu}$ is the number of times a random number is generated which should be proportional to time it takes the CPU/CPUS to perform the job.
-The SL adaptation is  performed every \textcolor{red}{???} job. The average performance of the last ten jobs are then sent to the RM and the SL adaptation is made as described in the previous section. See the sequence diagram  \ref{fig:sdiag} for the application loop.
+The SL adaptation is  performed for each job. The average performance of the last ten jobs are then sent to the RM and the SL adaptation is made as described in the previous section. See the sequence diagram  \ref{fig:sdiag} for the application loop.
 
 
 \fixed{You should write a paragraph with an example on how the service
@@ -546,7 +554,6 @@ representation of the pipeline.
 
 \begin{figure}
 \begin{framed}
-\label{fig:pipeline}
 \begin{picture}(100,60)
 \put(0,60){Pipeline}
 \put(0,4){\framebox(50,50){Source}}
@@ -557,7 +564,28 @@ representation of the pipeline.
 \end{picture}
 \end{framed}
 \caption{The GStreamer pipeline.}
+\label{fig:pipeline}
 \end{figure}
+
+\begin{comment}
+\begin{figure}
+\begin{framed}
+\label{fig:pipeline}
+\begin{picture}(100,60)
+\put(0,60){Pipeline}
+\put(0,4){\framebox(50,50){cachesrc}}
+\put(50,29){\vector(1,0){50}}
+\put(0,4){\framebox(50,50){rtph264pay}}
+\put(50,29){\vector(1,0){50}}
+\put(100,4){\framebox(50,50){rtpbin}}
+\put(150,29){\vector(1,0){50}}
+\put(200,4){\framebox(50,50){udpsink}}
+\end{picture}
+\end{framed}
+\caption{An example of a pipeline}
+\label{fig:ex_pipeline}
+\end{figure}	
+\end{comment}
 
 The data is contained into buffers. Buffers can contain one or more frames,
 flowing downstream. On Axis cameras, the source elements receive the images
@@ -837,8 +865,11 @@ _public_ int sd_event_run(sd_event *e,
   return r;
 }
 \end{lstlisting}
-\martina{Instead of the nested else if, wouldn't it be better to have a
+\fixed{Instead of the nested else if, wouldn't it be better to have a
   switch in the code above?}
+\newstuff{Maybe but this is part of the systemd source code, not written by us}
+  
+  
 
 The \texttt{epoll\_wait} function is called and a for loop goes through 
 all the file descriptors and checks what their event type is to call the
@@ -1547,20 +1578,21 @@ quality by modifying the pipeline to prepare the frame for the video
 streaming service.
 
 In this pipeline an ``identity'' element is added. The identity element
-forwards the received frames to the next element without actually applying
-the operations that were supposed to be applied according to the pipeline
-stage. This element is added just after the first (source) element.
-
-\martina{Check that the next sentence describes what you actually did.
+forwards the received frames to the next element without affecting them.
+This element is added just after the first (source) element.
+The identity element calls a callback function by sending a "handoff" signal each time it receives a new buffer, where a buffer can contain one or more frames.
+\fixed{Check that the next sentence describes what you actually did.
   I rephrased it but I am not sure it fits what you have done. In the tex
   file, your sentence is commented -- so you can check against the original
   version.}
+  \newstuff{We tried rewriting it again since your changes didn't really match what we where trying to say.}
+  
 % By activating the so called "hand-off"-signal of the identity element, a signal-handler-function is called every time the element receives a new buffer. In this function, computation of how long time each frame takes to be processed is made, which is used to compute the matching function.
-A further stage is added to the pipeline, that can be activated via a
-``hand-off'' signal. This stage takes care of computing the time to
-process each frame, therefore retrieving the matching function, described by
-Equation~\eqref{eq:matchingfunctiongeneral}. 
-%
+
+The time in between each incoming buffer to the identity element is the "job time" for the streaming application, 
+which is used when calculating the matching function, see Equation~\eqref{eq:matchingfunctiongeneral}. 
+If a buffer contains only one frame, this job time should correspond to \emph{fps} on the camera.
+
 After the matching function is computed, it is possible to calculate a new
 service level for the application and to notify the resource manager. The
 computed service level is then used to set the desired bit-rate in the 
@@ -2440,7 +2472,9 @@ Overall the plots of the virtual platforms and the service level looks good but 
 the extremely noisy performances. They do however have zero mean which is why it is deemed as a good enough result.
 There are a couple of possible explanations for the noisy performance ; one being the extra CPU that the gtrm slice receives when the system.slice has
 spare resources to lend. This introduces a disturbance driving the performance up. However when loading the system.slice with a cpu hog no major changes in performance were shown.
-Another explanation could be the delay in the sockets communication since delays tend to make systems oscillate. A third reason is simply a bug somewhere in the code.}
+Another explanation could be the delay in the sockets communication since delays tend to make systems oscillate. 
+A third reason is simply a bug somewhere in the code.
+The time between actions from the GTRM is irregular, how this affects the system has not been taken in to consideration.}
 
 
 \martina{What do the results show? Beside the fact that it is usable?
@@ -2462,7 +2496,12 @@ managed by the GTRM.
 
 The system itself is in need of further testing to track down bugs and
 memory leaks, if any. Future work would consist of taking this rough
-prototype and develop a more refined product. This project is well 
+prototype and develop a more refined product. The consequences of the irregular update times of the VP
+in the GTRM should be further looked into, there are simple solutions to using the longest time 
+between updates for all updates which would give uniform updating to the cost of a slower controller.
+
+
+This project is well 
 integrated into Axis' version control and could easily be applied as a 
 patch to future products. Also, it could be of interest to share this 
 work with the \texttt{systemd} open source community.
@@ -2525,7 +2564,7 @@ Sends a performance multiplier to an application via sockets.
 Calculates the constant epsilon used by the resource manager.
 \begin{itemize} 
 \item iterations: Number of iterations run by the RM.
-\item offset: One if there is a difference between currently and previously running applications, zero otherwise.
+\item offset: If one, resets the time used in the iteration. This restarts the calculation.
 \item c1: Constant, previously described.
 \item c2: Constant, also previously described.
 \item Return value: The calculated epsilon or one if this is the first iteration.
@@ -2680,6 +2719,7 @@ Receives the performance multiplier computed by the RM.
 Indicates the start of a job.
 \begin{itemize}
 \item a: Struct for representing the application.
+
 \item type: Type of the job that is started.
 \item Return value: Identifier of the started job.
 \end{itemize}
