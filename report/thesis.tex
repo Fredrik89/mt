@@ -2306,50 +2306,67 @@ With all weights set to one the adaptation is expected to be done by varying the
 \label{fig:test4}
 \end{figure}
 
-% --- Martina arrived here to check
-
 \clearpage
+\subsection{Test 5: four applications with no service level effect}
 
-\subsection{Test 5: 4 applications with both SL and CPU adaptation.}
-Four applications are started one by one with the settings in table \ref{tab:settings_test5}
-According to proposition 3.2 in "A Game-Theoretic Resource Manager for RT Applications" \cite{gtrm};
-given that the service level is large enough, the normalized virtual platforms will tend to the values given by:
-
-
-  \begin{eqnarray}	\label{eq:SpecialStationaryPoint}
-    \tv_i^* \to \frac{\lambda_i}{\sum_{j=1}^{n}\lambda_j},
-  \end{eqnarray}
-
-
-\begin{figure}[!H]
-  \centering
-  \includegraphics{"tools/plot/logs/test5/vp"}
-  \caption{The virtual platforms for the apps in test5}
-  \label{fig:test5_vp}
-\end{figure}
-
-\begin{figure}[!H]
-  \centering
-  \includegraphics{"tools/plot/logs/test5/f"}
-  \caption{The performance for the apps in test5}
-  \label{fig:test5_f}
-\end{figure}
-
-
+Four applications are started one by one with the settings in 
+Table \ref{tab:settings_test5}. As can be seen, the value of $a\_cpu$ is
+zero for all the applications, meaning that the service level is not
+at all affecting the amount of resources requested on the application side.
+According to proposition 3.2 in ``A Game-Theoretic Resource Manager for 
+RT Applications''~\cite{gtrm}, the normalized virtual platforms will tend 
+to the values given by
+\begin{equation}
+  \tv_i^* \to \frac{\lambda_i}{\sum_{j=1}^{n}\lambda_j},
+  \label{eq:SpecialStationaryPoint}
+\end{equation}
 
 \begin{table}[h]
   \centering
   \begin{tabular}{|c|c|c|c|c|c|c|}
- 	\hline 
-   \emph{app} & $SL_{t=0}$ & \textbf{$a_{cpu}$} & \textbf{$b_{cpu}$} & \textbf{$\epsilon$} & \emph{weight} & \emph{Deadline} \\ \hline
-	app1 & 75 & 0 & 10 & 0.06 & 0.2 &0.04  \\ \hline
-	app2 & 75 & 0 & 10 & 0.06 & 0.4 &0.04  \\ \hline
-	app3 & 75 & 0 & 10 & 0.01 & 0.6 &0.04  \\ \hline
-	app4 & 75 & 0 & 10 & 0.01 & 0.8 &0.04  \\ \hline        
+  \hline 
+   \emph{app} & $SL_{t=0}$ & \textbf{$a_{cpu}$} & 
+   \textbf{$b_{cpu}$} & \textbf{$\epsilon$} & 
+   \emph{weight} & \emph{Deadline} \\ \hline
+  app1 & 75 & 0 & 10 & 0.06 & 0.2 &0.04  \\ \hline
+  app2 & 75 & 0 & 10 & 0.06 & 0.4 &0.04  \\ \hline
+  app3 & 75 & 0 & 10 & 0.01 & 0.6 &0.04  \\ \hline
+  app4 & 75 & 0 & 10 & 0.01 & 0.8 &0.04  \\ \hline        
   \end{tabular}
-  \caption{Settings for the apps in test5}
+  \caption{Settings for the test applications in Test 5.}
   \label{tab:settings_test5}
 \end{table}
+
+\begin{figure}[th]
+\centering
+  \begin{minipage}{0.49\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{"tools/plot/logs/test5/vp"}
+  \subcaption{Virtual Platforms}
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.49\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{"tools/plot/logs/test5/f"}
+  \subcaption{Matching Functions}
+  \end{minipage}
+\caption{Results for Test 5.}
+\label{fig:test5}
+\end{figure}
+
+Figure~\ref{fig:test5} shows the convergence of the virtual platforms
+and the corresponding matching functions. As can be seen, the matching
+functions of all the applications become positive, meaning that the
+architecture is capable of handling the load produced by the applications
+correctly, despite the reduction in the virtual platforms.
+
+Also, as can be seen, all the virtual platforms converge to the same value,
+except for the one given to the last application, that is the last 
+(since it started later) to reach a positive matching function. 
+All the resources that are not distributed are therefore given to this
+application to help it recover faster. When the matching functions are
+positive, the allocation of resource stays unchanged, since there is no need
+for redistribution.
 
 
 \subsection{Test 5b: 4 applications with both SL and CPU adaptation.}
