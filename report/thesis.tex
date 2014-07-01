@@ -2191,10 +2191,10 @@ observed that --- despite the performance functions being quite noisy --- the
 service levels settle to an equilibrium, as well as the virtual platforms.
 
 \subsubsection{Comments on the results}
-See the plots \ref{fig:test1_vp} to \ref{fig:test1_f} and table \ref{tab:settings_test1}.
+See the plots in figure \ref{fig:test1} and table \ref{tab:settings_test1}.
 The plots behaves on the whole as expected from the settings in Table \ref{tab:settings_test1}.
 The mean of the noisy performance converges to zero which corresponds to each application finding a pairing of SL and virtual platform (VP). In the plot a higher/lower SL gives a higher/lower Virtual platform. The SL/VP combination
-for app2 becomes different since the $a_{cpu}$ is twice that of the other apps resulting in a half as big SL compared to what it would have been otherwise. The VP resets after a new app has been started as it should. The SL converges slower than app1/2 because of the lower epsilon.
+for app2 becomes different since the $a_{cpu}$ is twice that of the other apps resulting in a half as big SL compared to what it would have been otherwise. The VP resets after a new app has been started as it should. The SL for app 3/4 converges slower than that of app1/2 because of the lower $\epsilon$ in app3/4.
 
 \subsection{Test 2: four applications with different weights, 
   service level and resource adaptation}
@@ -2252,9 +2252,9 @@ functions, despite being noisy, converge to signals with zero mean.
   of what you learn about the system.} 
 
 \subsubsection{Comments on the result.} 
-See the plots \ref{fig:test2_vp} to \ref{fig:test2_f} and table \ref{tab:settings_test2}.
+See the plots in figure \ref{fig:test2} and table \ref{tab:settings_test2}.
 This test behaves alot like the previous one but with one difference in how the SL/VL combinations converge. The main point of this test is to see how the weight affects the VP:s convergence points.
-As can be seen in fig \ref{fig:test2_vp}, the applications with higher weights are assigned a higher VP which is in accordance with the theory.
+As can be seen in the plot of the virtual platforms in fig \ref{fig:test2}, the applications with higher weights are assigned a higher VP which is in accordance with the theory.
 
 \subsection{Test 3: four applications with zero weights and 
   service level adaptation}
@@ -2294,7 +2294,7 @@ The result is shown in Figure~\ref{fig:test3}.
 \end{figure}
 
 \subsubsection{Comments on the results}
-See the plots \ref{fig:test3_vp} to \ref{fig:test3_f}.
+See the plots in fig \ref{fig:test3}
 As expected there is no change in VP except for the even split when a new application is added. The Performance looks a bit noisier than previously indicating an improvement when both SL and VP adaptation is being used.
 \subsection{Test 4: four applications with weights equal to one and 
   service level adaptation}
@@ -2326,8 +2326,8 @@ With all weights set to one the adaptation is expected to be done by varying the
 
 \clearpage
 \subsubsection{Comments on the results}
-See the plots \ref{fig:test4_vp} to \ref{fig:test4_f}.
-From comparing the two SL plots from test1 ,\ref{fig:test1_sl},and test4, \ref{fig:test4_sl}, it seems like the SL for app3 and app4 converges slower in the test 4 case. 
+See the plots in figure \ref{fig:test4}
+From comparing the two SL plots from test1 ,in figure \ref{fig:test1},and test4, in figure \ref{fig:test4}, it seems like the SL for app3 and app4 converges slower in the test 4 case. 
 The VP plot also displays greater difference between the 4 applications than in the test 1 case. Although these changes are small in comparison to the changes in test 3 it can be argued that more of the adaptation is done by varying the VP in test 4 as opposed to in test 1.
 Once again the performance seems a bit noisier compared to the test 1 case indicating an improvement when both SL and VP adaptation is being used.
 
@@ -2430,10 +2430,10 @@ for redistribution.
 \begin{flushleft}
 \emph{Test with a lower $b_{cpu},$}
 \end{flushleft}
-See the plots \ref{fig:test5_vp} to \ref{fig:test5_f} and table \ref{tab:settings_test5}.
+See the plots in figure \ref{fig:test5} and table \ref{tab:settings_test5}.
 In this test only the VP and performance plots are of interest since $a_{cpu}=0$ and hence changes in SL has no effect.
 The VP for the different applications does not seem to converge to the theoretical ones which probably is because of a too small static SL, $b_{cpu}$.
-The effects of this small $b_{cpu}$ can be seen in the performance plot \ref{fig:test5_f} when 25 < t35 where the performance is stuck in the upper half plane indicating that the applications need a higher SL 
+The effects of this small $b_{cpu}$ can be seen in the performance plot in figure \ref{fig:test5} when 25 < t35 where the performance is stuck in the upper half plane indicating that the applications need a higher SL 
 in order to make use of all of their available CPU. After time t = 45 the time between updates of the performance in the RM increases drastically, (the performance plots shows the performance that the RM has received). This is most likely due to a temporary problem with sending messages on DBus which in turn might have been caused by the flood of sent messages due to the high performance.
 
 The test is repeated, increasing the value of $b_{cpu}$. Also, in this
@@ -2448,7 +2448,7 @@ platforms in this second case.
 \begin{flushleft}
 \emph{Test with a higher $b_{cpu}$,}
 \end{flushleft}
-See the plots \ref{fig:test5b_vp} to \ref{fig:test5b_f} and table \ref{tab:settings_test5b}.
+See the plots in figure \ref{fig:test5b} and table \ref{tab:settings_test5b}.
 The values that the VP for the different applications converges to, compensated for the scale factor,  together with the theoretical values and the weights are shown in table \ref{tab:VP_test5b}.
 From the table it can be seen that the applications have not reached their theoretical values, however they are not far from them.
 The discrepancy might be explained by all the noise that performance still displays. This noise seems to have been reduced by the cpu hog on the system.slice.
@@ -2508,13 +2508,14 @@ depicts the result of the run.
   exclude them from the picture. This second alternative will also show
   better the adaptation of the other service levels.}
 
+\subsubsection{Comments on the results}
+See the plots in figure \ref{fig:test6} and table \ref{tab:settings_test6}.
 
-\chapter{Discussion, Conclusion and Future Work}
-\label{chp:conclusion}
+The plots looks as expected.
+That the weights influence how much VP an application gets can be seen in that $VP_{app5}>VP_{app2}>VP_{app4}$. 
+The small $\epsilon$ for app5 makes the SL adaptation very slow.
+
  
-
-
-%part of test 5b
 
 \begin{table}[h]
   \centering
@@ -2526,21 +2527,17 @@ depicts the result of the run.
 	app3 & 0.6 & 0.3 & 	0.28 \\ \hline
 	app4 & 0.8 & 0.4 &  0.32 \\ \hline
   \end{tabular}
-  \caption{Table showing the settings in test5b}
+  \caption{Table showing the convergence of VP and weights in test 5b}
   \label{tab:VP_test5b}
 \end{table}
 \begin{comment}
 \end{comment}
 
 
+\chapter{Discussion, Conclusion and Future Work}
+\label{chp:conclusion}
 
 
-\subsection{Test 6}
-See the plots \ref{fig:test6_vp} to \ref{fig:test6_f} and table \ref{tab:settings_test6}.
-
-The plots looks as expected.
-That the weights influence how much VP an application gets can be seen in that $VP_{app5}>VP_{app2}>VP_{app4}$. 
-The small $\epsilon$ for app5 makes the SL adaptation very slow.
 
 \chapter{Conclusion and Future Work}
 \label{chp:conclusion}
