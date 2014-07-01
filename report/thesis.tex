@@ -1758,22 +1758,21 @@ socket.
 The resource split shown in Figure~\ref{fig:Piechart} is made by creating 
 a \texttt{gtrm.slice} file in the folder \texttt{/etc/systemd/system}.
 Any application that wants to take advantage of the GTRM capabilities needs
-to create a service file in the same folder. When the service is started a folder named \texttt{gtrm.slice} will be created in the corresponding cgroup-controller-folder to represent the slice. The controller is a combination of the CPU-and CPUAccounting, \texttt{cpu,cpuacct}. The applications run in this slice will be represented as a folder in the slice-folder.
+to create a service file in the same folder. When the service is started a folder named \texttt{gtrm.slice} will be created in the corresponding cgroup-controller-folder to represent the slice. The controller is a combination of the CPU-and CPUAccounting, \texttt{cpu,cpuacct}. The applications run in this slice will be represented as a folder within the slice-folder. The resulting path to the service will look like this.
 
 \begin{verbatim}
 /sys/fs/cgroup/cpu,cpuacct/gtrm.slice/gtrm.service/
 \end{verbatim}
 
-If no such file is created, by default, \texttt{systemd} defines a slice 
-that all services will belong to. Any service file in the 
-\texttt{/etc/systemd/system} folder overrides a service file for the 
-same application declared somewhere else. An example of such files follows. 
+The unit file to represent the \texttt{gtrm.slice} is defined as follows. Here the only parameter specified is the amount of CPUShares. By setting this field the system is given the ability to change the CPUShares of this slice.
 \subsubsection{gtrm.slice}
 \begin{verbatim}
 [Unit]
 [Slice]
 CPUShares=1024
 \end{verbatim}
+
+Any service file in the \texttt{/etc/systemd/system} folder overrides a service file for the same application declared somewhere else. The following describes the service files used by our test applications.
 
 \subsubsection{gtrm-test.service and gtrm-test2.service}
 \begin{verbatim}
@@ -1784,8 +1783,7 @@ CPUShares=100
 Slice=gtrm.slice
 \end{verbatim}
 
-The remaining application are located on the static slice. On the camera (and all other systemd systems) this is called the system slice, and its unit file is located in the folder \texttt{/usr/lib/systemd/system}.
-
+If no such file is created, by default, \texttt{systemd} defines a slice called \texttt{system.slice} located in \texttt{/usr/lib/systemd/system}. All services will belong to this slice unless another slice has been specified. 
 \subsubsection{system.slice}
 \begin{verbatim}
 [Unit]
@@ -1799,7 +1797,7 @@ After=-.slice
 
 \texttt{DefaultDependencies} is set to \emph{no} to disable some non-essential dependencies. The \texttt{Before} and \texttt{After} fields makes sure that the units are started in the correct order, if necessary delaying one unit to make sure the other starts first. The unit(s) specified in the \texttt{Wants}-field will start when this unit is started. In this case the \texttt{-.slice} will be started simultaneously as \texttt{system.slice}, but the \texttt{After} field ensures that \texttt{system.slice} will start-up first of them. This slice is given the default amount of CPUShares which is 1024, since nothing is specified in the unit file.
 
-\martina{Is it the same example of Figure~\ref{fig:Piechart}? If so,
+\fixed{Is it the same example of Figure~\ref{fig:Piechart}? If so,
   please write it somewhere. Again, if so, please show also the file
   that is generated for the static slice, that is unchanged and say where
   it resides in the file system. It would be nice to also expand on the
@@ -1959,6 +1957,7 @@ reduce the quality of the performed computation.
 \item The GTRM and the service level adaptation starts trying to compensate
   for that.
 \end{enumerate}
+
 
 It is expected that the system reaches a stable point. The applications with
 the higher weights adapt their matching function mainly due to an increase
