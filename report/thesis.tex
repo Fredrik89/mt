@@ -2368,46 +2368,44 @@ application to help it recover faster. When the matching functions are
 positive, the allocation of resource stays unchanged, since there is no need
 for redistribution.
 
-
-\subsection{Test 5b: 4 applications with both SL and CPU adaptation.}
-Test 5 is remade, this time with a much higher $b_{cpu}$.
-A cpu hog application is started on the system.slice in an attempt to limit the noise in performance.
- The settings for the applications can be seen in table  \ref{tab:settings_test5b}
-
-
-
-\begin{figure}[!H]
-  \centering
-  \includegraphics{"tools/plot/logs/test5b/vp"}
-  \caption{The virtual platforms for the apps in test5b}
-  \label{fig:test5b_vp}
-\end{figure}
-
-\begin{figure}[!H]
-  \centering
-  \includegraphics{"tools/plot/logs/test5b/f"}
-  \caption{The performance for the apps in test5b}
-  \label{fig:test5b_f}
-\end{figure}
-
-
-
 \begin{table}[h]
   \centering
   \begin{tabular}{|c|c|c|c|c|c|c|}
- 	\hline 
+  \hline 
    \emph{app} & $SL_{t=0}$ & \textbf{$a_{cpu}$} & \textbf{$b_{cpu}$} & \textbf{$\epsilon$} & \emph{weight} & \emph{Deadline} \\ \hline
-	app1 & 75 & 0 & 120 & 0.06 & 0.2 &0.04  \\ \hline
-	app2 & 75 & 0 & 120 & 0.06 & 0.4 &0.04  \\ \hline
-	app3 & 75 & 0 & 120 & 0.01 & 0.6 &0.04  \\ \hline
-	app4 & 75 & 0 & 120 & 0.01 & 0.8 &0.04  \\ \hline        
+  app1 & 75 & 0 & 120 & 0.06 & 0.2 &0.04  \\ \hline
+  app2 & 75 & 0 & 120 & 0.06 & 0.4 &0.04  \\ \hline
+  app3 & 75 & 0 & 120 & 0.01 & 0.6 &0.04  \\ \hline
+  app4 & 75 & 0 & 120 & 0.01 & 0.8 &0.04  \\ \hline        
   \end{tabular}
-  \caption{Settings for the apps in test5b}
+  \caption{Settings for the test applications in Test 5
+    with a higher $b\_cpu$ value.}
   \label{tab:settings_test5b}
 \end{table}
 
+\begin{figure}[tb]
+\centering
+  \begin{minipage}{0.49\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{"tools/plot/logs/test5b/vp"}
+  \subcaption{Virtual Platforms}
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.49\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{"tools/plot/logs/test5b/f"}
+  \subcaption{Matching Functions}
+  \end{minipage}
+\caption{Results for Test 5 with a higher $b\_cpu$ .}
+\label{fig:test5b}
+\end{figure}
 
-
+The test is repeated, increasing the value of $b_{cpu}$. Also, in this
+second case, a resource hungry application is started on the system slice 
+in an attempt to limit the noise in performance. The settings for the
+test can be seen in Table~\ref{tab:settings_test5b} while 
+Figure~\ref{fig:test5b} shows the matching functions and the virtual
+platforms in this second case.
 
 \subsection{Test 6: 3 applications with both SL and CPU adaptation and 2 without SL adaptation}
 Five applications are started one by one with the settings in table \ref{tab:settings_test6}
