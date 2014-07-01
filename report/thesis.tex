@@ -819,6 +819,7 @@ typedef union epoll_data {
 
 struct epoll_event {
 
+>>>>>>> 22d4d926840f4bbc08d8a00d17635a2ec81ac791
   uint32_t     events; /* Epoll events */
   epoll_data_t data;   /* User data variable */
 };
@@ -1627,6 +1628,7 @@ use is decided by setting the bit-rate priority field in \texttt{video.c}.
 		\item weight: Determines how the much of the adaptation will be done 
       by altering the service level or the changing the amount of resources.
 		\item deadline\_seconds: This deadline will correspond to the 
+
       desired frame rate.
 		\item Return value: None.
 	\end{itemize}
@@ -1744,6 +1746,7 @@ GTRM-slice. A service can reserve a minimum percentage of allocated
 resources referring to its parent slice.
 In the Pie chart above the static slice would be guaranteed a minimum of 
 \sfrac{1}{3} of the total resources while the two GTRM services are given 
+
 half of the \sfrac{2}{3} reserved by its parent slice, therefore obtaining
 a minimum of \sfrac{1}{3} of the total available resources each.
 
@@ -2307,91 +2310,106 @@ With all weights set to one the adaptation is expected to be done by varying the
 \label{fig:test4}
 \end{figure}
 
-% --- Martina arrived here to check
-
 \clearpage
+\subsection{Test 5: four applications with no service level effect}
 
-\subsection{Test 5: 4 applications with both SL and CPU adaptation.}
-Four applications are started one by one with the settings in table \ref{tab:settings_test5}
-According to proposition 3.2 in "A Game-Theoretic Resource Manager for RT Applications" \cite{gtrm};
-given that the service level is large enough, the normalized virtual platforms will tend to the values given by:
-
-
-  \begin{eqnarray}	\label{eq:SpecialStationaryPoint}
-    \tv_i^* \to \frac{\lambda_i}{\sum_{j=1}^{n}\lambda_j},
-  \end{eqnarray}
-
-
-\begin{figure}[!H]
-  \centering
-  \includegraphics{"tools/plot/logs/test5/vp"}
-  \caption{The virtual platforms for the apps in test5}
-  \label{fig:test5_vp}
-\end{figure}
-
-\begin{figure}[!H]
-  \centering
-  \includegraphics{"tools/plot/logs/test5/f"}
-  \caption{The performance for the apps in test5}
-  \label{fig:test5_f}
-\end{figure}
-
-
+Four applications are started one by one with the settings in 
+Table \ref{tab:settings_test5}. As can be seen, the value of $a\_cpu$ is
+zero for all the applications, meaning that the service level is not
+at all affecting the amount of resources requested on the application side.
+According to proposition 3.2 in ``A Game-Theoretic Resource Manager for 
+RT Applications''~\cite{gtrm}, the normalized virtual platforms will tend 
+to the values given by
+\begin{equation}
+  \tv_i^* \to \frac{\lambda_i}{\sum_{j=1}^{n}\lambda_j},
+  \label{eq:SpecialStationaryPoint}
+\end{equation}
 
 \begin{table}[h]
   \centering
   \begin{tabular}{|c|c|c|c|c|c|c|}
- 	\hline 
-   \emph{app} & $SL_{t=0}$ & \textbf{$a_{cpu}$} & \textbf{$b_{cpu}$} & \textbf{$\epsilon$} & \emph{weight} & \emph{Deadline} \\ \hline
-	app1 & 75 & 0 & 10 & 0.06 & 0.2 &0.04  \\ \hline
-	app2 & 75 & 0 & 10 & 0.06 & 0.4 &0.04  \\ \hline
-	app3 & 75 & 0 & 10 & 0.01 & 0.6 &0.04  \\ \hline
-	app4 & 75 & 0 & 10 & 0.01 & 0.8 &0.04  \\ \hline        
+  \hline 
+   \emph{app} & $SL_{t=0}$ & \textbf{$a_{cpu}$} & 
+   \textbf{$b_{cpu}$} & \textbf{$\epsilon$} & 
+   \emph{weight} & \emph{Deadline} \\ \hline
+  app1 & 75 & 0 & 10 & 0.06 & 0.2 &0.04  \\ \hline
+  app2 & 75 & 0 & 10 & 0.06 & 0.4 &0.04  \\ \hline
+  app3 & 75 & 0 & 10 & 0.01 & 0.6 &0.04  \\ \hline
+  app4 & 75 & 0 & 10 & 0.01 & 0.8 &0.04  \\ \hline        
   \end{tabular}
-  \caption{Settings for the apps in test5}
+  \caption{Settings for the test applications in Test 5.}
   \label{tab:settings_test5}
 \end{table}
 
-
-\subsection{Test 5b: 4 applications with both SL and CPU adaptation.}
-Test 5 is remade, this time with a much higher $b_{cpu}$.
-A cpu hog application is started on the system.slice in an attempt to limit the noise in performance.
- The settings for the applications can be seen in table  \ref{tab:settings_test5b}
-
-
-
-\begin{figure}[!H]
+\begin{figure}[th]
+\centering
+  \begin{minipage}{0.49\textwidth}
   \centering
-  \includegraphics{"tools/plot/logs/test5b/vp"}
-  \caption{The virtual platforms for the apps in test5b}
-  \label{fig:test5b_vp}
+  \includegraphics[width=\textwidth]{"tools/plot/logs/test5/vp"}
+  \subcaption{Virtual Platforms}
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.49\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{"tools/plot/logs/test5/f"}
+  \subcaption{Matching Functions}
+  \end{minipage}
+\caption{Results for Test 5.}
+\label{fig:test5}
 \end{figure}
 
-\begin{figure}[!H]
-  \centering
-  \includegraphics{"tools/plot/logs/test5b/f"}
-  \caption{The performance for the apps in test5b}
-  \label{fig:test5b_f}
-\end{figure}
+Figure~\ref{fig:test5} shows the convergence of the virtual platforms
+and the corresponding matching functions. As can be seen, the matching
+functions of all the applications become positive, meaning that the
+architecture is capable of handling the load produced by the applications
+correctly, despite the reduction in the virtual platforms.
 
-
+Also, as can be seen, all the virtual platforms converge to the same value,
+except for the one given to the last application, that is the last 
+(since it started later) to reach a positive matching function. 
+All the resources that are not distributed are therefore given to this
+application to help it recover faster. When the matching functions are
+positive, the allocation of resource stays unchanged, since there is no need
+for redistribution.
 
 \begin{table}[h]
   \centering
   \begin{tabular}{|c|c|c|c|c|c|c|}
- 	\hline 
+  \hline 
    \emph{app} & $SL_{t=0}$ & \textbf{$a_{cpu}$} & \textbf{$b_{cpu}$} & \textbf{$\epsilon$} & \emph{weight} & \emph{Deadline} \\ \hline
-	app1 & 75 & 0 & 120 & 0.06 & 0.2 &0.04  \\ \hline
-	app2 & 75 & 0 & 120 & 0.06 & 0.4 &0.04  \\ \hline
-	app3 & 75 & 0 & 120 & 0.01 & 0.6 &0.04  \\ \hline
-	app4 & 75 & 0 & 120 & 0.01 & 0.8 &0.04  \\ \hline        
+  app1 & 75 & 0 & 120 & 0.06 & 0.2 &0.04  \\ \hline
+  app2 & 75 & 0 & 120 & 0.06 & 0.4 &0.04  \\ \hline
+  app3 & 75 & 0 & 120 & 0.01 & 0.6 &0.04  \\ \hline
+  app4 & 75 & 0 & 120 & 0.01 & 0.8 &0.04  \\ \hline        
   \end{tabular}
-  \caption{Settings for the apps in test5b}
+  \caption{Settings for the test applications in Test 5
+    with a higher $b\_cpu$ value.}
   \label{tab:settings_test5b}
 \end{table}
 
+\begin{figure}[tb]
+\centering
+  \begin{minipage}{0.49\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{"tools/plot/logs/test5b/vp"}
+  \subcaption{Virtual Platforms}
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.49\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{"tools/plot/logs/test5b/f"}
+  \subcaption{Matching Functions}
+  \end{minipage}
+\caption{Results for Test 5 with a higher $b\_cpu$ .}
+\label{fig:test5b}
+\end{figure}
 
-
+The test is repeated, increasing the value of $b_{cpu}$. Also, in this
+second case, a resource hungry application is started on the system slice 
+in an attempt to limit the noise in performance. The settings for the
+test can be seen in Table~\ref{tab:settings_test5b} while 
+Figure~\ref{fig:test5b} shows the matching functions and the virtual
+platforms in this second case.
 
 \subsection{Test 6: 3 applications with both SL and CPU adaptation and 2 without SL adaptation}
 Five applications are started one by one with the settings in table \ref{tab:settings_test6}
@@ -2451,6 +2469,7 @@ The result is shown in figures ~\ref{fig:test3_vp} to ~\ref{fig:test3_f}.
 \end{comment}
 
 \chapter{Discussion, Conclusion and Future Work}
+\label{chp:conclusion}
 
 \section{Discussion on the results}
 \subsection{Test 1}
@@ -2528,12 +2547,18 @@ The small $\epsilon$ for app5 makes the SL adaptation very slow.
 
 
 
-\chapter{Conclusion and Further Work}
-\label{chp:conclusion}
 
 This thesis implemented a Game Theoretic Resource Manager (GTRM) on Axis
 cameras, to distribute the CPU among multiple running applications that can
 be adaptive in nature and vary their service level and the required
+computation, together with the quality of the offered service.
+
+\section{Result discussion}
+
+Overall the plots of the virtual platforms and the service level looks good but the main problem are
+the extremely noisy performances. They do however have zero mean which is why it is deemed as a good enough result.
+There are a couple of possible explanations for the noisy performance ; one being the extra CPU that the gtrm slice receives when the system.slice has
+spare resources to lend. This introduces a disturbance driving the performance up. However when loading the system.slice with a cpu hog no major changes in performance were shown.
 computation, together with the quality of the offered service.
 
 \section{Conclusion}
