@@ -2470,7 +2470,8 @@ Represents an application being managed and consists of the following fields.
 \item vp\_old: Previous virtual platform.
 \item performance: Performance, or matching function of the application.
 \item weight: The current "weight" of the application.
-\item happy: Indicates if the application is happy with its current performance.
+\item happy: Indicates if the application is happy with its 
+      current performance. This field was added to prevent application from sending their performance even when they are satisfied and nothing should be needed from the resource manager, eliminating unnecessary computations.
 \item sa: Socket Address, used to send back the performance multiplier.
 \end{itemize}
 
