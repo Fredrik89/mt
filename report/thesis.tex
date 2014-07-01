@@ -1,10 +1,10 @@
 \documentclass[nobiblatex]{LTHthesis}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
+\usepackage{graphicx}
 \usepackage{mathptmx, helvet}
 \usepackage{xfrac}
 \usepackage[left=2.5cm,right=2.5cm,top=3cm,bottom=5cm]{geometry}
-\usepackage{graphicx}
 \usepackage{listings}
 \usepackage{color}
 \usepackage{url}
@@ -14,9 +14,10 @@
 \usepackage{titlesec}
 \usepackage{todonotes}
 \usepackage{framed}
-
 \usepackage{nicefrac}
 \usepackage{amsmath} % assumes amsmath package installed
+
+\newsubfloat{figure}
 
 \newcommand{\martina}[1]
   {\todo[inline,color=red!30,caption={}]{\textbf{Martina:} #1}}
@@ -751,7 +752,15 @@ typedef union epoll_data {
   uint64_t u64;
 } epoll_data_t;
 
+
+
+
+<<<<<<< Updated upstream
+
+=======
+>>>>>>> Stashed changes
 struct epoll_event {
+
 
   uint32_t     events; /* Epoll events */
   epoll_data_t data;   /* User data variable */
@@ -1542,6 +1551,7 @@ use is decided by setting the bit-rate priority field in \texttt{video.c}.
 		\item weight: Determines how the much of the adaptation will be done 
       by altering the service level or the changing the amount of resources.
 		\item deadline\_seconds: This deadline will correspond to the 
+
       desired frame rate.
 		\item Return value: None.
 	\end{itemize}
@@ -1900,406 +1910,458 @@ performance. The applications that supports the service level adaptation
 lowered their quality as much as possible. The GTRM loop will continue to
 try to adjust to the current conditions.
 
-\chapter{Testing and Results}
+\chapter{Experimental Results}
 \label{chp:test}
 
-%monolith testing that we cant do :(
-\begin{comment}
-The end result will be a working prototype that can demonstrate that the system works and what results that can be expected. These are the main aspects that we want to test.
-To provide results and to prove that the thesis is valid, thorough testing is required. The main focus of the test is to see if the following can be achieved.
-\begin{itemize}
-\item Can we keep the FPS we want even during high load of the system.
-\item Can we adapt so that other applications can perform well during high loads as well. 
-\end{itemize}
+% The end result will be a working prototype that can demonstrate that 
+% the system works and what results that can be expected. These are the 
+% main aspects that we want to test. To provide results and to prove that 
+% the thesis is valid, thorough testing is required. The main focus of the 
+% test is to see if the following can be achieved.
+% \begin{itemize}
+% \item Can we keep the FPS we want even during high load of the system.
+% \item Can we adapt so that other applications can perform well during high loads as well. 
+% \end{itemize}
+% The test output consist of logs showing CPU-time for applications along 
+% with their service levels, performance and virtual platforms. The CPU-time
+% differ between how much resources are assigned to each application and how
+% much is actually used and it is of interest to see how much they vary if 
+% any. The FPS and video quality are other outputs that has to be taken into 
+% the result.
+% It is also desirable to test if the system can fulfill the 
+% previously described use cases.
+% \begin{itemize}
+% \item The first and simplest case is a camera that is still and filming 
+%   a scenery which does not change notably. Here it is expected maximal 
+%   quality of the images since the scene itself does not require a lot 
+%   of resources. 
+% \item Next step is to test more complex scenery, for example scenery 
+%   with a lot of different things going on at the same time. This will 
+%   stress the video streaming and we want to make sure that if necessary 
+%   the quality will be reduced in favor for a steady FPS.
+% \item A moving PTZ-camera will cause a high load when it is moving 
+%   around. This will cause the whole picture to be redrawn and not partly 
+%   as when the image is still, and will be the ultimate stress test for 
+%   the streaming part.
+% \item By running different test applications that are resource demanding 
+%   the camera can be tested during intense CPU-loads. Some of the 
+%   applications will have a linear relationship between computational 
+%   time and the SL while others will have a non linear one. This matters 
+%   since the SL adaptation assumes a linear relationship between the SL 
+%   and the computational time. If the steps in SL are small enough the 
+%   linear relationship could still be assumed even for non linear ones.
+% \end{itemize}
 
-The test output consist of logs showing CPU-time for applications along with their service levels, performance and virtual platforms. The CPU-time differ between how much resources are assigned to each application and how much is actually used and it is of interest to see how much they vary if any. The FPS and video quality are other outputs that has to be taken into the result.
+This chapter describes the tests that have been conducted on the entire
+architecture to validate the claims. The tests will resemble the envisioned
+use cases.
 
-It is also desirable to test if the system can fulfill the previously described use cases.
+A first set of tests is obtained by starting and stopping different 
+test-applications on the Axis P3367 camera. These applications run on 
+the GTRM-slice and their resource is managed by the GTRM itself. The slices
+and services are started and stopped with the command line tool 
+\texttt{systemctl}~\cite{systemctl}.
 
-\begin{itemize}
-
-\item The first and simplest case is a camera that is still and filming a scenery which does not change notably. Here it is expected maximal quality of the images since the scene itself does not require a lot of resources. 
-\item Next step is to test more complex scenery, for example scenery with a lot of different things going on at the same time. This will stress the video streaming and we want to make sure that if necessary the quality will be reduced in favor for a steady FPS.
-\item A moving PTZ-camera will cause a high load when it is moving around. This will cause the whole picture to be redrawn and not partly as when the image is still, and will be the ultimate stress test for the streaming part.
-\item By running different test applications that are resource demanding the camera can be tested during intense CPU-loads. Some of the applications will have a linear relationship between computational time and the SL while others will have a non linear one. This matters since the SL adaptation assumes a linear relationship between the SL and the computational time. If the steps in SL are small enough the linear relationship could still be assumed even for non linear ones.
-\end{itemize}
-
-\end{comment}
-
-
-
-The first part of the testing is done by starting and stopping different test-applications on the Axis P3367 camera, running on the gtrm-slice.
-The slices and services are started and stopped with the command line tool systemctl \cite{systemctl}.
-
-The camera is split into two different top level slices, the gtrm.slice, containing the test services, and the system.slice that contains all other services. The command line tool systemd-cgls shows the layout of the service/slice tree:
+As previously discussed, the resource available in the camera is split into
+two different top slices. The first one is the system slice, that contains
+all the normal services. The second one is the GTRM slice, that contains
+applications that are possibly service level aware, the resource devoted to
+which are managed by the GTRM. The command line tool \texttt{systemd-cgls}
+shows the layout of the slice tree. Its output is shown in
+Figures~\ref{fig:systemd-cgls2a} and \ref{fig:systemd-cgls2b}.
+The system slice has been given $CPUShares = 1024$, while the GTRM slice got 
+$CPUShares = 256$, meaning that the resource is split $\frac{4}{5}$ to 
+$\frac{1}{5}$, between the two slices. 
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.8\textwidth]{systemd-cgls2}
-    \caption{The first lines of the output from  systemd-cgls}
-    \label{fig:systemd-cgls2}
+    \caption{The first lines of the output from  systemd-cgls.}
+    \label{fig:systemd-cgls2a}
 \end{figure}
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.8\textwidth]{systemd-cgls1}
-    \caption{The last lines of the output from systemd-cgls}
-    \label{fig:systemd-cgls2}
+    \caption{The last lines of the output from systemd-cgls.}
+    \label{fig:systemd-cgls2b}
 \end{figure}
 
-
-The system.slice have been given $CPUShares = 1024$ and the gtrm.slice 256 meaning that the cpu resources are split 4/5 to 1/5 between the two slices. The test applications takes 10 arguments when started, described in the box below, that will be varied between different test. By varying the weight parameter from 0 to 1 the applications can be set somewhere between the extremes of only adapting through resource allocation or only adapt through SL adaptation.
-By varying the a\_cpu and b\_cpu the speed that the cpu requirement changes due to changes in SL varies. The epsilon makes the SL adaptation slower or faster. All services are given an initial 100 CPUShares to be able to send their first message to systemd relatively fast.
-
+To test the system, several test applications are run together, specifying
+different parameters for each of them.%
+When started, the test applications takes $10$ parameters, described in 
+the box below. These parameters are modified in different tests. By 
+varying the \texttt{weight} parameter from $0$ to $1$, the applications can 
+be set somewhere between the extremes of only adapting through resource
+allocation and only adapt through service level modification.
+By varying the \texttt{a\_cpu} and \texttt{b\_cpu}, the emulated relationship
+between service level and resource requirement is changed. While
+\texttt{b\_cpu} represents service level independent load, \texttt{a\_cpu}
+denotes the relationship between the set service level and the service level
+dependent load that the application excerpt on the platform. The parameter
+\texttt{epsilon} makes the service level adaptation slower or faster. All
+services are given an initial $CPUShares = 100$, to be able to send their first message to \texttt{systemd} relatively fast.
 
 \begin{framed}
-	\begin{flushleft}
-		\textbf{\emph{test-gtrm-app.c(int argc, char* argv[])}}
-		The argv[] gets parsed to the following variables in the following orders:
-		\begin{itemize}
-		\item float service\_level, Sets the starting value for the service level.
+\begin{flushleft}
+	\textbf{\emph{test-gtrm-app.c(int argc, char* argv[])}} \newline
+	The argv[] gets parsed to the following variables in the following 
+  orders:
+	\begin{itemize}
+		\item float service\_level, Sets the starting value for the service 
+      level.
 		\item float a\_cpu, Used for calculating the cpu\_req.
 		\item float b\_cpu, Used for calculating the cpu\_req.
 		\item float a\_mem, Not used.
 		\item float b\_mem, Not used.
 		\item double epsilon, Affects how quickly the SL adapts.
-		\item double weight, Determines how much of the adaptation that will be made by the RM or by the SL adaptation. Is defined between 0 and 1.
+		\item double weight, Determines how much of the adaptation that will 
+      be made by the RM or by the SL adaptation. Is defined between 0 and 1.
 		\item double deadline, The deadline for the job.
-		\end{itemize}
-		The cpu requirement is a linear function of the SL: $cpu\_req = a\_cpu*ls +b\_cpu  $. Cpu\_req is simply the number of calculations 
-		that will be performed each job. 
-	\end{flushleft}
+	\end{itemize}
+	The cpu requirement is a linear function of the SL: 
+  $cpu\_req = a\_cpu*ls +b\_cpu  $. Cpu\_req is simply the number 
+  of calculations that will be performed each job. 
+\end{flushleft}
 \end{framed}	
 
+In the tests, all the applications are launched at the same time. The
+applications are expected to converge to a matching function close to or
+equal to zero, with a service level that should stabilize over time. It is 
+also expected that the resource manager initially assigns the same amount
+of resource to all the applications. As their demands and adaptation
+rates vary, the applications service level and virtual platforms does not 
+have to converge identically, but if the system works as intended all the
+applications should end up with a matching function close to zero.
 
+The tests are performed by starting the services one by one. Every time 
+an application is added, the system is expected to reset the virtual
+platforms and assign to each application the same amount of resources. 
+After that the system will then manage the resources and service level 
+until all the applications are satisfied with their performance level.
+Notice that the resource manager is managing only $90\%$ of the total 
+shares assigned to it. This is a parameter of GTRM that could be changed
+upon request, and the $10\%$ unused resource is intended as a slack, for
+example to run the resource manager itself.
 
+\subsection{Test 1: four applications with the same weights, 
+  service level and resource adaptation}
 
-To test the system, several applications are run with different parameters.
+\begin{figure}[th]
+\centering
+  \begin{minipage}{0.49\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{"tools/plot/logs/test1/vp"}
+  \subcaption{Virtual Platforms}
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.49\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{"tools/plot/logs/test1/sl"}
+  \subcaption{Service Levels}
+  \end{minipage}
+  \begin{minipage}{0.49\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{"tools/plot/logs/test1/f"}
+  \subcaption{Matching Functions}
+  \end{minipage}
+\caption{Results for Test 1.}
+\label{fig:test1}
+\end{figure}
 
-In the test all the applications are launched at the same time. The applications are expected to converge to a matching function close to or equal to zero, with a service level that will stabilize over time. It also expected that the resource manager will initially assign all the applications the same amount of resources. As their demands and adaptation rates vary, the applications service level and virtual platforms does not have to converge identically, but if the system works as intended they should all end up with a performance close to zero.
+In this test, four applications are started, one every 10 seconds. 
+The applications are started with the settings shown in 
+Table~\ref{tab:settings_test1}. The result is shown in 
+Figure~\ref{fig:test1}. 
 
-The tests are performed by starting the services one by one. Every time an application is added the system is expected to reset the virtual platforms, assigning each application the same amount of resources. After that the system will then manage the resources and service level until all the applications are satisfied with their performance. After the tests were done it was discovered that all values for virtual platforms had been scaled by multiplying them with 0.9. This does not affect the algorithm since it corresponds to scaling the total amount of CPUShares with a factor 0.9. However it might good to keep in mind when looking at plot 6.
-
-
-
-\subsection{Test 1: 4 applications with both SL and cpu adaptation, same weights}
-
-Here four applications are started in roughly 10 seconds intervals. The applications are started with the settings shown in table \ref{tab:settings_test1}
-The result is shown in figures ~\ref{fig:test1_vp} to ~\ref{fig:test1_f}. 
-\begin{table}[h]
+\begin{table}[h!]
   \centering
   \begin{tabular}{|c|c|c|c|c|c|c|}
- 	\hline 
-   \emph{app} & $SL_{t=0}$ & \textbf{$a_{cpu}$} & \textbf{$b_{cpu}$} & \textbf{$\epsilon$} & \emph{weight} & \emph{Deadline} \\ \hline
-	app1 & 75 & 10 & 0 & 0.06 & 0.5 &0.04  \\ \hline
-	app2 & 75 & 20 & 0 & 0.06 & 0.5 &0.04  \\ \hline
-	app3 & 75 & 10 & 0 & 0.01 & 0.5 &0.04  \\ \hline
-	app4 & 75 & 10 & 0 & 0.01 & 0.5 &0.04  \\ \hline        
+  \hline 
+   \emph{app} & $SL_{t=0}$ & \textbf{$a_{cpu}$} & 
+   \textbf{$b_{cpu}$} & \textbf{$\epsilon$} & \emph{weight} & 
+   \emph{Deadline} \\ \hline
+  app1 & 75 & 10 & 0 & 0.06 & 0.5 &0.04  \\ \hline
+  app2 & 75 & 20 & 0 & 0.06 & 0.5 &0.04  \\ \hline
+  app3 & 75 & 10 & 0 & 0.01 & 0.5 &0.04  \\ \hline
+  app4 & 75 & 10 & 0 & 0.01 & 0.5 &0.04  \\ \hline        
   \end{tabular}
-  \caption{Settings for the apps in test1}
+  \caption{Settings for the test applications in Test 1.}
   \label{tab:settings_test1}
 \end{table}
 
+\fixed{Look at the next paragraph. You will need to add something like
+  this for every experiment. You must comment the graphs.}
+It can be seen that the applications receive different amount of resources
+and settle to different service levels. Application 4, which is the last
+one to enter the pool, starts with a very negative matching function. The
+re-arrangement of resources allows the application to obtain a higher virtual
+platform and therefore compute at a higher service level. It can also be
+observed that --- despite the performance functions being quite noisy --- the
+service levels settle to an equilibrium, as well as the virtual platforms.
 
+\subsubsection{Comments on the results}
+See the plots in figure \ref{fig:test1} and table \ref{tab:settings_test1}.
+The plots behaves on the whole as expected from the settings in Table \ref{tab:settings_test1}.
+The mean of the noisy performance converges to zero which corresponds to each application finding a pairing of SL and virtual platform (VP). In the plot a higher/lower SL gives a higher/lower Virtual platform. The SL/VP combination
+for app2 becomes different since the $a_{cpu}$ is twice that of the other apps resulting in a half as big SL compared to what it would have been otherwise. The VP resets after a new app has been started as it should. The SL for app 3/4 converges slower than that of app1/2 because of the lower $\epsilon$ in app3/4.
 
-\begin{figure}[!H]
+\subsection{Test 2: four applications with different weights, 
+  service level and resource adaptation}
+
+\begin{figure}[th]
+\centering
+  \begin{minipage}{0.49\textwidth}
   \centering
-  \includegraphics{"tools/plot/logs/test1/vp"}
-  \caption{The virtual platforms for the apps in test1}
-  \label{fig:test1_vp}
+  \includegraphics[width=\textwidth]{"tools/plot/logs/test2/vp"}
+  \subcaption{Virtual Platforms}
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.49\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{"tools/plot/logs/test2/sl"}
+  \subcaption{Service Levels}
+  \end{minipage}
+  \begin{minipage}{0.49\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{"tools/plot/logs/test2/f"}
+  \subcaption{Matching Functions}
+  \end{minipage}
+\caption{Results for Test 2.}
+\label{fig:test2}
 \end{figure}
 
-\begin{figure}[!H]
-  \centering
-  \includegraphics{"tools/plot/logs/test1/sl"}
-  \caption{The SL for the apps in test1}
-  \label{fig:test1_sl}
-\end{figure}
+In this second test, four applications are started as done for the previous
+one. The difference here is that these applications have different weights,
+%therefore they help the infrastructure up to different extents. (we don't understand this)
+which indirectly governs how much of the adaptation that should be made by the application or by the GTRM. 
 
-\begin{figure}[!H]
-  \centering
-  \includegraphics{"tools/plot/logs/test1/f"}
-  \caption{The performance for the apps in test1}
-  \label{fig:test1_f}
-\end{figure}
+For a summary
+of the relevant data for the experiment, see Table~\ref{tab:settings_test2}.
 
-
-\subsection{Test 2: 4 applications with both SL and CPU adaptation, different weights}
-
-Four applications are started just as in test1 with the difference that they have different weights, see table \ref{tab:settings_test2}
-The result is shown in figures ~\ref{fig:test2_vp} to ~\ref{fig:test2_f}. 
-\begin{figure}[!H]
-  \centering
-  \includegraphics{"tools/plot/logs/test2/vp"}
-  \caption{The virtual platforms for the apps in test2}
-  \label{fig:test2_vp}
-\end{figure}
-
-
-
-
-
-\begin{figure}
-  \centering
-  \includegraphics{"tools/plot/logs/test2/sl"}
-  \caption{The SL for the apps in test2}
-  \label{fig:test2_sl}
-\end{figure}
-
-\begin{figure}[!H]
-  \centering
-  \includegraphics{"tools/plot/logs/test2/f"}
-  \caption{The performance for the apps in test2}
-  \label{fig:test2_f}
-\end{figure}
-
-\begin{table}[h]
+\begin{table}[h!]
   \centering
   \begin{tabular}{|c|c|c|c|c|c|c|}
  	\hline 
-   \emph{app} & $SL_{t=0}$ & \textbf{$a_{cpu}$} & \textbf{$b_{cpu}$} & \textbf{$\epsilon$} & \emph{weight} & \emph{Deadline} \\ \hline
+   \emph{app} & $SL_{t=0}$ & \textbf{$a_{cpu}$} & 
+   \textbf{$b_{cpu}$} & \textbf{$\epsilon$} & \emph{weight} & 
+   \emph{Deadline} \\ \hline
 	app1 & 75 & 10 & 0 & 0.06 & 0.2 &0.04  \\ \hline
 	app2 & 75 & 20 & 0 & 0.06 & 0.4 &0.04  \\ \hline
 	app3 & 75 & 10 & 0 & 0.01 & 0.6 &0.04  \\ \hline
 	app4 & 75 & 10 & 0 & 0.01 & 0.8 &0.04  \\ \hline        
   \end{tabular}
-  \caption{Settings for the apps in test2}
+  \caption{Settings for the test applications in Test 2.}
   \label{tab:settings_test2}
 \end{table}
 
+Figure~\ref{fig:test2} shows the results in terms of virtual platforms,
+service levels and matching functions. As can be seen, the performance
+functions, despite being noisy, converge to signals with zero mean.
 
+\fixed{Comment here: are the virtual platform assignments respecting
+  the theory? The application that should help more with the SL is helping
+  more or not? You have to show that this experiment is significant in terms
+  of what you learn about the system.} 
 
+\subsubsection{Comments on the result.} 
+See the plots in figure \ref{fig:test2} and table \ref{tab:settings_test2}.
+This test behaves alot like the previous one but with one difference in how the SL/VL combinations converge. The main point of this test is to see how the weight affects the VP:s convergence points.
+As can be seen in the plot of the virtual platforms in fig \ref{fig:test2}, the applications with higher weights are assigned a higher VP which is in accordance with the theory.
 
-\subsection{Test 3: 4 applications with SL adaptation and weights set to 0}
-Four applications are started as in test1 but now with all the weights set to 0.
-With all weights set to zero the virtual platforms are not expected to change.
-The result is shown in figures ~\ref{fig:test3_vp} to ~\ref{fig:test3_f}. 
+\subsection{Test 3: four applications with zero weights and 
+  service level adaptation}
 
-\begin{figure}[!H]
+In this third test, four applications are started as done for the previous
+ones. However, the weights of the applications are set to zero. With all
+weights set to zero the virtual platforms are not expected to change.
+The result is shown in Figure~\ref{fig:test3}.
+
+\fixed{Include in the figure for the virtual platform 0.2 in the
+  axis, to make sure that you actually see the signals. Are they
+  really at 0.25 or it is simply assumed? Another comment that you can
+  make here is the role of $\epsilon$. Do you see that the applications 3
+  and 4 are way slower in adjusting their service level? What does that
+  mean? You should add something about it.}
+
+\begin{figure}[th]
+\centering
+  \begin{minipage}{0.49\textwidth}
   \centering
-  \includegraphics{"tools/plot/logs/test3/vp"}
-  \caption{The virtual platforms for the apps in test3}
-  \label{fig:test3_vp}
+  \includegraphics[width=\textwidth]{"tools/plot/logs/test3/vp"}
+  \subcaption{Virtual Platforms}
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.49\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{"tools/plot/logs/test3/sl"}
+  \subcaption{Service Levels}
+  \end{minipage}
+  \begin{minipage}{0.49\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{"tools/plot/logs/test3/f"}
+  \subcaption{Matching Functions}
+  \end{minipage}
+\caption{Results for Test 3.}
+\label{fig:test3}
 \end{figure}
 
-\begin{figure}[!H]
-  \centering
-  \includegraphics{"tools/plot/logs/test3/sl"}
-  \caption{The SL for the apps in test3}
-  \label{fig:test3_sl}
-\end{figure}
+\subsubsection{Comments on the results}
+See the plots in fig \ref{fig:test3}
+As expected there is no change in VP except for the even split when a new application is added. The Performance looks a bit noisier than previously indicating an improvement when both SL and VP adaptation is being used.
+\subsection{Test 4: four applications with weights equal to one and 
+  service level adaptation}
 
-\begin{figure}[!H]
-  \centering
-  \includegraphics{"tools/plot/logs/test3/f"}
-  \caption{The performance for the apps in test3}
-  \label{fig:test3_f}
-\end{figure}
+This test is the dual of the previous one but all the weights are set to 1.
+With all weights set to one the adaptation is expected to be done by varying the virtual platforms. The result is shown in Figure~\ref{fig:test4}. 
 
-\subsection{Test 4: 4 applications with SL and CPU adaptation and weights set to 1}
-Four applications are started as in test1 but with all the weights set to 1.
-With all weights set to one most of the adaptation is expected to be done by varying the virtual platforms.
-The result is shown in figures ~\ref{fig:test4_vp} to ~\ref{fig:test4_f}. 
-
-\begin{figure}[!H]
+\begin{figure}[th]
+\centering
+  \begin{minipage}{0.49\textwidth}
   \centering
-  \includegraphics{"tools/plot/logs/test4/vp"}
-  \caption{The virtual platforms for the apps in test4}
-  \label{fig:test4_vp}
-\end{figure}
-
-\begin{figure}[!H]
+  \includegraphics[width=\textwidth]{"tools/plot/logs/test4/vp"}
+  \subcaption{Virtual Platforms}
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.49\textwidth}
   \centering
-  \includegraphics{"tools/plot/logs/test4/sl"}
-  \caption{The SL for the apps in test4}
-  \label{fig:test4_sl}
-\end{figure}
-
-\begin{figure}[!H]
+  \includegraphics[width=\textwidth]{"tools/plot/logs/test4/sl"}
+  \subcaption{Service Levels}
+  \end{minipage}
+  \begin{minipage}{0.49\textwidth}
   \centering
-  \includegraphics{"tools/plot/logs/test4/f"}
-  \caption{The performance for the apps in test4}
-  \label{fig:test4_f}
+  \includegraphics[width=\textwidth]{"tools/plot/logs/test4/f"}
+  \subcaption{Matching Functions}
+  \end{minipage}
+\caption{Results for Test 4.}
+\label{fig:test4}
 \end{figure}
 
 \clearpage
+\subsubsection{Comments on the results}
+See the plots in figure \ref{fig:test4}
+From comparing the two SL plots from test1 ,in figure \ref{fig:test1},and test4, in figure \ref{fig:test4}, it seems like the SL for app3 and app4 converges slower in the test 4 case. 
+The VP plot also displays greater difference between the 4 applications than in the test 1 case. Although these changes are small in comparison to the changes in test 3 it can be argued that more of the adaptation is done by varying the VP in test 4 as opposed to in test 1.
+Once again the performance seems a bit noisier compared to the test 1 case indicating an improvement when both SL and VP adaptation is being used.
 
-\subsection{Test 5: 4 applications with both SL and CPU adaptation.}
-Four applications are started one by one with the settings in table \ref{tab:settings_test5}
-According to proposition 3.2 in "A Game-Theoretic Resource Manager for RT Applications" \cite{gtrm};
-given that the service level is large enough, the normalized virtual platforms will tend to the values given by:
+\subsection{Test 5: four applications with no service level adaptation}
 
-
-  \begin{eqnarray}	\label{eq:SpecialStationaryPoint}
-    \tv_i^* \to \frac{\lambda_i}{\sum_{j=1}^{n}\lambda_j},
-  \end{eqnarray}
-
-
-\begin{figure}[!H]
-  \centering
-  \includegraphics{"tools/plot/logs/test5/vp"}
-  \caption{The virtual platforms for the apps in test5}
-  \label{fig:test5_vp}
-\end{figure}
-
-\begin{figure}[!H]
-  \centering
-  \includegraphics{"tools/plot/logs/test5/f"}
-  \caption{The performance for the apps in test5}
-  \label{fig:test5_f}
-\end{figure}
-
-
-
-\begin{table}
-  \centering
-  \begin{tabular}{|c|c|c|c|c|c|c|}
- 	\hline 
-   \emph{app} & $SL_{t=0}$ & \textbf{$a_{cpu}$} & \textbf{$b_{cpu}$} & \textbf{$\epsilon$} & \emph{weight} & \emph{Deadline} \\ \hline
-	app1 & 75 & 0 & 10 & 0.06 & 0.2 &0.04  \\ \hline
-	app2 & 75 & 0 & 10 & 0.06 & 0.4 &0.04  \\ \hline
-	app3 & 75 & 0 & 10 & 0.01 & 0.6 &0.04  \\ \hline
-	app4 & 75 & 0 & 10 & 0.01 & 0.8 &0.04  \\ \hline        
-  \end{tabular}
-  \caption{Settings for the apps in test5}
-  \label{tab:settings_test5}
-\end{table}
-
-
-\subsection{Test 5b: 4 applications with both SL and CPU adaptation.}
-Test 5 is remade, this time with a much higher $b_{cpu}$.
-A cpu hog application is started on the system.slice in an attempt to limit the noise in performance.
- The settings for the applications can be seen in table  \ref{tab:settings_test5b}
-
-
-
-\begin{figure}[!H]
-  \centering
-  \includegraphics{"tools/plot/logs/test5b/vp"}
-  \caption{The virtual platforms for the apps in test5b}
-  \label{fig:test5b_vp}
-\end{figure}
-
-\begin{figure}[!H]
-  \centering
-  \includegraphics{"tools/plot/logs/test5b/f"}
-  \caption{The performance for the apps in test5b}
-  \label{fig:test5b_f}
-\end{figure}
-
-
-
-\begin{table}
-  \centering
-  \begin{tabular}{|c|c|c|c|c|c|c|}
- 	\hline 
-   \emph{app} & $SL_{t=0}$ & \textbf{$a_{cpu}$} & \textbf{$b_{cpu}$} & \textbf{$\epsilon$} & \emph{weight} & \emph{Deadline} \\ \hline
-	app1 & 75 & 0 & 120 & 0.06 & 0.2 &0.04  \\ \hline
-	app2 & 75 & 0 & 120 & 0.06 & 0.4 &0.04  \\ \hline
-	app3 & 75 & 0 & 120 & 0.01 & 0.6 &0.04  \\ \hline
-	app4 & 75 & 0 & 120 & 0.01 & 0.8 &0.04  \\ \hline        
-  \end{tabular}
-  \caption{Settings for the apps in test5b}
-  \label{tab:settings_test5b}
-\end{table}
-
-
-
-
-\subsection{Test 6: 3 applications with both SL and CPU adaptation and 2 without SL adaptation}
-Five applications are started one by one with the settings in table \ref{tab:settings_test6}
-
-
-\begin{figure}[!H]
-  \centering
-  \includegraphics{"tools/plot/logs/test6/vp"}
-  \caption{The virtual platforms for the apps in test6}
-  \label{fig:test6_vp}
-\end{figure}
-
-\begin{figure}[!H]
-  \centering
-  \includegraphics{"tools/plot/logs/test6/sl"}
-  \caption{The SL for the apps in test6}
-  \label{fig:test6_sl}
-\end{figure}
-
-\begin{figure}[!H]
-  \centering
-  \includegraphics{"tools/plot/logs/test6/f"}
-  \caption{The performance for the apps in test6}
-  \label{fig:test6_f}
-\end{figure}
-
-
+Four applications are started one by one with the settings in 
+Table \ref{tab:settings_test5}. As can be seen, the value of $a\_cpu$ is
+zero for all the applications, meaning that the service level is not
+at all affecting the amount of resources requested on the application side.
+According to proposition 3.2 in ``A Game-Theoretic Resource Manager for 
+RT Applications''~\cite{gtrm}, the normalized virtual platforms will tend 
+to the values given by
+\begin{equation}
+  \tv_i^* \to \frac{\lambda_i}{\sum_{j=1}^{n}\lambda_j},
+  \label{eq:SpecialStationaryPoint}
+\end{equation}
 
 \begin{table}[h]
   \centering
   \begin{tabular}{|c|c|c|c|c|c|c|}
- 	\hline 
-   \emph{app} & $SL_{t=0}$ & \textbf{$a_{cpu}$} & \textbf{$b_{cpu}$} & \textbf{$\epsilon$} & \emph{weight} & \emph{Deadline} \\ \hline
-	app1 & 50 & 0  & 30 & - 	  & 0.5 &0.04  \\ \hline
-	app2 & 50 & 20 & 0  & 0.01  & 0.5 &0.04  \\ \hline
-	app3 & 50 & 0  & 30 & - 	  & 0.2 &0.04  \\ \hline
-	app4 & 50 & 20 & 0  & 0.01  & 0.2 &0.04  \\ \hline
-	app5 & 50 & 10 & 0  & 0.002 & 0.8 &0.04  \\ \hline                
+  \hline 
+   \emph{app} & $SL_{t=0}$ & \textbf{$a_{cpu}$} & 
+   \textbf{$b_{cpu}$} & \textbf{$\epsilon$} & 
+   \emph{weight} & \emph{Deadline} \\ \hline
+  app1 & 75 & 0 & 10 & 0.06 & 0.2 &0.04  \\ \hline
+  app2 & 75 & 0 & 10 & 0.06 & 0.4 &0.04  \\ \hline
+  app3 & 75 & 0 & 10 & 0.01 & 0.6 &0.04  \\ \hline
+  app4 & 75 & 0 & 10 & 0.01 & 0.8 &0.04  \\ \hline        
   \end{tabular}
-  \caption{Settings for the apps in test6}
-  \label{tab:settings_test6}
+  \caption{Settings for the test applications in Test 5.}
+  \label{tab:settings_test5}
 \end{table}
 
+\begin{figure}[th]
+\centering
+  \begin{minipage}{0.49\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{"tools/plot/logs/test5/vp"}
+  \subcaption{Virtual Platforms}
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.49\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{"tools/plot/logs/test5/f"}
+  \subcaption{Matching Functions}
+  \end{minipage}
+\caption{Results for Test 5.}
+\label{fig:test5}
+\end{figure}
 
+Figure~\ref{fig:test5} shows the convergence of the virtual platforms
+and the corresponding matching functions. As can be seen, the matching
+functions of all the applications become positive, meaning that the
+architecture is capable of handling the load produced by the applications
+correctly, despite the reduction in the virtual platforms.
 
-\begin{comment}
+Also, as can be seen, all the virtual platforms converge to the same value,
+except for the one given to the last application, that is the last 
+(since it started later) to reach a positive matching function. 
+All the resources that are not distributed are therefore given to this
+application to help it recover faster. When the matching functions are
+positive, the allocation of resource stays unchanged, since there is no need
+for redistribution.
 
+\begin{table}[h]
+  \centering
+  \begin{tabular}{|c|c|c|c|c|c|c|}
+  \hline 
+   \emph{app} & $SL_{t=0}$ & \textbf{$a_{cpu}$} & \textbf{$b_{cpu}$} & \textbf{$\epsilon$} & \emph{weight} & \emph{Deadline} \\ \hline
+  app1 & 75 & 0 & 120 & 0.06 & 0.2 &0.04  \\ \hline
+  app2 & 75 & 0 & 120 & 0.06 & 0.4 &0.04  \\ \hline
+  app3 & 75 & 0 & 120 & 0.01 & 0.6 &0.04  \\ \hline
+  app4 & 75 & 0 & 120 & 0.01 & 0.8 &0.04  \\ \hline        
+  \end{tabular}
+  \caption{Settings for the test applications in Test 5
+    with a higher $b\_cpu$ value.}
+  \label{tab:settings_test5b}
+\end{table}
 
-\subsection{Test 4: 4 applications with SL and CPU adaptation and weights set to 1)
-Four applications are started as in test1 but with all the weights set to 1
-With all weights set to zero the virtual platform .
-The result is shown in figures ~\ref{fig:test3_vp} to ~\ref{fig:test3_f}. 
+\begin{figure}[tb]
+\centering
+  \begin{minipage}{0.49\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{"tools/plot/logs/test5b/vp"}
+  \subcaption{Virtual Platforms}
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.49\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{"tools/plot/logs/test5b/f"}
+  \subcaption{Matching Functions}
+  \end{minipage}
+\caption{Results for Test 5 with a higher $b\_cpu$.}
+\label{fig:test5b}
+\end{figure}
 
+\newpage
+\subsubsection{Comments on the results}
 
-\subsection{Test 4: }
-
-\end{comment}
-
-\chapter{Discussion, Conclusion and Future Work}
-\label{chp:conclusion}
-
-\section{Discussion on the results}
-\subsection{Test 1}
-See the plots \ref{fig:test1_vp} to \ref{fig:test1_f} and table \ref{tab:settings_test1}.
-The plots behaves on the whole as expected from the settings in Table \ref{tab:settings_test1}.
-The mean of the noisy performance converges to zero which corresponds to each application finding a pairing of SL and virtual platform (VP). In the plot a higher/lower SL gives a higher/lower Virtual platform. The SL/VP combination
-for app2 becomes different since the $a_{cpu}$ is twice that of the other apps resulting in a half as big SL compared to what it would have been otherwise. The VP resets after a new app has been started as it should. Th SL converges slower than app1/2 because of the lower epsilon.
-
-\subsection{Test 2} 
-See the plots \ref{fig:test2_vp} to \ref{fig:test2_f} and table \ref{tab:settings_test2}.
-This test behaves alot like the previous one but with one difference in how the SL/VL combinations converge. The main point of this test is to see how the weight affects the VP:s convergence points.
-As can be seen in fig \ref{fig:test2_vp}, the applications with higher weights are assigned a higher VP which is in accordance with the theory.
-
-\subsection{Test 3}
-See the plots \ref{fig:test3_vp} to \ref{fig:test3_f}.
-As expected there is no change in VP except for the even split when a new application is added. The Performance looks a bit noisier than previously indicating an improvement when both SL and VP adaptation is being used.
-
-\subsection{Test 4}
-See the plots \ref{fig:test4_vp} to \ref{fig:test4_f}.
-From comparing the two SL plots from test1 ,\ref{fig:test1_sl},and test4, \ref{fig:test4_sl}, it seems like the SL for app3 and app4 converges slower in the test 4 case. 
-The VP plot also displays greater difference between the 4 applications than in the test 1 case. Although these changes are small in comparison to the changes in test 3 it can be argued that more of the adaptation is done by varying the VP in test 4 as opposed to in test 1.
-Once again the performance seems a bit noisier compared to the test 1 case indicating an improvement when both SL and VP adaptation is being used.
-
-\subsection{test5}
-See the plots \ref{fig:test5_vp} to \ref{fig:test5_f} and table \ref{tab:settings_test5}.
+\begin{flushleft}
+\emph{Test with a lower $b_{cpu},$}
+\end{flushleft}
+See the plots in figure \ref{fig:test5} and table \ref{tab:settings_test5}.
 In this test only the VP and performance plots are of interest since $a_{cpu}=0$ and hence changes in SL has no effect.
 The VP for the different applications does not seem to converge to the theoretical ones which probably is because of a too small static SL, $b_{cpu}$.
-The effects of this small $b_{cpu}$ can be seen in the performance plot \ref{fig:test5_f} when 25 < t35 where the performance is stuck in the upper half plane indicating that the applications need a higher SL 
+The effects of this small $b_{cpu}$ can be seen in the performance plot in figure \ref{fig:test5} when 25 < t35 where the performance is stuck in the upper half plane indicating that the applications need a higher SL 
 in order to make use of all of their available CPU. After time t = 45 the time between updates of the performance in the RM increases drastically, (the performance plots shows the performance that the RM has received). This is most likely due to a temporary problem with sending messages on DBus which in turn might have been caused by the flood of sent messages due to the high performance.
 
+The test is repeated, increasing the value of $b_{cpu}$. Also, in this
+second case, a resource hungry application is started on the system slice 
+in an attempt to limit the noise in performance. The settings for the
+test can be seen in Table~\ref{tab:settings_test5b} while 
+Figure~\ref{fig:test5b} shows the matching functions and the virtual
+platforms in this second case.
 
 
 
-\subsection {test5b}
-See the plots \ref{fig:test5b_vp} to \ref{fig:test5b_f} and table \ref{tab:settings_test5b}.
+\begin{flushleft}
+\emph{Test with a higher $b_{cpu}$,}
+\end{flushleft}
+See the plots in figure \ref{fig:test5b} and table \ref{tab:settings_test5b}.
 The values that the VP for the different applications converges to, compensated for the scale factor,  together with the theoretical values and the weights are shown in table \ref{tab:VP_test5b}.
 From the table it can be seen that the applications have not reached their theoretical values, however they are not far from them.
 The discrepancy might be explained by all the noise that performance still displays. This noise seems to have been reduced by the cpu hog on the system.slice.
@@ -2307,7 +2369,67 @@ The discrepancy might be explained by all the noise that performance still displ
  
 
 
-%part of test 5b
+\subsection{Test 6: mixed load of applications with and without service 
+  level adaptation}
+
+
+In this last test, five applications are started one by one with the 
+settings shown in Table~\ref{tab:settings_test6}. Figure~\ref{fig:test6}
+depicts the result of the run.
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{|c|c|c|c|c|c|c|}
+  \hline 
+   \emph{app} & $SL_{t=0}$ & \textbf{$a_{cpu}$} & 
+   \textbf{$b_{cpu}$} & \textbf{$\epsilon$} & 
+   \emph{weight} & \emph{Deadline} \\ \hline
+  app1 & 50 & 0  & 30 & -     & 0.5 &0.04  \\ \hline
+  app2 & 50 & 20 & 0  & 0.01  & 0.5 &0.04  \\ \hline
+  app3 & 50 & 0  & 30 & -     & 0.2 &0.04  \\ \hline
+  app4 & 50 & 20 & 0  & 0.01  & 0.2 &0.04  \\ \hline
+  app5 & 50 & 10 & 0  & 0.002 & 0.8 &0.04  \\ \hline                
+  \end{tabular}
+  \caption{Settings for the test applications in Test 6}
+  \label{tab:settings_test6}
+\end{table}
+
+\begin{figure}[th]
+\centering
+  \begin{minipage}{0.49\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{"tools/plot/logs/test6/vp"}
+  \subcaption{Virtual Platforms}
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.49\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{"tools/plot/logs/test6/sl"}
+  \subcaption{Service Levels}
+  \end{minipage}
+  \begin{minipage}{0.49\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{"tools/plot/logs/test6/f"}
+  \subcaption{Matching Functions}
+  \end{minipage}
+\caption{Results for Test 6.}
+\label{fig:test6}
+\end{figure}
+
+\fixed{When you comment it, say that the service level shown in the
+  figure has no sense for application 1 and 3, since they don't adapt
+  the computation that they do but it is simply a value. Alternatively,
+  exclude them from the picture. This second alternative will also show
+  better the adaptation of the other service levels.}
+
+\subsubsection{Comments on the results}
+See the plots in figure \ref{fig:test6} and table \ref{tab:settings_test6}.
+
+The plots looks as expected.
+That the weights influence how much VP an application gets can be seen in that $VP_{app5}>VP_{app2}>VP_{app4}$. 
+The small $\epsilon$ for app5 makes the SL adaptation very slow.
+
+ 
 
 \begin{table}[h]
   \centering
@@ -2319,25 +2441,15 @@ The discrepancy might be explained by all the noise that performance still displ
 	app3 & 0.6 & 0.3 & 	0.28 \\ \hline
 	app4 & 0.8 & 0.4 &  0.32 \\ \hline
   \end{tabular}
-  \caption{Table showing the settings in test5b}
+  \caption{Table showing the convergence of VP and weights in test 5b}
   \label{tab:VP_test5b}
 \end{table}
 \begin{comment}
 \end{comment}
 
 
-
-
-
-
-
-\subsection{Test 6}
-See the plots \ref{fig:test6_vp} to \ref{fig:test6_f} and table \ref{tab:settings_test6}.
-
-The plots looks as expected.
-That the weights influence how much VP an application gets can be seen in that $VP_{app5}>VP_{app2}>VP_{app4}$. 
-The small $\epsilon$ for app5 makes the SL adaptation very slow.
-
+\chapter{Discussion, Conclusion and Future Work}
+\label{chp:conclusion}
 
 This thesis implemented a Game Theoretic Resource Manager (GTRM) on Axis
 cameras, to distribute the CPU among multiple running applications that can
@@ -2428,6 +2540,7 @@ Represents an application being managed and consists of the following fields.
 \item performance: Performance, or matching function of the application.
 \item weight: The current "weight" of the application.
 \item happy: Indicates if the application is happy with its 
+
       current performance. This field was added to prevent application from sending their performance even when they are satisfied and nothing should be needed from the resource manager, eliminating unnecessary computations.
 \item sa: Socket Address, used to send back the performance multiplier.
 \end{itemize}
