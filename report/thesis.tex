@@ -818,6 +818,7 @@ typedef union epoll_data {
 
 struct epoll_event {
 
+
   uint32_t     events; /* Epoll events */
   epoll_data_t data;   /* User data variable */
 };
@@ -1626,6 +1627,7 @@ use is decided by setting the bit-rate priority field in \texttt{video.c}.
 		\item weight: Determines how the much of the adaptation will be done 
       by altering the service level or the changing the amount of resources.
 		\item deadline\_seconds: This deadline will correspond to the 
+
       desired frame rate.
 		\item Return value: None.
 	\end{itemize}
@@ -2358,6 +2360,7 @@ The result is shown in figures ~\ref{fig:test3_vp} to ~\ref{fig:test3_f}.
 \end{comment}
 
 \chapter{Discussion, Conclusion and Future Work}
+\label{chp:conclusion}
 
 \section{Discussion on the results}
 \subsection{Test 1}
@@ -2435,8 +2438,6 @@ The small $\epsilon$ for app5 makes the SL adaptation very slow.
 
 
 
-\chapter{Conclusion and Further Work}
-\label{chp:conclusion}
 
 This thesis implemented a Game Theoretic Resource Manager (GTRM) on Axis
 cameras, to distribute the CPU among multiple running applications that can
