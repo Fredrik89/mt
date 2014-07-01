@@ -445,7 +445,7 @@ needs, to the amount of resource received and to the quality of the
 computation.
 
 \section{Systemd and Cgroups}
-
+\label{sec:systemdandcroups}
 Systemd ~\cite{sysd1}~\cite{sysd2} is a daemon for Linux, that executes system management
 operations. It is the first process that starts during boot, and thus it is
 given the PID 1. Systemd implements a lot of features for increased
@@ -565,18 +565,28 @@ already compressed by external hardware through another application which
 reads a file descriptor in order to get the frames from the encoding device.
 The data is then sent through a number of filters and finally is released to
 the network by the sink element. This chain is dynamically created depending
-on different settings like codecs used (\emph{jpeg, h264 and more}) or 
+on different settings like codecs used (\emph{mjpeg, h264 and more}) or 
 network connection (\emph{http or udp}).
 
-\martina{Can you add a couple of information about the processing? How are
+For streaming using h264 over rtp, two pipeline are used which looks likes this.
+\begin{verbatim}
+artpecsrc > cachesink
+
+cachesrc > rtph264pay > rtpbin > udpsink
+\end{verbatim}
+
+The first pipeline simply fetches images from the camera sensor to be used by different video streams. 
+
+The second pipeline consists of different elements depending on what kind if stream is required. The first element will provide the pipeline with incoming buffers produced by the first pipeline. The \texttt{rtph264pay}-element ~\cite{gst-elements} payload-encodes the H264 video frames into RTP~\cite{rtp} packets. \texttt{rtpbin} is an element which combines the features of many different RTP-elements, allowing multiple RTP-sessions. The final element, \texttt{udpsink}, sends data over the network using UDP.
+\fixed{Can you add a couple of information about the processing? How are
   the images being processed? What are those ``filters''? At least in one
   example that is reasonable (choose a codec and a network connection type
   and describe the pipeline in that case).}
 
 \section{Sockets and Epoll}
 
-This section introduces ...
-\martina{Add a short introductory sentence above. This sentence should
+This section introduces sockets and epoll for communication between processes on the system.
+\fixed{Add a short introductory sentence above. This sentence should
   state why you are introducing sockets and the epoll function.}
 
 \subsection{Sockets}
@@ -610,7 +620,7 @@ arrived data.
 \section{Equipment}
 The project involves experiments with two different cameras: the M1033 and 
 the P3367, both manufactured by Axis. Both the cameras have \texttt{systemd}
-installed, although the P3367 runs a more updated version of it.
+installed, although the P3367 runs a more updated version of it. 
 
 \subsection{Axis M1033}
 
@@ -639,14 +649,22 @@ streams as well as Motion JPEG streams. It supports various frame rates and
 resolutions up to 5 Megapixel at 12 frames per second, it also supports 
 HDTV 1080p at 30 frames per second and has two way audio streaming 
 capabilities.
-\martina{dome? home?}
+\fixed{dome? home?}
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.5\textwidth]{p3367}
-    \caption{The Axis P3367 camera, without its case}
+    \caption{The Axis P3367 camera, without its dome casing}
     \label{fig:P3367}
 \end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{p3367incase}
+    \caption{The Axis P3367 camera, here in its final form}
+    \label{fig:P3367}
+\end{figure}
+
 
 The power is supplied using Power over Ethernet, therefore the camera does 
 not need a separate power supply and is powered directly through the network
@@ -658,7 +676,9 @@ It is clearly more advanced than the M1033 but it shares the same
 characteristics of being extremely flexible to execute multiple applications
 at the same time, especially due to the video analytics co-processor.
 
-\martina{Will you present test with both the cameras or only with one of
+These cameras are very common amongst Axis' costumers and also by the developers and will serve as realistic testing platforms for this project. Initially the M1033 was the only camera considered but during development a later version of systemd was brought to the P3367 and the project moved to that camera instead. Testing will thus only be carried out only on the P3367 as the previous cameras systemd implementation differs to much to bring the software to both of them.
+
+\fixed{Will you present test with both the cameras or only with one of
   them? Will you present the same tests on both the cameras? In this case,
 
   explain why one camera is better than another for testing some specific
@@ -739,9 +759,9 @@ messages. The events returned from \texttt{epoll\_wait()} are then put in
 a prioritized queue. This first element in the prioritized queue is then 
 dequeued, calling its callback function. This means that a message might 
 not be read immediately after being retreived from the buffer. Most of the
-functions used to manage \texttt{epoll} are located in \texttt{sd-event}.
+functions used to manage \texttt{epoll} are located in \texttt{sd-event.c}, which serves as a wrapper for many different event, such as those generated by \texttt{epoll}.
 
-\martina{What is sd-event?}
+\fixed{What is sd-event?}
 
 The \texttt{epoll\_wait} prototype is
 \begin{verbatim}
@@ -985,14 +1005,13 @@ Within the function, the \texttt{rm\_app\_t} structure is used.
 		\item performance: Matching function of the application.
 		\item weight: The current ``weight'' of the application.
 		\item happy: Indicates if the application is happy with its 
-
-      current performance.
+      current performance. This field was added to prevent application from sending their performance even when they are satisfied and nothing should be needed from the resource manager, eliminating unnecessary computations.
 		\item sa: Socket Address, used to send back the performance 
       multiplier.
 		\end{itemize}
 	\end{flushleft}	
 \end{framed}
-\martina{Why did you need to add the happy field? That's a difference
+\fixed{Why did you need to add the happy field? That's a difference
   with the original GTRM approach. Is it for faster computation? In that
   case, write it down here.}
 
@@ -1296,6 +1315,8 @@ followed be a necessary call to apply the changes.
   return 0;
 }
 \end{lstlisting}
+
+In ~\ref{sec:systemdandcgroup} we introduced CPUShares, which assigns CPU-resources to an application proportionally to the amount of shares received 
 
 \martina{If you have not made an example of CPUShares before (see the
   remarks on the other chapters) here you definitively need one. Otherwise
