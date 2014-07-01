@@ -2523,17 +2523,17 @@ cameras, to distribute the CPU among multiple running applications that can
 be adaptive in nature and vary their service level and the required
 computation, together with the quality of the offered service.
 
-<<<<<<< HEAD
+
 \section{Result discussion}
 
 Overall the plots of the virtual platforms and the service level looks good but the main problem are
 the extremely noisy performances. They do however have zero mean which is why it is deemed as a good enough result.
-There are a couple of possible explanations for the noisy performance; one being the extra CPU that the gtrm slice receives when the system slice has
+There are a couple of possible explanations for the noisy performance ; one being the extra CPU that the gtrm slice receives when the system.slice has
 spare resources to lend. This introduces a disturbance driving the performance up. However when loading the system.slice with a cpu hog no major changes in performance were shown.
+Another explanation could be the delay in the sockets communication since delays tend to make systems oscillate. 
+A third reason is simply a bug somewhere in the code.
+The time between actions from the GTRM is irregular, how this affects the system has not been taken in to consideration.
 
-
-=======
->>>>>>> 745116bfc0b3cb4a8c0b859a09a5ac3a01f5c16c
 \section{Conclusion}
 
 The provided implementation demonstrated that the GTRM can be integrated into
@@ -2562,14 +2562,7 @@ panic by assigning more resource than available was eliminated. Since the
 assignment of CPU-shares is done inside \texttt{systemd}, without the need of
 communication over DBus, it does not require a significant amount of time.
 
-\newstuff{
-Overall the plots of the virtual platforms and the service level looks good but the main problem are
-the extremely noisy performances. They do however have zero mean which is why it is deemed as a good enough result.
-There are a couple of possible explanations for the noisy performance ; one being the extra CPU that the gtrm slice receives when the system.slice has
-spare resources to lend. This introduces a disturbance driving the performance up. However when loading the system.slice with a cpu hog no major changes in performance were shown.
-Another explanation could be the delay in the sockets communication since delays tend to make systems oscillate. 
-A third reason is simply a bug somewhere in the code.
-The time between actions from the GTRM is irregular, how this affects the system has not been taken in to consideration.}
+
 
 \section{Future work}
 
