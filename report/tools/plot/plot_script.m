@@ -109,11 +109,11 @@ for i =1:NO_OF_PLOTS
 
 	figure(sl_handle)	
 	hold on
-	if(i!=1&&i!=3)
+	%if(i!=1&&i!=3)
 	plot(S(:,1),S(:,3),my_colors(i))
-	endif
+	%endif
 	title('service level')	
-	%legend(my_legend)
+	legend(my_legend)
 	axis("tight");
 	hold off		
 end
