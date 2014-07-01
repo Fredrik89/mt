@@ -18,12 +18,6 @@
 \usepackage{amsmath} % assumes amsmath package installed
 
 \newsubfloat{figure}
-
-\newcommand{\martina}[1]
-  {\todo[inline,color=red!30,caption={}]{\textbf{Martina:} #1}}
-
-\newcommand{\newstuff}[1]%
-  {\todo[inline,color=green!30,caption={}]{\textbf{New stuff:} #1}}
   
 \newcommand{\tv}{\tilde{v}}
 \definecolor{red}{rgb}{1,0,0}
@@ -740,8 +734,9 @@ the application. The aim of GTRM is to bring $f_i$ to zero for all the
 running applications. It is assumed that $f_i$ is measurable also for the
 non-service level aware applications. The matching function is updated as
 the average of the measured value for the last ten jobs.
-\newstuff{Resource management in this paper is restricted to cpu, cgroups have a controller to handle memory management as well, the \emph{memory} controller, 
-which is not installed on the camera.}
+Resource management in this work is restricted to CPU; cgroups have a
+controller to handle memory management as well, the \emph{memory} 
+controller, but this one is not installed on the camera.
 
 \section{Inter-Process Communication}
 
@@ -2562,14 +2557,18 @@ panic by assigning more resource than available was eliminated. Since the
 assignment of CPU-shares is done inside \texttt{systemd}, without the need of
 communication over DBus, it does not require a significant amount of time.
 
-\newstuff{
-Overall the plots of the virtual platforms and the service level looks good but the main problem are
-the extremely noisy performances. They do however have zero mean which is why it is deemed as a good enough result.
-There are a couple of possible explanations for the noisy performance ; one being the extra CPU that the gtrm slice receives when the system.slice has
-spare resources to lend. This introduces a disturbance driving the performance up. However when loading the system.slice with a cpu hog no major changes in performance were shown.
-Another explanation could be the delay in the sockets communication since delays tend to make systems oscillate. 
-A third reason is simply a bug somewhere in the code.
-The time between actions from the GTRM is irregular, how this affects the system has not been taken in to consideration.}
+Overall the plots of the virtual platforms and the service level look 
+good, depite extremely noisy performance measurements. The matching functions
+are however signals with zero mean, which is the main objective of the
+resource allocation policy.
+There are a couple of possible explanations for the noisy performance; one
+being the extra CPU that the gtrm slice receives when the system slice has
+spare resources to lend. This introduces a disturbance driving the 
+performance up. However when loading the system slice with a CPU hunger
+application, no major changes in performance were shown.
+Another explanation could be the delay in the sockets communication,
+since delays tend to make systems oscillate. Also, it has to be noticed
+that the time between actions from the GTRM is irregular. The effect of this aperiodicity on the system has not been taken into account.
 
 \section{Future work}
 
