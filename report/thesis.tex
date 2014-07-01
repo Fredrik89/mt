@@ -1659,6 +1659,7 @@ GTRM-slice. A service can reserve a minimum percentage of allocated
 resources referring to its parent slice.
 In the Pie chart above the static slice would be guaranteed a minimum of 
 \sfrac{1}{3} of the total resources while the two GTRM services are given 
+
 half of the \sfrac{2}{3} reserved by its parent slice, therefore obtaining
 a minimum of \sfrac{1}{3} of the total available resources each.
 
@@ -2263,6 +2264,7 @@ The result is shown in figures ~\ref{fig:test3_vp} to ~\ref{fig:test3_f}.
 \end{comment}
 
 \chapter{Discussion, Conclusion and Future Work}
+\label{chp:conclusion}
 
 \section{Discussion on the results}
 \subsection{Test 1}
@@ -2336,12 +2338,6 @@ The plots looks as expected.
 That the weights influence how much VP an application gets can be seen in that $VP_{app5}>VP_{app2}>VP_{app4}$. 
 The small $\epsilon$ for app5 makes the SL adaptation very slow.
 
-
-
-
-
-\chapter{Conclusion and Further Work}
-\label{chp:conclusion}
 
 This thesis implemented a Game Theoretic Resource Manager (GTRM) on Axis
 cameras, to distribute the CPU among multiple running applications that can
