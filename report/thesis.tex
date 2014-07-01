@@ -1763,12 +1763,13 @@ The sequence diagram in Figure~\ref{fig:sdiag} describes the flow of
 execution of the system via pseudo-code. Some functions call that are 
 not relevant and have been left out. 
 
+\subsection{Application}
 The application computes its performance (matching function), via a 
 function called \texttt{calculate\_performance()}. According to its value,
 and eventually to the performance multiplier received from the resource
 manager at the past step, the service level of the application is adjusted,
 calling \texttt{update\_service\_level()}. Finally, the resource manager
-is notified via the \texttt{send\_performance()} call.
+is notified via the \texttt{send\_performance()} call. Receiving the performance multiplier is done via a non-blocking socket so the application does not have to wait for the resource manager to send it.
 
 \begin{figure}[t]
     \centering
@@ -1777,6 +1778,7 @@ is notified via the \texttt{send\_performance()} call.
     \label{fig:sdiag}
 \end{figure}
 
+\subsection{Resource manager, GTRM}
 The resource manager consists of parallel parts. Upon receiving the
 performance of an application, the handler (or dispatch function)
 corresponding to the reception event is executed. In the sequence diagram of
@@ -2389,6 +2391,14 @@ cameras, to distribute the CPU among multiple running applications that can
 be adaptive in nature and vary their service level and the required
 computation, together with the quality of the offered service.
 
+\section{Result discussion}
+
+Overall the plots of the virtual platforms and the service level looks good but the main problem are
+the extremely noisy performances. They do however have zero mean which is why it is deemed as a good enough result.
+There are a couple of possible explanations for the noisy performance ; one being the extra CPU that the gtrm slice receives when the system.slice has
+spare resources to lend. This introduces a disturbance driving the performance up. However when loading the system.slice with a cpu hog no major changes in performance were shown.
+Another explanation could be the delay in the sockets communication since delays tend to make systems oscillate. A third reason is simply a bug somewhere in the code.
+
 \section{Conclusion}
 
 The provided implementation demonstrated that the GTRM can be integrated into
@@ -2417,17 +2427,6 @@ panic by assigning more resource than available was eliminated. Since the
 assignment of CPU-shares is done inside \texttt{systemd}, without the need of
 communication over DBus, it does not require a significant amount of time.
 
-\newstuff{
-Overall the plots of the virtual platforms and the service level looks good but the main problem are
-the extremely noisy performances. They do however have zero mean which is why it is deemed as a good enough result.
-There are a couple of possible explanations for the noisy performance ; one being the extra CPU that the gtrm slice receives when the system.slice has
-spare resources to lend. This introduces a disturbance driving the performance up. However when loading the system.slice with a cpu hog no major changes in performance were shown.
-Another explanation could be the delay in the sockets communication since delays tend to make systems oscillate. A third reason is simply a bug somewhere in the code.}
-
-
-\martina{What do the results show? Beside the fact that it is usable?
-  Is there something that was expected and is not working in the way you
-  thought? Is there something that was not expected and happened?}
 
 \section{Future work}
 
