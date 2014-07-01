@@ -2183,7 +2183,7 @@ Figure~\ref{fig:test1}.
   \label{tab:settings_test1}
 \end{table}
 
-\martina{Look at the next paragraph. You will need to add something like
+\fixed{Look at the next paragraph. You will need to add something like
   this for every experiment. You must comment the graphs.}
 It can be seen that the applications receive different amount of resources
 and settle to different service levels. Application 4, which is the last
@@ -2226,7 +2226,10 @@ for app2 becomes different since the $a_{cpu}$ is twice that of the other apps r
 
 In this second test, four applications are started as done for the previous
 one. The difference here is that these applications have different weights,
-therefore they help the infrastructure up to different extents. For a summary
+%therefore they help the infrastructure up to different extents. (we don't understand this)
+which indirectly governs how much of the adaptation that should be made by the application or by the GTRM. 
+
+For a summary
 of the relevant data for the experiment, see Table~\ref{tab:settings_test2}.
 
 \begin{table}[h!]
@@ -2249,7 +2252,7 @@ Figure~\ref{fig:test2} shows the results in terms of virtual platforms,
 service levels and matching functions. As can be seen, the performance
 functions, despite being noisy, converge to signals with zero mean.
 
-\martina{Comment here: are the virtual platform assignments respecting
+\fixed{Comment here: are the virtual platform assignments respecting
   the theory? The application that should help more with the SL is helping
   more or not? You have to show that this experiment is significant in terms
   of what you learn about the system.} 
