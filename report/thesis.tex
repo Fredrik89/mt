@@ -1316,9 +1316,9 @@ followed be a necessary call to apply the changes.
 }
 \end{lstlisting}
 
-In ~\ref{sec:systemdandcgroup} we introduced CPUShares, which assigns CPU-resources to an application proportionally to the amount of shares received 
+In Section~\ref{sec:systemdandcroups} we introduced CPUShares, which assigns CPU-resources between the application proportionally to the amount of shares assigned to each application. This implies that assigning an application an amount of shares, will give different amount of resources depending on how the shares are assigned to the competing applications. The CPUShares also define a minimum amount of resources, an application can thus receive more resources than specified if there is free resources available. This is different to the approach in~\cite{gtrm} where the resources where set exact via \texttt{SCHED\_DEADLINE}. Some risks are introduced by using \texttt{SCHED\_DEADLINE} which are not present in the CPUShares approach. Such as assigning, in total, more resources than available, causing a kernel-panic or not fully utilizing the system by assigning less resources, in total. \texttt{SCHED\_DEADLINE} also has to take the amount of CPU cores into consideration, which CPUShares is independent of.
 
-\martina{If you have not made an example of CPUShares before (see the
+\fixed{If you have not made an example of CPUShares before (see the
   remarks on the other chapters) here you definitively need one. Otherwise
   point back to that example and say that setting a CPUShare actually means
   \emph{blah blah}. Also write a sentence saying that in~\cite{gtrm} the
