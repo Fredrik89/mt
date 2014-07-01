@@ -19,7 +19,7 @@ set(h,'PaperPosition',[0,0,W,H])
 print -dpng vp.png	
 
 
-
+%{
 h=sl_handle
 figure(sl_handle)
 xlim([0,XMAX])
@@ -31,7 +31,7 @@ set(h,'PaperSize',[H,W])
 set(h,'PaperPosition',[0,0,W,H])
 
 print -dpng sl.png
-
+%}
 
 h=f_handle
 figure(f_handle)
