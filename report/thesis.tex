@@ -59,6 +59,15 @@
   stringstyle=\color{orange},
 }
 
+%\textcolor{red}{2do:}
+
+\begin{verbatim}
+\end{verbatim}
+
+
+
+
+
 \begin{titlepages}
 \author{Fredrik Johnsson and Olle Svensson}
 \title{Resource management and prioritization in an embedded Linux system}
@@ -87,7 +96,6 @@ adaptation scheme is partially implemented for the streaming service on the
 camera and for some test services, performing mathematical operations. The
 resource manager is incorporated into \texttt{systemd}, and uses 
 \texttt{cgroups}~\cite{cgroups} to distribute the computing capacity. The result is a fully operational resource manager, capable of managing and prioritizing resources as intended on the embedded system. However the work with adapting the video quality adaptation is still left to be completed.
-\fixed{Add one sentence to summarize the results.}
 
 
 \chapter*{Acknowledgements}
@@ -96,7 +104,6 @@ We want to thank our supervisors, Umut Tezduyar-Lindskog, Axis and Martina
 Maggio, LTH Department of Control. We would also like to thank engineering 
 manager Pontus Bergendahl, Axis.
 
-\newpage
 
 \tableofcontents
 \newpage
@@ -298,19 +305,6 @@ sl_i(t+1) = sl_i(t) + (\epsilon \cdot sl_i(t) \cdot PM_i).
 
 The test applications used in this thesis simply makes some random computations in an infinite loop to demand and make use of resources. In this case each iteration corresponds to one "job", but a job could for example be the processing of an image frame done by an image processing application. The quality of service for these applications is the amount of computations done each iteration, thus a higher service level means more computations done each iteration. One could also model the service level the other way around, meaning we have a fixed amount of computations done each iteration, thus increasing the service level would instead increase the amount of computational iterations.
 
-
-\fixed{You should write a paragraph with an example on how the service
-  level is adjusted. For example, when you take the \emph{test application}
-  what is the service level? Is it the same as the test application of
-  the original GTRM? If so, write it and write \textbf{how} the adaptation
-  is performed: for example, every 10-th jobs? What is a job? What is the
-  equation behind the adaptation. You should also clarify that it uses
-  the matching function as well (if it does it) --- in the original GTRM
-  contribution it was using the performance multiplier, which is a variation
-  with respect to the original performance measurement.}
-\newstuff{moved text from implementation}
-
-
 \subsection{Service Level update}
 In the following we discuss two possible ways of adjusting the service level.
 In the first case, the application only considers information that are
@@ -355,19 +349,7 @@ C_{cpu} = a_{cpu}*SL + b_{cpu}
 \label{eq:cputime}
 \end{equation} 
 Where $C_{cpu}$ is the number of times a random number is generated which should be proportional to time it takes the CPU/CPUS to perform the job.
-The SL adaptation is  performed every \textcolor{red}{???} job. The average performance of the last ten jobs are then sent to the RM and the SL adaptation is made as described in the previous section. See the sequence diagram  \ref{fig:sdiag} for the application loop.
-
-
-\fixed{You should write a paragraph with an example on how the service
-  level is adjusted. For example, when you take the \emph{test application}
-  what is the service level? Is it the same as the test application of
-  the original GTRM? If so, write it and write \textbf{how} the adaptation
-  is performed: for example, every 10-th jobs? What is a job? What is the
-  equation behind the adaptation. You should also clarify that it uses
-  the matching function as well (if it does it) --- in the original GTRM
-  contribution it was using the performance multiplier, which is a variation
-  with respect to the original performance measurement.}
-\newstuff{moved text from implementation}
+The SL adaptation is  performed for each job. The average performance of the last ten jobs are then sent to the RM and the SL adaptation is made as described in the previous section. See the sequence diagram  \ref{fig:sdiag} for the application loop.
 
 
 \subsection{Resource Management}
@@ -382,10 +364,6 @@ applications. Here ``resources'' could refer to something rather than CPU,
 such as memory or network bandwidth, depending on what is allocated in the
 system. The GTRM is run in the main loop of systemd which checks sockets for messages and dispatches jobs from the incoming messages. This means that the GTRM acts in irregular time intervals with the shortest being the time it takes to pass the main loop when there are no incoming messages and the longest depending on the amount of incoming messages and the execution time of the next task queued up in the prioritized queue that stores the jobs from the incoming messages. 
 
-\fixed{Write the equations for the resource adaptation. Take them from the
-  ECRTS paper. Describe when the resouce manager acts. Is it every second?
-  Are there events that triggers it? For example, when a new application is
-  introduced, what happens?}
 
 \subsection{Resource Allocation update}
 
@@ -420,12 +398,6 @@ of computing elements. This means that the computed resource allocation $v$
 represents the percentage of the total resources allocated to the application
 and is converted into the actual value during the third step of the
 algorithm. CPUShares are used here in place of bandwidth.
-
-\fixed{Can you comment a bit on what is the difference between CPUShares
-  and bandwidth? From what I understand, it makes a difference in the
-  multicore case.}
-
-
 
 \subsection{Decoupling}
 
@@ -525,16 +497,6 @@ level folder in this example, the controller named CPU, is alone on its
 level meaning that the CPUShares for this slice do not matter since there
 is no competition. There are two slices dividing the CPU-controller, the first slice is given four times the amount of CPU-shares compared to the second slice. This means that the applications in slice 1, is assigned 80 \% of the CPU-time in total. The applications running in slice 1 are defined in two services, which also specify the amount of CPU-shares for each service. The first service is given a total of 200 shares and the second 100 shares. Service 1 will thus be given \sfrac{2}{3} of the shares in slice 1 and service 2 the remaining \sfrac{1}{3}.
 
-\fixed{Describe a little bit better the example that you are giving.
-  Maybe complete the numerical example of what you would give to each 
-  of the slices and to each of the services inside the slices and how 
-  would the CPU behave. What do the number in the table mean?}
-
-\fixed{And, if you are in a multicore environment, what happens
-  when you setup a slice? On which core is the slice allocated? Is there
-  any enforcement that the slice would effectively be respected? Can it
-  be split among multiple cores?}
-
 \section{Video Streaming}
 
 The video streaming application is based upon the GStreamer multimedia
@@ -546,7 +508,6 @@ representation of the pipeline.
 
 \begin{figure}
 \begin{framed}
-\label{fig:pipeline}
 \begin{picture}(100,60)
 \put(0,60){Pipeline}
 \put(0,4){\framebox(50,50){Source}}
@@ -557,7 +518,28 @@ representation of the pipeline.
 \end{picture}
 \end{framed}
 \caption{The GStreamer pipeline.}
+\label{fig:pipeline}
 \end{figure}
+
+\begin{comment}
+\begin{figure}
+\begin{framed}
+\label{fig:pipeline}
+\begin{picture}(100,60)
+\put(0,60){Pipeline}
+\put(0,4){\framebox(50,50){cachesrc}}
+\put(50,29){\vector(1,0){50}}
+\put(0,4){\framebox(50,50){rtph264pay}}
+\put(50,29){\vector(1,0){50}}
+\put(100,4){\framebox(50,50){rtpbin}}
+\put(150,29){\vector(1,0){50}}
+\put(200,4){\framebox(50,50){udpsink}}
+\end{picture}
+\end{framed}
+\caption{An example of a pipeline}
+\label{fig:ex_pipeline}
+\end{figure}	
+\end{comment}
 
 The data is contained into buffers. Buffers can contain one or more frames,
 flowing downstream. On Axis cameras, the source elements receive the images
@@ -578,16 +560,10 @@ cachesrc > rtph264pay > rtpbin > udpsink
 The first pipeline simply fetches images from the camera sensor to be used by different video streams. 
 
 The second pipeline consists of different elements depending on what kind if stream is required. The first element will provide the pipeline with incoming buffers produced by the first pipeline. The \texttt{rtph264pay}-element ~\cite{gst-elements} payload-encodes the H264 video frames into RTP~\cite{rtp} packets. \texttt{rtpbin} is an element which combines the features of many different RTP-elements, allowing multiple RTP-sessions. The final element, \texttt{udpsink}, sends data over the network using UDP.
-\fixed{Can you add a couple of information about the processing? How are
-  the images being processed? What are those ``filters''? At least in one
-  example that is reasonable (choose a codec and a network connection type
-  and describe the pipeline in that case).}
 
 \section{Sockets and Epoll}
 
 This section introduces sockets and epoll for communication between processes on the system.
-\fixed{Add a short introductory sentence above. This sentence should
-  state why you are introducing sockets and the epoll function.}
 
 \subsection{Sockets}
 The communication between applications and \texttt{systemd} is obtained
@@ -649,7 +625,6 @@ streams as well as Motion JPEG streams. It supports various frame rates and
 resolutions up to 5 Megapixel at 12 frames per second, it also supports 
 HDTV 1080p at 30 frames per second and has two way audio streaming 
 capabilities.
-\fixed{dome? home?}
 
 \begin{figure}[h]
     \centering
@@ -677,17 +652,6 @@ characteristics of being extremely flexible to execute multiple applications
 at the same time, especially due to the video analytics co-processor.
 
 These cameras are very common amongst Axis' costumers and also by the developers and will serve as realistic testing platforms for this project. Initially the M1033 was the only camera considered but during development a later version of systemd was brought to the P3367 and the project moved to that camera instead. Testing will thus only be carried out only on the P3367 as the previous cameras systemd implementation differs to much to bring the software to both of them.
-
-\fixed{Will you present test with both the cameras or only with one of
-  them? Will you present the same tests on both the cameras? In this case,
-
-  explain why one camera is better than another for testing some specific
-  feature of your approach. Is there something special beside ``they have
-  systemd'' why you chose these two models? How are those positioned
-  among the Axis products? Are they in the middle, are they the top of the
-  Axis production? What other applications are likely to be run on the
-  same hardware? If you have some of the answers to this questions, try
-  to insert them in the text.}
 
 
 \chapter{Implementation}
@@ -761,7 +725,6 @@ dequeued, calling its callback function. This means that a message might
 not be read immediately after being retreived from the buffer. Most of the
 functions used to manage \texttt{epoll} are located in \texttt{sd-event.c}, which serves as a wrapper for many different event, such as those generated by \texttt{epoll}.
 
-\fixed{What is sd-event?}
 
 The \texttt{epoll\_wait} prototype is
 \begin{verbatim}
@@ -837,8 +800,8 @@ _public_ int sd_event_run(sd_event *e,
   return r;
 }
 \end{lstlisting}
-\martina{Instead of the nested else if, wouldn't it be better to have a
-  switch in the code above?}
+  
+  
 
 The \texttt{epoll\_wait} function is called and a for loop goes through 
 all the file descriptors and checks what their event type is to call the
@@ -1011,9 +974,6 @@ Within the function, the \texttt{rm\_app\_t} structure is used.
 		\end{itemize}
 	\end{flushleft}	
 \end{framed}
-\fixed{Why did you need to add the happy field? That's a difference
-  with the original GTRM approach. Is it for faster computation? In that
-  case, write it down here.}
 
 A while loop reads the socket one message at a time, until there are no 
 more unread messages. 
@@ -1318,14 +1278,6 @@ followed be a necessary call to apply the changes.
 
 In Section~\ref{sec:systemdandcroups} we introduced CPUShares, which assigns CPU-resources between the application proportionally to the amount of shares assigned to each application. This implies that assigning an application an amount of shares, will give different amount of resources depending on how the shares are assigned to the competing applications. The CPUShares also define a minimum amount of resources, an application can thus receive more resources than specified if there is free resources available. This is different to the approach in~\cite{gtrm} where the resources where set exact via \texttt{SCHED\_DEADLINE}. Some risks are introduced by using \texttt{SCHED\_DEADLINE} which are not present in the CPUShares approach. Such as assigning, in total, more resources than available, causing a kernel-panic or not fully utilizing the system by assigning less resources, in total. \texttt{SCHED\_DEADLINE} also has to take the amount of CPU cores into consideration, which CPUShares is independent of.
 
-\fixed{If you have not made an example of CPUShares before (see the
-  remarks on the other chapters) here you definitively need one. Otherwise
-  point back to that example and say that setting a CPUShare actually means
-  \emph{blah blah}. Also write a sentence saying that in~\cite{gtrm} the
-  setting was made through \texttt{SCHED\_DEADLINE} and was exact. How does
-  that compare to the CPUShares? Is it exact? Is it approximate? Is it
-  ensured? Can the application get more resource?}
-
 
 \section{Service Level Update}
 \label{sec:servicelevelupdatesection}
@@ -1547,20 +1499,16 @@ quality by modifying the pipeline to prepare the frame for the video
 streaming service.
 
 In this pipeline an ``identity'' element is added. The identity element
-forwards the received frames to the next element without actually applying
-the operations that were supposed to be applied according to the pipeline
-stage. This element is added just after the first (source) element.
-
-\martina{Check that the next sentence describes what you actually did.
-  I rephrased it but I am not sure it fits what you have done. In the tex
-  file, your sentence is commented -- so you can check against the original
-  version.}
+forwards the received frames to the next element without affecting them.
+This element is added just after the first (source) element.
+The identity element calls a callback function by sending a "handoff" signal each time it receives a new buffer, where a buffer can contain one or more frames.
+  
 % By activating the so called "hand-off"-signal of the identity element, a signal-handler-function is called every time the element receives a new buffer. In this function, computation of how long time each frame takes to be processed is made, which is used to compute the matching function.
-A further stage is added to the pipeline, that can be activated via a
-``hand-off'' signal. This stage takes care of computing the time to
-process each frame, therefore retrieving the matching function, described by
-Equation~\eqref{eq:matchingfunctiongeneral}. 
-%
+
+The time in between each incoming buffer to the identity element is the "job time" for the streaming application, 
+which is used when calculating the matching function, see Equation~\eqref{eq:matchingfunctiongeneral}. 
+If a buffer contains only one frame, this job time should correspond to \emph{fps} on the camera.
+
 After the matching function is computed, it is possible to calculate a new
 service level for the application and to notify the resource manager. The
 computed service level is then used to set the desired bit-rate in the 
@@ -1726,20 +1674,21 @@ socket.
 The resource split shown in Figure~\ref{fig:Piechart} is made by creating 
 a \texttt{gtrm.slice} file in the folder \texttt{/etc/systemd/system}.
 Any application that wants to take advantage of the GTRM capabilities needs
-to create a service file in the same folder.
+to create a service file in the same folder. When the service is started a folder named \texttt{gtrm.slice} will be created in the corresponding cgroup-controller-folder to represent the slice. The controller is a combination of the CPU-and CPUAccounting, \texttt{cpu,cpuacct}. The applications run in this slice will be represented as a folder within the slice-folder. The resulting path to the service will look like this.
 
-If no such file is created, by default, \texttt{systemd} defines a slice 
-that all services will belong to. Any service file in the 
-\texttt{/etc/systemd/system} folder overrides a service file for the 
-same application declared somewhere else. An example of such files follows.
+\begin{verbatim}
+/sys/fs/cgroup/cpu,cpuacct/gtrm.slice/gtrm.service/
+\end{verbatim}
 
-
+The unit file to represent the \texttt{gtrm.slice} is defined as follows. Here the only parameter specified is the amount of CPUShares. By setting this field the system is given the ability to change the CPUShares of this slice.
 \subsubsection{gtrm.slice}
 \begin{verbatim}
 [Unit]
 [Slice]
 CPUShares=1024
 \end{verbatim}
+
+Any service file in the \texttt{/etc/systemd/system} folder overrides a service file for the same application declared somewhere else. The following describes the service files used by our test applications.
 
 \subsubsection{gtrm-test.service and gtrm-test2.service}
 \begin{verbatim}
@@ -1750,12 +1699,19 @@ CPUShares=100
 Slice=gtrm.slice
 \end{verbatim}
 
-\martina{Is it the same example of Figure~\ref{fig:Piechart}? If so,
-  please write it somewhere. Again, if so, please show also the file
-  that is generated for the static slice, that is unchanged and say where
-  it resides in the file system. It would be nice to also expand on the
-  cgroups file system structure, showing the tree of files and where
-  they do belong.}
+If no such file is created, by default, \texttt{systemd} defines a slice called \texttt{system.slice} located in \texttt{/usr/lib/systemd/system}. All services will belong to this slice unless another slice has been specified. 
+\subsubsection{system.slice}
+\begin{verbatim}
+[Unit]
+Description=System Slice
+Documentation=man:systemd.special(7)
+DefaultDependencies=no
+Before=slices.target
+Wants=-.slice
+After=-.slice
+\end{verbatim}
+
+\texttt{DefaultDependencies} is set to \emph{no} to disable some non-essential dependencies. The \texttt{Before} and \texttt{After} fields makes sure that the units are started in the correct order, if necessary delaying one unit to make sure the other starts first. The unit(s) specified in the \texttt{Wants}-field will start when this unit is started. In this case the \texttt{-.slice} will be started simultaneously as \texttt{system.slice}, but the \texttt{After} field ensures that \texttt{system.slice} will start-up first of them. This slice is given the default amount of CPUShares which is 1024, since nothing is specified in the unit file.
 
 \section{Sequence Diagram}
 
@@ -1797,11 +1753,6 @@ To ease the service level adaptation, the resource manager also sends a
 suggestion to the application, that depends on how much the virtual platform
 is changed in the current round via a call to 
 \texttt{send\_performance\_number}.
-
-\martina{Is the application always waiting to receive the performance
-  multiplier? This was avoided via the shared memory, before. Is it now so?
-  If so, is it send in the application socket via a communication initiated
-  by the resource manager? Comment on this in the application subsection.}
 
 \chapter{Use cases}
 \label{chp:usecases}
@@ -1911,6 +1862,7 @@ reduce the quality of the performed computation.
 \item The GTRM and the service level adaptation starts trying to compensate
   for that.
 \end{enumerate}
+
 
 It is expected that the system reaches a stable point. The applications with
 the higher weights adapt their matching function mainly due to an increase
@@ -2443,7 +2395,12 @@ managed by the GTRM.
 
 The system itself is in need of further testing to track down bugs and
 memory leaks, if any. Future work would consist of taking this rough
-prototype and develop a more refined product. This project is well 
+prototype and develop a more refined product. The consequences of the irregular update times of the VP
+in the GTRM should be further looked into, there are simple solutions to using the longest time 
+between updates for all updates which would give uniform updating to the cost of a slower controller.
+
+
+This project is well 
 integrated into Axis' version control and could easily be applied as a 
 patch to future products. Also, it could be of interest to share this 
 work with the \texttt{systemd} open source community.
@@ -2506,7 +2463,7 @@ Sends a performance multiplier to an application via sockets.
 Calculates the constant epsilon used by the resource manager.
 \begin{itemize} 
 \item iterations: Number of iterations run by the RM.
-\item offset: One if there is a difference between currently and previously running applications, zero otherwise.
+\item offset: If one, resets the time used in the iteration. This restarts the calculation.
 \item c1: Constant, previously described.
 \item c2: Constant, also previously described.
 \item Return value: The calculated epsilon or one if this is the first iteration.
@@ -2661,6 +2618,7 @@ Receives the performance multiplier computed by the RM.
 Indicates the start of a job.
 \begin{itemize}
 \item a: Struct for representing the application.
+
 \item type: Type of the job that is started.
 \item Return value: Identifier of the started job.
 \end{itemize}
