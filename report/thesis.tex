@@ -2542,6 +2542,19 @@ The small $\epsilon$ for app5 makes the SL adaptation very slow.
 \begin{comment}
 \end{comment}
 
+\section{Result discussion}
+
+Overall the plots of the virtual platforms and the service level look good,
+with the exception of the extremely noisy matching functions. They do 
+however have zero mean which is why it is deemed as a good enough result.
+There are a couple of possible explanations for the noisy performance; one
+being the extra CPU that the GTRM slice receives when the system slice has
+spare resources to lend. This introduces a disturbance driving the 
+performance up. However when loading the system slice with a cpu hunger
+application, no major changes in performance were shown.
+To reduce the amount of noise in the matching functions, one could average
+over a larger interval of samples, therefore smoothening the function's
+behavior.
 
 \chapter{Discussion, Conclusion and Future Work}
 \label{chp:conclusion}
@@ -2551,6 +2564,7 @@ cameras, to distribute the CPU among multiple running applications that can
 be adaptive in nature and vary their service level and the required
 computation, together with the quality of the offered service.
 
+<<<<<<< HEAD
 \section{Result discussion}
 
 Overall the plots of the virtual platforms and the service level looks good but the main problem are
@@ -2559,6 +2573,8 @@ There are a couple of possible explanations for the noisy performance; one being
 spare resources to lend. This introduces a disturbance driving the performance up. However when loading the system.slice with a cpu hog no major changes in performance were shown.
 
 
+=======
+>>>>>>> 745116bfc0b3cb4a8c0b859a09a5ac3a01f5c16c
 \section{Conclusion}
 
 The provided implementation demonstrated that the GTRM can be integrated into
