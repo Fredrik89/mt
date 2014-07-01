@@ -286,6 +286,7 @@ down the adaption rate to avoid instability.
 
 \begin{equation}
 sl_i(t+1)= sl_i(t) + \epsilon*(f_i(t)*sl_i(t))
+\label{eq:simple_sl_rec}
 \end{equation}
 
 The \emph{coordinated adaptation} follows a suggestion given by the resource
@@ -445,7 +446,7 @@ Theoretic Resource Manager (GTRM).
 Decoupling the two adaptations makes it possible to obtain a linear time
 complexity for the resource adaptation algorithm. In fact, the amount of
 operations that are necessary to perform the adaptation defined by
-Equation~\eqref{eq:resourceadaptation} depends only on the number of
+Equation~\eqref{eq:RecursionForResources} depends only on the number of
 running applications. Also, one of the main benefits of this decoupling is
 that the task of adjusting the SL is given to the applications that have
 knowledge of how to tune their parameters in order to adjust them to their
@@ -1815,9 +1816,12 @@ not relevant and have been left out.
 The application computes its performance (matching function), via a 
 function called \texttt{calculate\_performance()}. According to its value,
 and eventually to the performance multiplier received from the resource
-manager at the past step, the service level of the application is adjusted,
+manager at the past step, the service level of the application is adjusted by
 calling \texttt{update\_service\_level()}. Finally, the resource manager
-is notified via the \texttt{send\_performance()} call. Receiving the performance multiplier is done via a non-blocking socket so the application does not have to wait for the resource manager to send it.
+is notified via the \texttt{send\_performance()} call. Receiving the performance multiplier is done via a non-blocking socket which means that the application
+does not have to wait for the resource manager to send it. If there are messages containing performance multipliers on the socket, only the newest value is used. If the socket is
+empty the performance multiplier is set to one which corresponds to use of the update rule in  \ref{eq:simple_sl_rec}.
+
 
 \begin{figure}[t]
     \centering
@@ -1837,7 +1841,7 @@ that sent the performance measurement. Meanwhile, the resource management
 runs as a part of the main resource manager loop. The resource management
 algorithm uses the information in the hashmap to calculate the new virtual
 platforms via the function \texttt{calculate\_virtual\_platforms} according
-to Equation~\eqref{eq:resourceadaptation} and~\eqref{eq:RecursionForResources}.
+to Equation~\eqref{eq:RecursionForResources} and~\eqref{eq:RecursionForResources}.
 These virtual platforms are then used to set the amount of CPUShares to
 be given to each application in the call to \texttt{apply\_virtual\_platforms}.
 
@@ -1846,7 +1850,7 @@ suggestion to the application, that depends on how much the virtual platform
 is changed in the current round via a call to 
 \texttt{send\_performance\_number}.
 
-\martina{Is the application always waiting to receive the performance
+\fixed{Is the application always waiting to receive the performance
   multiplier? This was avoided via the shared memory, before. Is it now so?
   If so, is it send in the application socket via a communication initiated
   by the resource manager? Comment on this in the application subsection.}
@@ -1959,6 +1963,7 @@ reduce the quality of the performed computation.
 \item The GTRM and the service level adaptation starts trying to compensate
   for that.
 \end{enumerate}
+
 
 It is expected that the system reaches a stable point. The applications with
 the higher weights adapt their matching function mainly due to an increase
