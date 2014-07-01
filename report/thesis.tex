@@ -18,12 +18,6 @@
 \usepackage{amsmath} % assumes amsmath package installed
 
 \newsubfloat{figure}
-
-\newcommand{\martina}[1]
-  {\todo[inline,color=red!30,caption={}]{\textbf{Martina:} #1}}
-
-\newcommand{\newstuff}[1]%
-  {\todo[inline,color=green!30,caption={}]{\textbf{New stuff:} #1}}
   
 \newcommand{\tv}{\tilde{v}}
 \definecolor{red}{rgb}{1,0,0}
@@ -740,8 +734,9 @@ the application. The aim of GTRM is to bring $f_i$ to zero for all the
 running applications. It is assumed that $f_i$ is measurable also for the
 non-service level aware applications. The matching function is updated as
 the average of the measured value for the last ten jobs.
-\newstuff{Resource management in this paper is restricted to cpu, cgroups have a controller to handle memory management as well, the \emph{memory} controller, 
-which is not installed on the camera.}
+Resource management in this work is restricted to CPU; cgroups have a
+controller to handle memory management as well, the \emph{memory} 
+controller, but this one is not installed on the camera.
 
 \section{Inter-Process Communication}
 
@@ -2515,7 +2510,7 @@ To reduce the amount of noise in the matching functions, one could average
 over a larger interval of samples, therefore smoothening the function's
 behavior.
 
-\chapter{Discussion, Conclusion and Future Work}
+\chapter{Conclusion and Future Work}
 \label{chp:conclusion}
 
 This thesis implemented a Game Theoretic Resource Manager (GTRM) on Axis
