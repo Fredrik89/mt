@@ -60,6 +60,15 @@
   stringstyle=\color{orange},
 }
 
+%\textcolor{red}{2do:}
+
+\begin{verbatim}
+\end{verbatim}
+
+
+
+
+
 \begin{titlepages}
 \author{Fredrik Johnsson and Olle Svensson}
 \title{Resource management and prioritization in an embedded Linux system}
@@ -97,7 +106,6 @@ We want to thank our supervisors, Umut Tezduyar-Lindskog, Axis and Martina
 Maggio, LTH Department of Control. We would also like to thank engineering 
 manager Pontus Bergendahl, Axis.
 
-\newpage
 
 \tableofcontents
 \newpage
@@ -279,6 +287,7 @@ down the adaption rate to avoid instability.
 
 \begin{equation}
 sl_i(t+1)= sl_i(t) + \epsilon*(f_i(t)*sl_i(t))
+\label{eq:simple_sl_rec}
 \end{equation}
 
 The \emph{coordinated adaptation} follows a suggestion given by the resource
@@ -356,7 +365,7 @@ C_{cpu} = a_{cpu}*SL + b_{cpu}
 \label{eq:cputime}
 \end{equation} 
 Where $C_{cpu}$ is the number of times a random number is generated which should be proportional to time it takes the CPU/CPUS to perform the job.
-The SL adaptation is  performed every \textcolor{red}{???} job. The average performance of the last ten jobs are then sent to the RM and the SL adaptation is made as described in the previous section. See the sequence diagram  \ref{fig:sdiag} for the application loop.
+The SL adaptation is  performed for each job. The average performance of the last ten jobs are then sent to the RM and the SL adaptation is made as described in the previous section. See the sequence diagram  \ref{fig:sdiag} for the application loop.
 
 
 \fixed{You should write a paragraph with an example on how the service
@@ -438,7 +447,7 @@ Theoretic Resource Manager (GTRM).
 Decoupling the two adaptations makes it possible to obtain a linear time
 complexity for the resource adaptation algorithm. In fact, the amount of
 operations that are necessary to perform the adaptation defined by
-Equation~\eqref{eq:resourceadaptation} depends only on the number of
+Equation~\eqref{eq:RecursionForResources} depends only on the number of
 running applications. Also, one of the main benefits of this decoupling is
 that the task of adjusting the SL is given to the applications that have
 knowledge of how to tune their parameters in order to adjust them to their
@@ -547,7 +556,6 @@ representation of the pipeline.
 
 \begin{figure}
 \begin{framed}
-\label{fig:pipeline}
 \begin{picture}(100,60)
 \put(0,60){Pipeline}
 \put(0,4){\framebox(50,50){Source}}
@@ -558,7 +566,28 @@ representation of the pipeline.
 \end{picture}
 \end{framed}
 \caption{The GStreamer pipeline.}
+\label{fig:pipeline}
 \end{figure}
+
+\begin{comment}
+\begin{figure}
+\begin{framed}
+\label{fig:pipeline}
+\begin{picture}(100,60)
+\put(0,60){Pipeline}
+\put(0,4){\framebox(50,50){cachesrc}}
+\put(50,29){\vector(1,0){50}}
+\put(0,4){\framebox(50,50){rtph264pay}}
+\put(50,29){\vector(1,0){50}}
+\put(100,4){\framebox(50,50){rtpbin}}
+\put(150,29){\vector(1,0){50}}
+\put(200,4){\framebox(50,50){udpsink}}
+\end{picture}
+\end{framed}
+\caption{An example of a pipeline}
+\label{fig:ex_pipeline}
+\end{figure}	
+\end{comment}
 
 The data is contained into buffers. Buffers can contain one or more frames,
 flowing downstream. On Axis cameras, the source elements receive the images
@@ -838,8 +867,11 @@ _public_ int sd_event_run(sd_event *e,
   return r;
 }
 \end{lstlisting}
-\martina{Instead of the nested else if, wouldn't it be better to have a
+\fixed{Instead of the nested else if, wouldn't it be better to have a
   switch in the code above?}
+\newstuff{Maybe but this is part of the systemd source code, not written by us}
+  
+  
 
 The \texttt{epoll\_wait} function is called and a for loop goes through 
 all the file descriptors and checks what their event type is to call the
@@ -1317,9 +1349,9 @@ followed be a necessary call to apply the changes.
 }
 \end{lstlisting}
 
-In ~\ref{sec:systemdandcgroup} we introduced CPUShares, which assigns CPU-resources to an application proportionally to the amount of shares received 
+In Section~\ref{sec:systemdandcroups} we introduced CPUShares, which assigns CPU-resources between the application proportionally to the amount of shares assigned to each application. This implies that assigning an application an amount of shares, will give different amount of resources depending on how the shares are assigned to the competing applications. The CPUShares also define a minimum amount of resources, an application can thus receive more resources than specified if there is free resources available. This is different to the approach in~\cite{gtrm} where the resources where set exact via \texttt{SCHED\_DEADLINE}. Some risks are introduced by using \texttt{SCHED\_DEADLINE} which are not present in the CPUShares approach. Such as assigning, in total, more resources than available, causing a kernel-panic or not fully utilizing the system by assigning less resources, in total. \texttt{SCHED\_DEADLINE} also has to take the amount of CPU cores into consideration, which CPUShares is independent of.
 
-\martina{If you have not made an example of CPUShares before (see the
+\fixed{If you have not made an example of CPUShares before (see the
   remarks on the other chapters) here you definitively need one. Otherwise
   point back to that example and say that setting a CPUShare actually means
   \emph{blah blah}. Also write a sentence saying that in~\cite{gtrm} the
@@ -1548,20 +1580,21 @@ quality by modifying the pipeline to prepare the frame for the video
 streaming service.
 
 In this pipeline an ``identity'' element is added. The identity element
-forwards the received frames to the next element without actually applying
-the operations that were supposed to be applied according to the pipeline
-stage. This element is added just after the first (source) element.
-
-\martina{Check that the next sentence describes what you actually did.
+forwards the received frames to the next element without affecting them.
+This element is added just after the first (source) element.
+The identity element calls a callback function by sending a "handoff" signal each time it receives a new buffer, where a buffer can contain one or more frames.
+\fixed{Check that the next sentence describes what you actually did.
   I rephrased it but I am not sure it fits what you have done. In the tex
   file, your sentence is commented -- so you can check against the original
   version.}
+  \newstuff{We tried rewriting it again since your changes didn't really match what we where trying to say.}
+  
 % By activating the so called "hand-off"-signal of the identity element, a signal-handler-function is called every time the element receives a new buffer. In this function, computation of how long time each frame takes to be processed is made, which is used to compute the matching function.
-A further stage is added to the pipeline, that can be activated via a
-``hand-off'' signal. This stage takes care of computing the time to
-process each frame, therefore retrieving the matching function, described by
-Equation~\eqref{eq:matchingfunctiongeneral}. 
-%
+
+The time in between each incoming buffer to the identity element is the "job time" for the streaming application, 
+which is used when calculating the matching function, see Equation~\eqref{eq:matchingfunctiongeneral}. 
+If a buffer contains only one frame, this job time should correspond to \emph{fps} on the camera.
+
 After the matching function is computed, it is possible to calculate a new
 service level for the application and to notify the resource manager. The
 computed service level is then used to set the desired bit-rate in the 
@@ -1727,20 +1760,21 @@ socket.
 The resource split shown in Figure~\ref{fig:Piechart} is made by creating 
 a \texttt{gtrm.slice} file in the folder \texttt{/etc/systemd/system}.
 Any application that wants to take advantage of the GTRM capabilities needs
-to create a service file in the same folder.
+to create a service file in the same folder. When the service is started a folder named \texttt{gtrm.slice} will be created in the corresponding cgroup-controller-folder to represent the slice. The controller is a combination of the CPU-and CPUAccounting, \texttt{cpu,cpuacct}. The applications run in this slice will be represented as a folder within the slice-folder. The resulting path to the service will look like this.
 
-If no such file is created, by default, \texttt{systemd} defines a slice 
-that all services will belong to. Any service file in the 
-\texttt{/etc/systemd/system} folder overrides a service file for the 
-same application declared somewhere else. An example of such files follows.
+\begin{verbatim}
+/sys/fs/cgroup/cpu,cpuacct/gtrm.slice/gtrm.service/
+\end{verbatim}
 
-
+The unit file to represent the \texttt{gtrm.slice} is defined as follows. Here the only parameter specified is the amount of CPUShares. By setting this field the system is given the ability to change the CPUShares of this slice.
 \subsubsection{gtrm.slice}
 \begin{verbatim}
 [Unit]
 [Slice]
 CPUShares=1024
 \end{verbatim}
+
+Any service file in the \texttt{/etc/systemd/system} folder overrides a service file for the same application declared somewhere else. The following describes the service files used by our test applications.
 
 \subsubsection{gtrm-test.service and gtrm-test2.service}
 \begin{verbatim}
@@ -1751,7 +1785,21 @@ CPUShares=100
 Slice=gtrm.slice
 \end{verbatim}
 
-\martina{Is it the same example of Figure~\ref{fig:Piechart}? If so,
+If no such file is created, by default, \texttt{systemd} defines a slice called \texttt{system.slice} located in \texttt{/usr/lib/systemd/system}. All services will belong to this slice unless another slice has been specified. 
+\subsubsection{system.slice}
+\begin{verbatim}
+[Unit]
+Description=System Slice
+Documentation=man:systemd.special(7)
+DefaultDependencies=no
+Before=slices.target
+Wants=-.slice
+After=-.slice
+\end{verbatim}
+
+\texttt{DefaultDependencies} is set to \emph{no} to disable some non-essential dependencies. The \texttt{Before} and \texttt{After} fields makes sure that the units are started in the correct order, if necessary delaying one unit to make sure the other starts first. The unit(s) specified in the \texttt{Wants}-field will start when this unit is started. In this case the \texttt{-.slice} will be started simultaneously as \texttt{system.slice}, but the \texttt{After} field ensures that \texttt{system.slice} will start-up first of them. This slice is given the default amount of CPUShares which is 1024, since nothing is specified in the unit file.
+
+\fixed{Is it the same example of Figure~\ref{fig:Piechart}? If so,
   please write it somewhere. Again, if so, please show also the file
   that is generated for the static slice, that is unchanged and say where
   it resides in the file system. It would be nice to also expand on the
@@ -1763,13 +1811,16 @@ Slice=gtrm.slice
 The sequence diagram in Figure~\ref{fig:sdiag} describes the flow of 
 execution of the system via pseudo-code. Some functions call that are 
 not relevant and have been left out. 
-
+\subsection{Application}
 The application computes its performance (matching function), via a 
 function called \texttt{calculate\_performance()}. According to its value,
 and eventually to the performance multiplier received from the resource
-manager at the past step, the service level of the application is adjusted,
+manager at the past step, the service level of the application is adjusted by
 calling \texttt{update\_service\_level()}. Finally, the resource manager
-is notified via the \texttt{send\_performance()} call.
+is notified via the \texttt{send\_performance()} call. Receiving the performance multiplier is done via a non-blocking socket which means that the application
+does not have to wait for the resource manager to send it. If there are messages containing performance multipliers on the socket, only the newest value is used. If the socket is
+empty the performance multiplier is set to one which corresponds to use of the update rule in  \ref{eq:simple_sl_rec}.
+
 
 \begin{figure}[t]
     \centering
@@ -1778,6 +1829,7 @@ is notified via the \texttt{send\_performance()} call.
     \label{fig:sdiag}
 \end{figure}
 
+\subsection{Resource manager, GTRM}
 The resource manager consists of parallel parts. Upon receiving the
 performance of an application, the handler (or dispatch function)
 corresponding to the reception event is executed. In the sequence diagram of
@@ -1788,7 +1840,7 @@ that sent the performance measurement. Meanwhile, the resource management
 runs as a part of the main resource manager loop. The resource management
 algorithm uses the information in the hashmap to calculate the new virtual
 platforms via the function \texttt{calculate\_virtual\_platforms} according
-to Equation~\eqref{eq:resourceadaptation} and~\eqref{eq:RecursionForResources}.
+to Equation~\eqref{eq:RecursionForResources} and~\eqref{eq:RecursionForResources}.
 These virtual platforms are then used to set the amount of CPUShares to
 be given to each application in the call to \texttt{apply\_virtual\_platforms}.
 
@@ -1797,7 +1849,7 @@ suggestion to the application, that depends on how much the virtual platform
 is changed in the current round via a call to 
 \texttt{send\_performance\_number}.
 
-\martina{Is the application always waiting to receive the performance
+\fixed{Is the application always waiting to receive the performance
   multiplier? This was avoided via the shared memory, before. Is it now so?
   If so, is it send in the application socket via a communication initiated
   by the resource manager? Comment on this in the application subsection.}
@@ -1910,6 +1962,7 @@ reduce the quality of the performed computation.
 \item The GTRM and the service level adaptation starts trying to compensate
   for that.
 \end{enumerate}
+
 
 It is expected that the system reaches a stable point. The applications with
 the higher weights adapt their matching function mainly due to an increase
@@ -2515,7 +2568,9 @@ Overall the plots of the virtual platforms and the service level looks good but 
 the extremely noisy performances. They do however have zero mean which is why it is deemed as a good enough result.
 There are a couple of possible explanations for the noisy performance ; one being the extra CPU that the gtrm slice receives when the system.slice has
 spare resources to lend. This introduces a disturbance driving the performance up. However when loading the system.slice with a cpu hog no major changes in performance were shown.
-Another explanation could be the delay in the sockets communication since delays tend to make systems oscillate. A third reason is simply a bug somewhere in the code.}
+Another explanation could be the delay in the sockets communication since delays tend to make systems oscillate. 
+A third reason is simply a bug somewhere in the code.
+The time between actions from the GTRM is irregular, how this affects the system has not been taken in to consideration.}
 
 
 \martina{What do the results show? Beside the fact that it is usable?
@@ -2537,7 +2592,12 @@ managed by the GTRM.
 
 The system itself is in need of further testing to track down bugs and
 memory leaks, if any. Future work would consist of taking this rough
-prototype and develop a more refined product. This project is well 
+prototype and develop a more refined product. The consequences of the irregular update times of the VP
+in the GTRM should be further looked into, there are simple solutions to using the longest time 
+between updates for all updates which would give uniform updating to the cost of a slower controller.
+
+
+This project is well 
 integrated into Axis' version control and could easily be applied as a 
 patch to future products. Also, it could be of interest to share this 
 work with the \texttt{systemd} open source community.
@@ -2563,7 +2623,8 @@ Represents an application being managed and consists of the following fields.
 \item vp\_old: Previous virtual platform.
 \item performance: Performance, or matching function of the application.
 \item weight: The current "weight" of the application.
-\item happy: Indicates if the application is happy with its current performance.
+\item happy: Indicates if the application is happy with its 
+      current performance. This field was added to prevent application from sending their performance even when they are satisfied and nothing should be needed from the resource manager, eliminating unnecessary computations.
 \item sa: Socket Address, used to send back the performance multiplier.
 \end{itemize}
 
@@ -2599,7 +2660,7 @@ Sends a performance multiplier to an application via sockets.
 Calculates the constant epsilon used by the resource manager.
 \begin{itemize} 
 \item iterations: Number of iterations run by the RM.
-\item offset: One if there is a difference between currently and previously running applications, zero otherwise.
+\item offset: If one, resets the time used in the iteration. This restarts the calculation.
 \item c1: Constant, previously described.
 \item c2: Constant, also previously described.
 \item Return value: The calculated epsilon or one if this is the first iteration.
@@ -2754,6 +2815,7 @@ Receives the performance multiplier computed by the RM.
 Indicates the start of a job.
 \begin{itemize}
 \item a: Struct for representing the application.
+
 \item type: Type of the job that is started.
 \item Return value: Identifier of the started job.
 \end{itemize}
