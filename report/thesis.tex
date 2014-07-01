@@ -86,8 +86,8 @@ given resources and their computing requirements. This service level
 adaptation scheme is partially implemented for the streaming service on the
 camera and for some test services, performing mathematical operations. The
 resource manager is incorporated into \texttt{systemd}, and uses 
-\texttt{cgroups}~\cite{cgroups} to distribute the computing capacity.
-\martina{Add one sentence to summarize the results.}
+\texttt{cgroups}~\cite{cgroups} to distribute the computing capacity. The result is a fully operational resource manager, capable of managing and prioritizing resources as intended on the embedded system. However the work with adapting the video quality adaptation is still left to be completed.
+\fixed{Add one sentence to summarize the results.}
 
 
 \chapter*{Acknowledgements}
@@ -265,6 +265,40 @@ the application is always presenting valid result in time but with varying
 quality, as a trade-off. This adaptation is done by the application itself,
 without the resource management policy interfering with it.
 
+There are of course many possible ways of adjusting the service level, two of them were considered.
+In the first case, the application only considers information that are
+internally available, while in the second case, the application receives
+"hints" from GTRM and follows those hints.
+
+The \emph{independent adaptation} simply multiplies the current service level,
+the matching function and a constant scale factor $\epsilon$. This adaptation
+decreases the service level if the performance is negative and increases it 
+if the matching function is positive. The scaling factor $\epsilon$ slows 
+down the adaption rate to avoid instability. 
+
+\begin{equation}
+sl_i(t+1)= sl_i(t) + \epsilon*(f_i(t)*sl_i(t))
+\end{equation}
+
+The \emph{coordinated adaptation} follows a suggestion given by the resource
+manager, that includes also the variation of the resource allocation. In fact,
+the resource manager sends to the application a \emph{performance multiplier}
+$PM_i$ that is used as an estimation of how much the service levels should
+change to match the current allocation, that is unknown on the application
+side.
+
+The performance multiplier $PM_i$ is computed as
+\begin{equation}
+PM_i = (1+f_i) \cdot (vp_i(i+1)/vp(i))
+\end{equation}
+and the applications sets the new service level as
+\begin{equation}
+sl_i(t+1) = sl_i(t) + (\epsilon \cdot sl_i(t) \cdot PM_i).
+\end{equation}
+
+The test applications used in this thesis simply makes some random computations in an infinite loop to demand and make use of resources. In this case each iteration corresponds to one "job", but a job could for example be the processing of an image frame done by an image processing application. The quality of service for these applications is the amount of computations done each iteration, thus a higher service level means more computations done each iteration. One could also model the service level the other way around, meaning we have a fixed amount of computations done each iteration, thus increasing the service level would instead increase the amount of computational iterations.
+
+
 \fixed{You should write a paragraph with an example on how the service
   level is adjusted. For example, when you take the \emph{test application}
   what is the service level? Is it the same as the test application of
@@ -274,6 +308,7 @@ without the resource management policy interfering with it.
   the matching function as well (if it does it) --- in the original GTRM
   contribution it was using the performance multiplier, which is a variation
   with respect to the original performance measurement.}
+\newstuff{moved text from implementation}
 
 
 \subsection{Service Level update}
@@ -323,6 +358,16 @@ Where $C_{cpu}$ is the number of times a random number is generated which should
 The SL adaptation is  performed every \textcolor{red}{???} job. The average performance of the last ten jobs are then sent to the RM and the SL adaptation is made as described in the previous section. See the sequence diagram  \ref{fig:sdiag} for the application loop.
 
 
+\fixed{You should write a paragraph with an example on how the service
+  level is adjusted. For example, when you take the \emph{test application}
+  what is the service level? Is it the same as the test application of
+  the original GTRM? If so, write it and write \textbf{how} the adaptation
+  is performed: for example, every 10-th jobs? What is a job? What is the
+  equation behind the adaptation. You should also clarify that it uses
+  the matching function as well (if it does it) --- in the original GTRM
+  contribution it was using the performance multiplier, which is a variation
+  with respect to the original performance measurement.}
+\newstuff{moved text from implementation}
 
 
 \subsection{Resource Management}
@@ -333,7 +378,7 @@ applications, for them to meet their performance requirements. The resources
 are modeled as ``virtual platforms''. A virtual platform represents a
 percentage of the total available resources; for example, the amount of time
 an application is allowed to use the CPU with respect to the other 
-applications. Here "resources" could refer to something rather than CPU,
+applications. Here ``resources'' could refer to something rather than CPU,
 such as memory or network bandwidth, depending on what is allocated in the
 system. The GTRM is run in the main loop of systemd which checks sockets for messages and dispatches jobs from the incoming messages. This means that the GTRM acts in irregular time intervals with the shortest being the time it takes to pass the main loop when there are no incoming messages and the longest depending on the amount of incoming messages and the execution time of the next task queued up in the prioritized queue that stores the jobs from the incoming messages. 
 
@@ -376,9 +421,11 @@ represents the percentage of the total resources allocated to the application
 and is converted into the actual value during the third step of the
 algorithm. CPUShares are used here in place of bandwidth.
 
-\martina{Can you comment a bit on what is the difference between CPUShares
+\fixed{Can you comment a bit on what is the difference between CPUShares
   and bandwidth? From what I understand, it makes a difference in the
   multicore case.}
+
+
 
 \subsection{Decoupling}
 
@@ -526,7 +573,6 @@ network connection (\emph{http or udp}).
   example that is reasonable (choose a codec and a network connection type
   and describe the pipeline in that case).}
 
-
 \section{Sockets and Epoll}
 
 This section introduces ...
@@ -673,8 +719,6 @@ non-service level aware applications. The matching function is updated as
 the average of the measured value for the last ten jobs.
 \newstuff{Resource management in this paper is restricted to cpu, cgroups have a controller to handle memory management as well, the \emph{memory} controller, 
 which is not installed on the camera.}
-
-
 
 \section{Inter-Process Communication}
 
@@ -1331,6 +1375,7 @@ a file with the application name.
 Subsequently the arguments for the \texttt{gtrm\_lib\_set} function
 are initialized and passed.
 \begin{lstlisting}	
+
 	myself->weight = weight;
 	myself->application_id = getpid();
 	uint64_t deadline = (unsigned int) 
@@ -1346,6 +1391,7 @@ transfer the information from one place to the other, while encoding a B and
 P frame, in fact, require to compute the differences between the previous
 I frame and eventually the subsequent ones. The test application has 
 only one job type but the framework directly supports multiple job types. 
+An application can have different job types corresponding to different deadlines. The test application only has one job type. 
 
 \begin{framed}
 	\begin{flushleft}		
@@ -1353,6 +1399,7 @@ only one job type but the framework directly supports multiple job types.
     (\_application\_h* a, uint types, uint64\_t* ert)}}} \newline
 		Initializes the application struct with job types and their 
     expected response times.
+		Initializes the application struct with job types and their expected response times.
 		\begin{itemize}
 		  \item a: Struct representing an application.
 		  \item types: Number of different job types.
@@ -1421,6 +1468,7 @@ In the code, the following functions are used.
 				\end{itemize}
 	\end{flushleft}
 \end{framed}
+
 
 \begin{framed}
 	\begin{flushleft}	
@@ -1557,6 +1605,7 @@ including the newly introduced identity element, which is called
 \texttt{gtrm\_sl\_adapt}. A call to \texttt{setup\_sl\_adapt} sets
 the variables needed for the service level adaptation.
 
+At first all the different elements for the pipeline is defined, including the identity element, which is called \emph{gtrm\_sl\_adapt}. A call to \emph{setup\_sl\_adapt} sets up the what is needed for the service level adaptation.
 \begin{lstlisting}
   GstElement *gtrm_sl_adapt = NULL;
   setup_sl_adapt (service_level, epsilon, 
@@ -1759,6 +1808,7 @@ that should allocate the resources available for them in order to match
 the deadlines of every applications, including the streaming service.
 
 The detailed conditions addressed are the following:
+\section{Normal mode}
 \begin{enumerate}
 \item The camera is filming a scene that causes a high load. This may happen
   because the camera itself is moving around or because the scenary is
@@ -1774,6 +1824,7 @@ The detailed conditions addressed are the following:
 \item The scene becomes more static or the camera stops, therefore inflicing
   a lighter load on the system. The service level of the applications can be
   increased since the streaming one is not so demanding in terms of resource.
+\item The GTRM and SL adaptation will not drag down performance compared to the old system.
 \end{enumerate}
 
 The matching function of all the applications should be close to zero, since
@@ -1914,7 +1965,6 @@ The camera is split into two different top level slices, the gtrm.slice, contain
     \caption{The last lines of the output from systemd-cgls}
     \label{fig:systemd-cgls2}
 \end{figure}
-
 
 
 The system.slice have been given $CPUShares = 1024$ and the gtrm.slice 256 meaning that the cpu resources are split 4/5 to 1/5 between the two slices. The test applications takes 10 arguments when started, described in the box below, that will be varied between different test. By varying the weight parameter from 0 to 1 the applications can be set somewhere between the extremes of only adapting through resource allocation or only adapt through SL adaptation.
@@ -2310,6 +2360,7 @@ The small $\epsilon$ for app5 makes the SL adaptation very slow.
 
 
 
+\chapter{Conclusion and Further Work}
 \label{chp:conclusion}
 
 This thesis implemented a Game Theoretic Resource Manager (GTRM) on Axis
