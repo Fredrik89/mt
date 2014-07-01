@@ -1726,14 +1726,16 @@ socket.
 The resource split shown in Figure~\ref{fig:Piechart} is made by creating 
 a \texttt{gtrm.slice} file in the folder \texttt{/etc/systemd/system}.
 Any application that wants to take advantage of the GTRM capabilities needs
-to create a service file in the same folder.
+to create a service file in the same folder. When the service is started a folder named \texttt{gtrm.slice} will be created in the corresponding cgroup-controller-folder to represent the slice. The controller is a combination of the CPU-and CPUAccounting, \texttt{cpu,cpuacct}. The applications run in this slice will be represented as a folder in the slice-folder.
+
+\begin{verbatim}
+/sys/fs/cgroup/cpu,cpuacct/gtrm.slice/gtrm.service/
+\end{verbatim}
 
 If no such file is created, by default, \texttt{systemd} defines a slice 
 that all services will belong to. Any service file in the 
 \texttt{/etc/systemd/system} folder overrides a service file for the 
-same application declared somewhere else. An example of such files follows.
-
-
+same application declared somewhere else. An example of such files follows. 
 \subsubsection{gtrm.slice}
 \begin{verbatim}
 [Unit]
@@ -1749,6 +1751,21 @@ ExecStart=/mnt/flash/test-gtrm-app 50 10 0 0 0 0.1 0.5 0.04
 CPUShares=100
 Slice=gtrm.slice
 \end{verbatim}
+
+The remaining application are located on the static slice. On the camera (and all other systemd systems) this is called the system slice, and its unit file is located in the folder \texttt{/usr/lib/systemd/system}.
+
+\subsubsection{system.slice}
+\begin{verbatim}
+[Unit]
+Description=System Slice
+Documentation=man:systemd.special(7)
+DefaultDependencies=no
+Before=slices.target
+Wants=-.slice
+After=-.slice
+\end{verbatim}
+
+\texttt{DefaultDependencies} is set to \emph{no} to disable some non-essential dependencies. The \texttt{Before} and \texttt{After} fields makes sure that the units are started in the correct order, if necessary delaying one unit to make sure the other starts first. The unit(s) specified in the \texttt{Wants}-field will start when this unit is started. In this case the \texttt{-.slice} will be started simultaneously as \texttt{system.slice}, but the \texttt{After} field ensures that \texttt{system.slice} will start-up first of them. This slice is given the default amount of CPUShares which is 1024, since nothing is specified in the unit file.
 
 \martina{Is it the same example of Figure~\ref{fig:Piechart}? If so,
   please write it somewhere. Again, if so, please show also the file
