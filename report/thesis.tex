@@ -819,6 +819,7 @@ typedef union epoll_data {
 
 
 
+
 <<<<<<< Updated upstream
 
 =======
@@ -2271,7 +2272,7 @@ ones. However, the weights of the applications are set to zero. With all
 weights set to zero the virtual platforms are not expected to change.
 The result is shown in Figure~\ref{fig:test3}.
 
-\martina{Include in the figure for the virtual platform 0.2 in the
+\fixed{Include in the figure for the virtual platform 0.2 in the
   axis, to make sure that you actually see the signals. Are they
   really at 0.25 or it is simply assumed? Another comment that you can
   make here is the role of $\epsilon$. Do you see that the applications 3
@@ -2509,7 +2510,7 @@ depicts the result of the run.
 \label{fig:test6}
 \end{figure}
 
-\martina{When you comment it, say that the service level shown in the
+\fixed{When you comment it, say that the service level shown in the
   figure has no sense for application 1 and 3, since they don't adapt
   the computation that they do but it is simply a value. Alternatively,
   exclude them from the picture. This second alternative will also show
@@ -2649,6 +2650,7 @@ Represents an application being managed and consists of the following fields.
 \item performance: Performance, or matching function of the application.
 \item weight: The current "weight" of the application.
 \item happy: Indicates if the application is happy with its 
+
       current performance. This field was added to prevent application from sending their performance even when they are satisfied and nothing should be needed from the resource manager, eliminating unnecessary computations.
 \item sa: Socket Address, used to send back the performance multiplier.
 \end{itemize}

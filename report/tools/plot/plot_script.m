@@ -38,6 +38,10 @@ end
  
 
 
+counter=1;
+
+
+
 for i =1:NO_OF_PLOTS
 	
 	if (size(T2)==0)
@@ -100,11 +104,16 @@ for i =1:NO_OF_PLOTS
 	S(:,1)=S(:,1)/10^9;%convert to seconds
 	
 
+
+
+
 	figure(sl_handle)	
 	hold on
+	if(i!=1&&i!=3)
 	plot(S(:,1),S(:,3),my_colors(i))
+	endif
 	title('service level')	
-	legend(my_legend)
+	%legend(my_legend)
 	axis("tight");
 	hold off		
 end
