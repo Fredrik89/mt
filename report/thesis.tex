@@ -59,14 +59,9 @@
   stringstyle=\color{orange},
 }
 
-\textcolor{red}{2do:}
+%\textcolor{red}{2do:}
 
 \begin{verbatim}
-- change get_epsilon()
-- change compute_virtual
-- mention irregular update times in GTRM
-- mention solution to ^ in future work
-- replace all ???
 \end{verbatim}
 
 
@@ -211,7 +206,7 @@ resource assignment and the service level selection, but it is implemented
 with \texttt{SCHED\_DEADLINE}, which is not included in the Linux kernel
 used for Axis cameras. Moreover, Axis cameras are already exploiting the
 resource allocation capabilities offered by \texttt{systemd}. In this
-work, a GTRM-like approach is implemented to be \textcolor{red}{???} applicable to Axis cameras.
+work, a GTRM-like approach is implemented to be applicable to Axis cameras.
 
 \section{Outline}
 
@@ -369,7 +364,7 @@ C_{cpu} = a_{cpu}*SL + b_{cpu}
 \label{eq:cputime}
 \end{equation} 
 Where $C_{cpu}$ is the number of times a random number is generated which should be proportional to time it takes the CPU/CPUS to perform the job.
-The SL adaptation is  performed every \textcolor{red}{???} job. The average performance of the last ten jobs are then sent to the RM and the SL adaptation is made as described in the previous section. See the sequence diagram  \ref{fig:sdiag} for the application loop.
+The SL adaptation is  performed for each job. The average performance of the last ten jobs are then sent to the RM and the SL adaptation is made as described in the previous section. See the sequence diagram  \ref{fig:sdiag} for the application loop.
 
 
 \fixed{You should write a paragraph with an example on how the service
@@ -560,7 +555,6 @@ representation of the pipeline.
 
 \begin{figure}
 \begin{framed}
-\label{fig:pipeline}
 \begin{picture}(100,60)
 \put(0,60){Pipeline}
 \put(0,4){\framebox(50,50){Source}}
@@ -571,7 +565,28 @@ representation of the pipeline.
 \end{picture}
 \end{framed}
 \caption{The GStreamer pipeline.}
+\label{fig:pipeline}
 \end{figure}
+
+\begin{comment}
+\begin{figure}
+\begin{framed}
+\label{fig:pipeline}
+\begin{picture}(100,60)
+\put(0,60){Pipeline}
+\put(0,4){\framebox(50,50){cachesrc}}
+\put(50,29){\vector(1,0){50}}
+\put(0,4){\framebox(50,50){rtph264pay}}
+\put(50,29){\vector(1,0){50}}
+\put(100,4){\framebox(50,50){rtpbin}}
+\put(150,29){\vector(1,0){50}}
+\put(200,4){\framebox(50,50){udpsink}}
+\end{picture}
+\end{framed}
+\caption{An example of a pipeline}
+\label{fig:ex_pipeline}
+\end{figure}	
+\end{comment}
 
 The data is contained into buffers. Buffers can contain one or more frames,
 flowing downstream. On Axis cameras, the source elements receive the images
@@ -2436,7 +2451,9 @@ Overall the plots of the virtual platforms and the service level looks good but 
 the extremely noisy performances. They do however have zero mean which is why it is deemed as a good enough result.
 There are a couple of possible explanations for the noisy performance ; one being the extra CPU that the gtrm slice receives when the system.slice has
 spare resources to lend. This introduces a disturbance driving the performance up. However when loading the system.slice with a cpu hog no major changes in performance were shown.
-Another explanation could be the delay in the sockets communication since delays tend to make systems oscillate. A third reason is simply a bug somewhere in the code.}
+Another explanation could be the delay in the sockets communication since delays tend to make systems oscillate. 
+A third reason is simply a bug somewhere in the code.
+The time between actions from the GTRM is irregular, how this affects the system has not been taken in to consideration.}
 
 
 \martina{What do the results show? Beside the fact that it is usable?
@@ -2458,7 +2475,12 @@ managed by the GTRM.
 
 The system itself is in need of further testing to track down bugs and
 memory leaks, if any. Future work would consist of taking this rough
-prototype and develop a more refined product. This project is well 
+prototype and develop a more refined product. The consequences of the irregular update times of the VP
+in the GTRM should be further looked into, there are simple solutions to using the longest time 
+between updates for all updates which would give uniform updating to the cost of a slower controller.
+
+
+This project is well 
 integrated into Axis' version control and could easily be applied as a 
 patch to future products. Also, it could be of interest to share this 
 work with the \texttt{systemd} open source community.
@@ -2520,7 +2542,7 @@ Sends a performance multiplier to an application via sockets.
 Calculates the constant epsilon used by the resource manager.
 \begin{itemize} 
 \item iterations: Number of iterations run by the RM.
-\item offset: One if there is a difference between currently and previously running applications, zero otherwise.
+\item offset: If one, resets the time used in the iteration. This restarts the calculation.
 \item c1: Constant, previously described.
 \item c2: Constant, also previously described.
 \item Return value: The calculated epsilon or one if this is the first iteration.
@@ -2675,6 +2697,7 @@ Receives the performance multiplier computed by the RM.
 Indicates the start of a job.
 \begin{itemize}
 \item a: Struct for representing the application.
+
 \item type: Type of the job that is started.
 \item Return value: Identifier of the started job.
 \end{itemize}
