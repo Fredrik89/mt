@@ -817,6 +817,7 @@ typedef union epoll_data {
 } epoll_data_t;
 
 struct epoll_event {
+
   uint32_t     events; /* Epoll events */
   epoll_data_t data;   /* User data variable */
 };
@@ -2480,7 +2481,7 @@ A third reason is simply a bug somewhere in the code.
 The time between actions from the GTRM is irregular, how this affects the system has not been taken in to consideration.}
 
 
-\martina{What do the results show? Beside the fact that it is usable?
+\fixed{What do the results show? Beside the fact that it is usable?
   Is there something that was expected and is not working in the way you
   thought? Is there something that was not expected and happened?}
 
