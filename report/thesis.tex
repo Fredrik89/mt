@@ -18,15 +18,6 @@
 \usepackage{amsmath} % assumes amsmath package installed
 
 \newsubfloat{figure}
-
-\newcommand{\martina}[1]
-  {\todo[inline,color=red!30,caption={}]{\textbf{Martina:} #1}}
-
-\newcommand{\newstuff}[1]%
-  {\todo[inline,color=green!30,caption={}]{\textbf{New stuff:} #1}}
-
-\newcommand{\fixed}[1]%
-  {\todo[inline,color=blue!30,caption={}]{\textbf{Fixed:} #1}}  
   
 \newcommand{\tv}{\tilde{v}}
 \definecolor{red}{rgb}{1,0,0}
@@ -96,9 +87,11 @@ given resources and their computing requirements. This service level
 adaptation scheme is partially implemented for the streaming service on the
 camera and for some test services, performing mathematical operations. The
 resource manager is incorporated into \texttt{systemd}, and uses 
-\texttt{cgroups}~\cite{cgroups} to distribute the computing capacity. The result is a fully operational resource manager, capable of managing and prioritizing resources as intended on the embedded system. However the work with adapting the video quality adaptation is still left to be completed.
-\fixed{Add one sentence to summarize the results.}
-
+\texttt{cgroups}~\cite{cgroups} to distribute the computing capacity. The
+experimental results show that the resource manager is fully operational and
+capable of managing and prioritizing resources as intended on the embedded
+system. However the work with adapting the video quality adaptation is still
+left to be completed.
 
 \chapter*{Acknowledgements}
 
@@ -306,20 +299,16 @@ and the applications sets the new service level as
 sl_i(t+1) = sl_i(t) + (\epsilon \cdot sl_i(t) \cdot PM_i).
 \end{equation}
 
-The test applications used in this thesis simply makes some random computations in an infinite loop to demand and make use of resources. In this case each iteration corresponds to one "job", but a job could for example be the processing of an image frame done by an image processing application. The quality of service for these applications is the amount of computations done each iteration, thus a higher service level means more computations done each iteration. One could also model the service level the other way around, meaning we have a fixed amount of computations done each iteration, thus increasing the service level would instead increase the amount of computational iterations.
-
-
-\fixed{You should write a paragraph with an example on how the service
-  level is adjusted. For example, when you take the \emph{test application}
-  what is the service level? Is it the same as the test application of
-  the original GTRM? If so, write it and write \textbf{how} the adaptation
-  is performed: for example, every 10-th jobs? What is a job? What is the
-  equation behind the adaptation. You should also clarify that it uses
-  the matching function as well (if it does it) --- in the original GTRM
-  contribution it was using the performance multiplier, which is a variation
-  with respect to the original performance measurement.}
-\newstuff{moved text from implementation}
-
+The test applications used in this thesis simply makes some random
+computations in an infinite loop to demand and make use of resources. In this
+case each iteration corresponds to one ``job'', but a job could for example
+be the processing of an image frame done by an image processing application.
+The quality of service for these applications is the amount of computations
+done each iteration, thus a higher service level means more computations done 
+each iteration. One could also model the service level the other way around,
+meaning we have a fixed amount of computations done each iteration, thus
+increasing the service level would instead increase the amount of
+computational iterations.
 
 \subsection{Service Level update}
 In the following we discuss two possible ways of adjusting the service level.
@@ -355,30 +344,21 @@ sl_i(t+1) = sl_i(t) + (\epsilon \cdot sl_i(t) \cdot PM_i).
 \label{eq:servicelevelnotsimple}
 \end{equation}
 
-\subsection{The test application}
-The test application from \cite{gtrm} has been adapted to work with the implementation in this paper. Below follows an explanation of how it works to provide an example of how an application could implement SL adaptation and be managed by the GTRM.
+\subsection{The Test Application}
+The test application from~\cite{gtrm} has been adapted to work with the implementation in this paper. Below follows an explanation of how it works to provide an example of how an application could implement SL adaptation and be managed by the GTRM.
 The applications considered in this paper typically has a periodic task to perform , here called job, with a associated soft deadline.
-The test application has a linear relationship between the SL and the time it takes for the CPU/CPUs to perform a job described by equation \ref{eq:cputime}. 
+The test application has a linear relationship between the SL and the time it takes for the CPU/CPUs to perform a job described by equation~\ref{eq:cputime}. 
 
 \begin{equation}
 C_{cpu} = a_{cpu}*SL + b_{cpu}
 \label{eq:cputime}
 \end{equation} 
-Where $C_{cpu}$ is the number of times a random number is generated which should be proportional to time it takes the CPU/CPUS to perform the job.
-The SL adaptation is  performed for each job. The average performance of the last ten jobs are then sent to the RM and the SL adaptation is made as described in the previous section. See the sequence diagram  \ref{fig:sdiag} for the application loop.
-
-
-\fixed{You should write a paragraph with an example on how the service
-  level is adjusted. For example, when you take the \emph{test application}
-  what is the service level? Is it the same as the test application of
-  the original GTRM? If so, write it and write \textbf{how} the adaptation
-  is performed: for example, every 10-th jobs? What is a job? What is the
-  equation behind the adaptation. You should also clarify that it uses
-  the matching function as well (if it does it) --- in the original GTRM
-  contribution it was using the performance multiplier, which is a variation
-  with respect to the original performance measurement.}
-\newstuff{moved text from implementation}
-
+Where $C_{cpu}$ is the number of times a random number is generated which
+should be proportional to time it takes the CPU/CPUS to perform the job.
+The SL adaptation is  performed for each job. The average performance of the
+last ten jobs are then sent to the RM and the SL adaptation is made as
+described in the previous section. See the sequence diagram in 
+Figure~\ref{fig:sdiag} for the application loop.
 
 \subsection{Resource Management}
 
@@ -390,12 +370,13 @@ percentage of the total available resources; for example, the amount of time
 an application is allowed to use the CPU with respect to the other 
 applications. Here ``resources'' could refer to something rather than CPU,
 such as memory or network bandwidth, depending on what is allocated in the
-system. The GTRM is run in the main loop of systemd which checks sockets for messages and dispatches jobs from the incoming messages. This means that the GTRM acts in irregular time intervals with the shortest being the time it takes to pass the main loop when there are no incoming messages and the longest depending on the amount of incoming messages and the execution time of the next task queued up in the prioritized queue that stores the jobs from the incoming messages. 
-
-\fixed{Write the equations for the resource adaptation. Take them from the
-  ECRTS paper. Describe when the resouce manager acts. Is it every second?
-  Are there events that triggers it? For example, when a new application is
-  introduced, what happens?}
+system. The GTRM is run in the main loop of systemd which checks sockets for 
+messages and dispatches jobs from the incoming messages. This means that the 
+GTRM acts in irregular time intervals with the shortest being the time it 
+takes to pass the main loop when there are no incoming messages and the 
+longest depending on the amount of incoming messages and the execution time of 
+the next task queued up in the prioritized queue that stores the jobs from the 
+incoming messages. 
 
 \subsection{Resource Allocation update}
 
@@ -431,12 +412,6 @@ represents the percentage of the total resources allocated to the application
 and is converted into the actual value during the third step of the
 algorithm. CPUShares are used here in place of bandwidth.
 
-\fixed{Can you comment a bit on what is the difference between CPUShares
-  and bandwidth? From what I understand, it makes a difference in the
-  multicore case.}
-
-
-
 \subsection{Decoupling}
 
 The theory behind the decoupling of the resource allocation and the service
@@ -456,9 +431,9 @@ computation.
 
 \section{Systemd and Cgroups}
 \label{sec:systemdandcroups}
-Systemd ~\cite{sysd1}~\cite{sysd2} is a daemon for Linux, that executes system management
-operations. It is the first process that starts during boot, and thus it is
-given the PID 1. Systemd implements a lot of features for increased
+Systemd ~\cite{sysd1}~\cite{sysd2} is a daemon for Linux, that executes system
+management operations. It is the first process that starts during boot, and 
+thus it is given the PID 1. Systemd implements a lot of features for increased
 performance and system management over previous start up processes, like
 initd. It also has different features for management of resources, using
 cgroups~\cite{cgroups}, which makes it interesting for a resource manager
@@ -533,26 +508,23 @@ An example of this is shown in
 Figure~\ref{fig:ctree} and Figure~\ref{fig:ctable}. Note that the top 
 level folder in this example, the controller named CPU, is alone on its
 level meaning that the CPUShares for this slice do not matter since there
-is no competition. There are two slices dividing the CPU-controller, the first slice is given four times the amount of CPU-shares compared to the second slice. This means that the applications in slice 1, is assigned 80 \% of the CPU-time in total. The applications running in slice 1 are defined in two services, which also specify the amount of CPU-shares for each service. The first service is given a total of 200 shares and the second 100 shares. Service 1 will thus be given \sfrac{2}{3} of the shares in slice 1 and service 2 the remaining \sfrac{1}{3}.
-
-\fixed{Describe a little bit better the example that you are giving.
-  Maybe complete the numerical example of what you would give to each 
-  of the slices and to each of the services inside the slices and how 
-  would the CPU behave. What do the number in the table mean?}
-
-\fixed{And, if you are in a multicore environment, what happens
-  when you setup a slice? On which core is the slice allocated? Is there
-  any enforcement that the slice would effectively be respected? Can it
-  be split among multiple cores?}
+is no competition. There are two slices dividing the CPU-controller, the 
+first slice is given four times the amount of CPU-shares compared to the 
+second slice. This means that the applications in slice 1, is assigned $80\%$
+of the CPU-time in total. The applications running in slice 1 are defined in 
+two services, which also specify the amount of CPU-shares for each service. 
+The first service is given a total of 200 shares and the second 100 shares. 
+Service 1 will thus be given \sfrac{2}{3} of the shares in slice 1 and service 
+2 the remaining \sfrac{1}{3}.
 
 \section{Video Streaming}
 
 The video streaming application is based upon the GStreamer multimedia
-framework ~\cite{gst}~\cite{gst-tutorial}. The framework is a modular system, where a chain is built by
-linking elements together in a pipeline to form a process chain. 
-The data flows downstream from a source element, through filter elements 
-and end up in a sink element, see Figure~\ref{fig:pipeline} for a graphical
-representation of the pipeline. 
+framework ~\cite{gst}~\cite{gst-tutorial}. The framework is a modular system,
+where a chain is built by linking elements together in a pipeline to form a
+process chain. The data flows downstream from a source element, through
+filter elements and end up in a sink element, see Figure~\ref{fig:pipeline} 
+for a graphical representation of the pipeline. 
 
 \begin{figure}
 \begin{framed}
@@ -598,31 +570,34 @@ the network by the sink element. This chain is dynamically created depending
 on different settings like codecs used (\emph{mjpeg, h264 and more}) or 
 network connection (\emph{http or udp}).
 
-For streaming using h264 over rtp, two pipeline are used which looks likes this.
+For streaming using \texttt{h264} over \texttt{rtp}, two pipeline are used
+which looks likes this.
 \begin{verbatim}
 artpecsrc > cachesink
-
 cachesrc > rtph264pay > rtpbin > udpsink
 \end{verbatim}
+The first pipeline simply fetches images from the camera sensor to be used 
+by different video streams. 
 
-The first pipeline simply fetches images from the camera sensor to be used by different video streams. 
-
-The second pipeline consists of different elements depending on what kind if stream is required. The first element will provide the pipeline with incoming buffers produced by the first pipeline. The \texttt{rtph264pay}-element ~\cite{gst-elements} payload-encodes the H264 video frames into RTP~\cite{rtp} packets. \texttt{rtpbin} is an element which combines the features of many different RTP-elements, allowing multiple RTP-sessions. The final element, \texttt{udpsink}, sends data over the network using UDP.
-\fixed{Can you add a couple of information about the processing? How are
-  the images being processed? What are those ``filters''? At least in one
-  example that is reasonable (choose a codec and a network connection type
-  and describe the pipeline in that case).}
+The second pipeline consists of different elements depending on what kind if 
+stream is required. The first element will provide the pipeline with incoming 
+buffers produced by the first pipeline. The 
+\texttt{rtph264pay}-element~\cite{gst-elements} payload-encodes the H264 video 
+frames into RTP~\cite{rtp} packets. \texttt{rtpbin} is an element which 
+combines the features of many different RTP-elements, allowing multiple 
+RTP-sessions. The final element, \texttt{udpsink}, sends data over 
+the network using UDP.
 
 \section{Sockets and Epoll}
 
-This section introduces sockets and epoll for communication between processes on the system.
-\fixed{Add a short introductory sentence above. This sentence should
-  state why you are introducing sockets and the epoll function.}
+This section introduces sockets and epoll for communication between 
+processes on the system.
 
 \subsection{Sockets}
 The communication between applications and \texttt{systemd} is obtained
-through sockets ~\cite{socket}. The RM runs in the \texttt{systemd} main loop, therefore
-sockets are used to send data between the RM and the applications.
+through sockets ~\cite{socket}. The RM runs in the \texttt{systemd} main 
+loop, therefore sockets are used to send data between the RM and 
+the applications.
 
 Sockets are the endpoints for \emph{inter-process communication} (IPC) 
 flows over a network, where the entities communicating may reside on the
@@ -640,12 +615,12 @@ the latter is the one used by the GTRM socket.
 
 
 \subsection{Epoll}
-Epoll~\cite{epoll} is a Linux system call, allowing the user to listen to multiple 
-sockets simultaneously. The API function \texttt{epoll\_wait(...)} returns 
-a queue of event-objects containing information about what file descriptors
-have received datagrams together with other information. By looking at this 
-queue the user knows what file descriptor to read with to obtain the newly
-arrived data.  
+Epoll~\cite{epoll} is a Linux system call, allowing the user to listen to
+multiple sockets simultaneously. The API function 
+\texttt{epoll\_wait(...)} returns a queue of event-objects containing 
+information about what file descriptors have received datagrams together 
+with other information. By looking at this queue the user knows what 
+file descriptor to read with to obtain the newly arrived data.  
 
 \section{Equipment}
 The project involves experiments with two different cameras: the M1033 and 
@@ -674,12 +649,11 @@ using the collected data, for example some motion detection application.
 
 \subsection{Axis P3367}
 
-The Axis P3367 ~\cite{p3367} is a fixed dome network camera capable of multiple H.264
-streams as well as Motion JPEG streams. It supports various frame rates and
-resolutions up to 5 Megapixel at 12 frames per second, it also supports 
-HDTV 1080p at 30 frames per second and has two way audio streaming 
-capabilities.
-\fixed{dome? home?}
+The Axis P3367~\cite{p3367} is a fixed dome network camera capable of 
+multiple H.264 streams as well as Motion JPEG streams. It supports 
+various frame rates and resolutions up to 5 Megapixel at 12 frames per 
+second, it also supports HDTV 1080p at 30 frames per second and has two 
+way audio streaming capabilities.
 
 \begin{figure}[h]
     \centering
@@ -695,30 +669,23 @@ capabilities.
     \label{fig:P3367}
 \end{figure}
 
-
 The power is supplied using Power over Ethernet, therefore the camera does 
 not need a separate power supply and is powered directly through the network
-cable. It features an ARTPEC-4 ~\cite{artpec-4} system-on-chip, developed by Axis, which
-contains a single-core CPU running at 400 MHz and a co-processor dedicated
-to video analytics.
+cable. It features an ARTPEC-4~\cite{artpec-4} system-on-chip, developed 
+by Axis, which contains a single-core CPU running at 400 MHz and a 
+co-processor dedicated to video analytics.
 
 It is clearly more advanced than the M1033 but it shares the same
 characteristics of being extremely flexible to execute multiple applications
 at the same time, especially due to the video analytics co-processor.
 
-These cameras are very common amongst Axis' costumers and also by the developers and will serve as realistic testing platforms for this project. Initially the M1033 was the only camera considered but during development a later version of systemd was brought to the P3367 and the project moved to that camera instead. Testing will thus only be carried out only on the P3367 as the previous cameras systemd implementation differs to much to bring the software to both of them.
-
-\fixed{Will you present test with both the cameras or only with one of
-  them? Will you present the same tests on both the cameras? In this case,
-
-  explain why one camera is better than another for testing some specific
-  feature of your approach. Is there something special beside ``they have
-  systemd'' why you chose these two models? How are those positioned
-  among the Axis products? Are they in the middle, are they the top of the
-  Axis production? What other applications are likely to be run on the
-  same hardware? If you have some of the answers to this questions, try
-  to insert them in the text.}
-
+These cameras are very common amongst Axis' costumers and also by the 
+developers and will serve as realistic testing platforms for this project. 
+Initially the M1033 was the only camera considered but during development a 
+later version of systemd was brought to the P3367 and the project moved to 
+that camera instead. Testing will thus only be carried out only on the P3367 
+as the previous cameras systemd implementation differs to much to bring the 
+software to both of them.
 
 \chapter{Implementation}
 \label{chp:development}
@@ -767,8 +734,9 @@ the application. The aim of GTRM is to bring $f_i$ to zero for all the
 running applications. It is assumed that $f_i$ is measurable also for the
 non-service level aware applications. The matching function is updated as
 the average of the measured value for the last ten jobs.
-\newstuff{Resource management in this paper is restricted to cpu, cgroups have a controller to handle memory management as well, the \emph{memory} controller, 
-which is not installed on the camera.}
+Resource management in this work is restricted to CPU; cgroups have a
+controller to handle memory management as well, the \emph{memory} 
+controller, but this one is not installed on the camera.
 
 \section{Inter-Process Communication}
 
@@ -789,9 +757,9 @@ messages. The events returned from \texttt{epoll\_wait()} are then put in
 a prioritized queue. This first element in the prioritized queue is then 
 dequeued, calling its callback function. This means that a message might 
 not be read immediately after being retreived from the buffer. Most of the
-functions used to manage \texttt{epoll} are located in \texttt{sd-event.c}, which serves as a wrapper for many different event, such as those generated by \texttt{epoll}.
-
-\fixed{What is sd-event?}
+functions used to manage \texttt{epoll} are located in \texttt{sd-event.c},
+which serves as a wrapper for many different event, such as those generated by 
+\texttt{epoll}.
 
 The \texttt{epoll\_wait} prototype is
 \begin{verbatim}
@@ -816,6 +784,7 @@ typedef union epoll_data {
   uint32_t u32;
   uint64_t u64;
 } epoll_data_t;
+
 
 
 
@@ -876,11 +845,6 @@ _public_ int sd_event_run(sd_event *e,
   return r;
 }
 \end{lstlisting}
-\fixed{Instead of the nested else if, wouldn't it be better to have a
-  switch in the code above?}
-\newstuff{Maybe but this is part of the systemd source code, not written by us}
-  
-  
 
 The \texttt{epoll\_wait} function is called and a for loop goes through 
 all the file descriptors and checks what their event type is to call the
@@ -1047,15 +1011,15 @@ Within the function, the \texttt{rm\_app\_t} structure is used.
 		\item performance: Matching function of the application.
 		\item weight: The current ``weight'' of the application.
 		\item happy: Indicates if the application is happy with its 
-      current performance. This field was added to prevent application from sending their performance even when they are satisfied and nothing should be needed from the resource manager, eliminating unnecessary computations.
+      current performance. This field was added to prevent application from
+      sending their performance even when they are satisfied and nothing 
+      should be needed from the resource manager, eliminating unnecessary 
+      computations.
 		\item sa: Socket Address, used to send back the performance 
       multiplier.
 		\end{itemize}
 	\end{flushleft}	
 \end{framed}
-\fixed{Why did you need to add the happy field? That's a difference
-  with the original GTRM approach. Is it for faster computation? In that
-  case, write it down here.}
 
 A while loop reads the socket one message at a time, until there are no 
 more unread messages. 
@@ -1358,15 +1322,20 @@ followed be a necessary call to apply the changes.
 }
 \end{lstlisting}
 
-In Section~\ref{sec:systemdandcroups} we introduced CPUShares, which assigns CPU-resources between the application proportionally to the amount of shares assigned to each application. This implies that assigning an application an amount of shares, will give different amount of resources depending on how the shares are assigned to the competing applications. The CPUShares also define a minimum amount of resources, an application can thus receive more resources than specified if there is free resources available. This is different to the approach in~\cite{gtrm} where the resources where set exact via \texttt{SCHED\_DEADLINE}. Some risks are introduced by using \texttt{SCHED\_DEADLINE} which are not present in the CPUShares approach. Such as assigning, in total, more resources than available, causing a kernel-panic or not fully utilizing the system by assigning less resources, in total. \texttt{SCHED\_DEADLINE} also has to take the amount of CPU cores into consideration, which CPUShares is independent of.
-
-\fixed{If you have not made an example of CPUShares before (see the
-  remarks on the other chapters) here you definitively need one. Otherwise
-  point back to that example and say that setting a CPUShare actually means
-  \emph{blah blah}. Also write a sentence saying that in~\cite{gtrm} the
-  setting was made through \texttt{SCHED\_DEADLINE} and was exact. How does
-  that compare to the CPUShares? Is it exact? Is it approximate? Is it
-  ensured? Can the application get more resource?}
+In Section~\ref{sec:systemdandcroups} we introduced CPUShares, which assigns 
+CPU-resources between the application proportionally to the amount of shares 
+assigned to each application. This implies that assigning an application an 
+amount of shares, will give different amount of resources depending on how the 
+shares are assigned to the competing applications. The CPUShares also define a 
+minimum amount of resources, an application can thus receive more resources 
+than specified if there is free resources available. This is different to the 
+approach in~\cite{gtrm} where the resources where set exact via 
+\texttt{SCHED\_DEADLINE}. Some risks are introduced by using 
+\texttt{SCHED\_DEADLINE} which are not present in the CPUShares approach. Such 
+as assigning, in total, more resources than available, causing a kernel-panic 
+or not fully utilizing the system by assigning less resources, in total. 
+\texttt{SCHED\_DEADLINE} also has to take the amount of CPU cores into 
+consideration, which CPUShares is independent of.
 
 
 \section{Service Level Update}
@@ -1591,18 +1560,15 @@ streaming service.
 In this pipeline an ``identity'' element is added. The identity element
 forwards the received frames to the next element without affecting them.
 This element is added just after the first (source) element.
-The identity element calls a callback function by sending a "handoff" signal each time it receives a new buffer, where a buffer can contain one or more frames.
-\fixed{Check that the next sentence describes what you actually did.
-  I rephrased it but I am not sure it fits what you have done. In the tex
-  file, your sentence is commented -- so you can check against the original
-  version.}
-  \newstuff{We tried rewriting it again since your changes didn't really match what we where trying to say.}
-  
-% By activating the so called "hand-off"-signal of the identity element, a signal-handler-function is called every time the element receives a new buffer. In this function, computation of how long time each frame takes to be processed is made, which is used to compute the matching function.
+The identity element calls a callback function by sending a ``handoff'' 
+signal each time it receives a new buffer, where a buffer can contain one or 
+more frames.
 
-The time in between each incoming buffer to the identity element is the "job time" for the streaming application, 
-which is used when calculating the matching function, see Equation~\eqref{eq:matchingfunctiongeneral}. 
-If a buffer contains only one frame, this job time should correspond to \emph{fps} on the camera.
+The time in between each incoming buffer to the identity element is the 
+``job time'' for the streaming application, which is used when calculating the 
+matching function, see Equation~\eqref{eq:matchingfunctiongeneral}. 
+If a buffer contains only one frame, this job time should correspond to 
+\emph{fps} on the camera.
 
 After the matching function is computed, it is possible to calculate a new
 service level for the application and to notify the resource manager. The
@@ -1808,14 +1774,15 @@ Wants=-.slice
 After=-.slice
 \end{verbatim}
 
-\texttt{DefaultDependencies} is set to \emph{no} to disable some non-essential dependencies. The \texttt{Before} and \texttt{After} fields makes sure that the units are started in the correct order, if necessary delaying one unit to make sure the other starts first. The unit(s) specified in the \texttt{Wants}-field will start when this unit is started. In this case the \texttt{-.slice} will be started simultaneously as \texttt{system.slice}, but the \texttt{After} field ensures that \texttt{system.slice} will start-up first of them. This slice is given the default amount of CPUShares which is 1024, since nothing is specified in the unit file.
-
-\fixed{Is it the same example of Figure~\ref{fig:Piechart}? If so,
-  please write it somewhere. Again, if so, please show also the file
-  that is generated for the static slice, that is unchanged and say where
-  it resides in the file system. It would be nice to also expand on the
-  cgroups file system structure, showing the tree of files and where
-  they do belong.}
+\texttt{DefaultDependencies} is set to \emph{no} to disable some non-essential 
+dependencies. The \texttt{Before} and \texttt{After} fields makes sure that 
+the units are started in the correct order, if necessary delaying one unit to 
+make sure the other starts first. The unit(s) specified in the \texttt{Wants}-
+field will start when this unit is started. In this case the \texttt{-.slice} 
+will be started simultaneously as \texttt{system.slice}, but the 
+\texttt{After} field ensures that \texttt{system.slice} will start-up first of 
+them. This slice is given the default amount of CPUShares which is 1024, since 
+nothing is specified in the unit file.
 
 \section{Sequence Diagram}
 
@@ -1828,10 +1795,13 @@ function called \texttt{calculate\_performance()}. According to its value,
 and eventually to the performance multiplier received from the resource
 manager at the past step, the service level of the application is adjusted by
 calling \texttt{update\_service\_level()}. Finally, the resource manager
-is notified via the \texttt{send\_performance()} call. Receiving the performance multiplier is done via a non-blocking socket which means that the application
-does not have to wait for the resource manager to send it. If there are messages containing performance multipliers on the socket, only the newest value is used. If the socket is
-empty the performance multiplier is set to one which corresponds to use of the update rule in  \ref{eq:simple_sl_rec}.
-
+is notified via the \texttt{send\_performance()} call. 
+Receiving the performance multiplier is done via a non-blocking socket which
+means that the application does not have to wait for the resource manager to 
+send it. If there are messages containing performance multipliers on the 
+socket, only the newest value is used. If the socket is
+empty the performance multiplier is set to one which corresponds to use of the 
+update rule in Equation~\ref{eq:simple_sl_rec}.
 
 \begin{figure}[t]
     \centering
@@ -1859,11 +1829,6 @@ To ease the service level adaptation, the resource manager also sends a
 suggestion to the application, that depends on how much the virtual platform
 is changed in the current round via a call to 
 \texttt{send\_performance\_number}.
-
-\fixed{Is the application always waiting to receive the performance
-  multiplier? This was avoided via the shared memory, before. Is it now so?
-  If so, is it send in the application socket via a communication initiated
-  by the resource manager? Comment on this in the application subsection.}
 
 \chapter{Use cases}
 \label{chp:usecases}
@@ -2185,8 +2150,6 @@ Figure~\ref{fig:test1}.
   \label{tab:settings_test1}
 \end{table}
 
-\fixed{Look at the next paragraph. You will need to add something like
-  this for every experiment. You must comment the graphs.}
 It can be seen that the applications receive different amount of resources
 and settle to different service levels. Application 4, which is the last
 one to enter the pool, starts with a very negative matching function. The
@@ -2197,9 +2160,16 @@ service levels settle to an equilibrium, as well as the virtual platforms.
 
 \subsubsection{Comments on the results}
 See the plots in figure \ref{fig:test1} and table \ref{tab:settings_test1}.
-The plots behaves on the whole as expected from the settings in Table \ref{tab:settings_test1}.
-The mean of the noisy performance converges to zero which corresponds to each application finding a pairing of SL and virtual platform (VP). In the plot a higher/lower SL gives a higher/lower Virtual platform. The SL/VP combination
-for app2 becomes different since the $a_{cpu}$ is twice that of the other apps resulting in a half as big SL compared to what it would have been otherwise. The VP resets after a new app has been started as it should. The SL for app 3/4 converges slower than that of app1/2 because of the lower $\epsilon$ in app3/4.
+The plots behaves on the whole as expected from the settings in 
+Table~\ref{tab:settings_test1}.
+The mean of the noisy performance converges to zero which corresponds to each 
+application finding a pairing of SL and virtual platform (VP). In the plot a 
+higher/lower SL gives a higher/lower Virtual platform. The SL/VP combination
+for app2 becomes different since the $a_{cpu}$ is twice that of the other apps 
+resulting in a half as big SL compared to what it would have been otherwise. 
+The VP resets after a new app has been started as it should. The SL for app 
+3 and 4 converges slower than that of app 1 and 2 because of the lower
+$\epsilon$ in app 3 and 4.
 
 \subsection{Test 2: four applications with different weights, 
   service level and resource adaptation}
@@ -2228,11 +2198,10 @@ for app2 becomes different since the $a_{cpu}$ is twice that of the other apps r
 
 In this second test, four applications are started as done for the previous
 one. The difference here is that these applications have different weights,
-%therefore they help the infrastructure up to different extents. (we don't understand this)
-which indirectly governs how much of the adaptation that should be made by the application or by the GTRM. 
-
-For a summary
-of the relevant data for the experiment, see Table~\ref{tab:settings_test2}.
+which indirectly governs how much of the adaptation that should be made by 
+the application or by the GTRM. 
+For a summary of the relevant data for the experiment, see 
+Table~\ref{tab:settings_test2}.
 
 \begin{table}[h!]
   \centering
@@ -2254,15 +2223,14 @@ Figure~\ref{fig:test2} shows the results in terms of virtual platforms,
 service levels and matching functions. As can be seen, the performance
 functions, despite being noisy, converge to signals with zero mean.
 
-\fixed{Comment here: are the virtual platform assignments respecting
-  the theory? The application that should help more with the SL is helping
-  more or not? You have to show that this experiment is significant in terms
-  of what you learn about the system.} 
-
 \subsubsection{Comments on the result.} 
 See the plots in figure \ref{fig:test2} and table \ref{tab:settings_test2}.
-This test behaves alot like the previous one but with one difference in how the SL/VL combinations converge. The main point of this test is to see how the weight affects the VP:s convergence points.
-As can be seen in the plot of the virtual platforms in fig \ref{fig:test2}, the applications with higher weights are assigned a higher VP which is in accordance with the theory.
+This test behaves alot like the previous one but with one difference in how 
+the SL/VL combinations converge. The main point of this test is to see how the 
+weight affects the VP:s convergence points.
+As can be seen in the plot of the virtual platforms in fig \ref{fig:test2}, 
+the applications with higher weights are assigned a higher VP which is in 
+accordance with the theory.
 
 \subsection{Test 3: four applications with zero weights and 
   service level adaptation}
@@ -2271,13 +2239,6 @@ In this third test, four applications are started as done for the previous
 ones. However, the weights of the applications are set to zero. With all
 weights set to zero the virtual platforms are not expected to change.
 The result is shown in Figure~\ref{fig:test3}.
-
-\fixed{Include in the figure for the virtual platform 0.2 in the
-  axis, to make sure that you actually see the signals. Are they
-  really at 0.25 or it is simply assumed? Another comment that you can
-  make here is the role of $\epsilon$. Do you see that the applications 3
-  and 4 are way slower in adjusting their service level? What does that
-  mean? You should add something about it.}
 
 \begin{figure}[th]
 \centering
@@ -2304,6 +2265,7 @@ The result is shown in Figure~\ref{fig:test3}.
 \subsubsection{Comments on the results}
 See the plots in fig \ref{fig:test3}
 As expected there is no change in VP except for the even split when a new application is added. The Performance looks a bit noisier than previously indicating an improvement when both SL and VP adaptation is being used.
+
 \subsection{Test 4: four applications with weights equal to one and 
   service level adaptation}
 
@@ -2510,20 +2472,13 @@ depicts the result of the run.
 \label{fig:test6}
 \end{figure}
 
-\fixed{When you comment it, say that the service level shown in the
-  figure has no sense for application 1 and 3, since they don't adapt
-  the computation that they do but it is simply a value. Alternatively,
-  exclude them from the picture. This second alternative will also show
-  better the adaptation of the other service levels.}
 
 \subsubsection{Comments on the results}
-See the plots in figure \ref{fig:test6} and table \ref{tab:settings_test6}.
+See the plots in Figure \ref{fig:test6} and Table \ref{tab:settings_test6}.
+The plots looks as expected. That the weights influence how much VP an
+application gets can be seen in that $VP_{app5}>VP_{app2}>VP_{app4}$. 
+The small $\epsilon$ for app 5 makes the SL adaptation very slow.
 
-The plots looks as expected.
-That the weights influence how much VP an application gets can be seen in that $VP_{app5}>VP_{app2}>VP_{app4}$. 
-The small $\epsilon$ for app5 makes the SL adaptation very slow.
-
- 
 
 \begin{table}[h]
   \centering
@@ -2541,8 +2496,21 @@ The small $\epsilon$ for app5 makes the SL adaptation very slow.
 \begin{comment}
 \end{comment}
 
+\section{Result discussion}
 
-\chapter{Discussion, Conclusion and Future Work}
+Overall the plots of the virtual platforms and the service level look good,
+with the exception of the extremely noisy matching functions. They do 
+however have zero mean which is why it is deemed as a good enough result.
+There are a couple of possible explanations for the noisy performance; one
+being the extra CPU that the GTRM slice receives when the system slice has
+spare resources to lend. This introduces a disturbance driving the 
+performance up. However when loading the system slice with a cpu hunger
+application, no major changes in performance were shown.
+To reduce the amount of noise in the matching functions, one could average
+over a larger interval of samples, therefore smoothening the function's
+behavior.
+
+\chapter{Conclusion and Future Work}
 \label{chp:conclusion}
 
 This thesis implemented a Game Theoretic Resource Manager (GTRM) on Axis
@@ -2550,13 +2518,16 @@ cameras, to distribute the CPU among multiple running applications that can
 be adaptive in nature and vary their service level and the required
 computation, together with the quality of the offered service.
 
+
 \section{Result discussion}
 
 Overall the plots of the virtual platforms and the service level looks good but the main problem are
 the extremely noisy performances. They do however have zero mean which is why it is deemed as a good enough result.
 There are a couple of possible explanations for the noisy performance ; one being the extra CPU that the gtrm slice receives when the system.slice has
 spare resources to lend. This introduces a disturbance driving the performance up. However when loading the system.slice with a cpu hog no major changes in performance were shown.
-computation, together with the quality of the offered service.
+Another explanation could be the delay in the sockets communication since delays tend to make systems oscillate. 
+A third reason is simply a bug somewhere in the code.
+The time between actions from the GTRM is irregular, how this affects the system has not been taken in to consideration.
 
 \section{Conclusion}
 
@@ -2586,19 +2557,7 @@ panic by assigning more resource than available was eliminated. Since the
 assignment of CPU-shares is done inside \texttt{systemd}, without the need of
 communication over DBus, it does not require a significant amount of time.
 
-\newstuff{
-Overall the plots of the virtual platforms and the service level looks good but the main problem are
-the extremely noisy performances. They do however have zero mean which is why it is deemed as a good enough result.
-There are a couple of possible explanations for the noisy performance ; one being the extra CPU that the gtrm slice receives when the system.slice has
-spare resources to lend. This introduces a disturbance driving the performance up. However when loading the system.slice with a cpu hog no major changes in performance were shown.
-Another explanation could be the delay in the sockets communication since delays tend to make systems oscillate. 
-A third reason is simply a bug somewhere in the code.
-The time between actions from the GTRM is irregular, how this affects the system has not been taken in to consideration.}
 
-
-\fixed{What do the results show? Beside the fact that it is usable?
-  Is there something that was expected and is not working in the way you
-  thought? Is there something that was not expected and happened?}
 
 \section{Future work}
 
