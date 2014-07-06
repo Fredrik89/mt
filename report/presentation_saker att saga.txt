@@ -1,0 +1,80 @@
+Axis Communications:
+
+* The work for this master thesis was done at axis communications.
+
+	(as u can see here they make surveillance cameras that are able to stream over a network)
+
+Background and goals
+
+*  The cameras run a custom built linux build.
+	On the camera there are alot of processes and applications running simultaneously, contending for resources 
+	such as RAM and CPU power.
+	One of the applications is the streaming application that compresses images and sends them out onto the network.
+	There is a demand from the customers that the framereate should remain on a set level even during higher load from other applications
+	or from increased image quality.
+	To acomplish this, a way to distribute resources and alter the image quality in order to maintin the framerate is needed.
+
+
+Problem formulation:
+
+	We were to adjust an existing RM framework, developed here at the control department, to fit it on to 
+	the camera according to some specifications from Axis.
+
+
+Resource Manager Framework:
+	We were handed existing code implementing a resource management framework where
+	both applications and the resource manager act independently
+	trying to maximize their own performance measure. 
+
+	The performance of the applications can be tuned in two ways:
+	-resource distribution
+	-The service level.
+
+There are two main benefits when using this approach
+-The control scheme scales linearly in time complexity as the number of applications grows.
+
+
+
+Matching function:
+
+*The applications considered here are assumed to have short tasks, jobs, that have a soft deadline. 
+The execution time can be divided into three cases:
+1
+2
+3
+
+The matching function is calculated by 
+comparing the deadline with the actual execution time for the task. 
+
+
+Adaptations Of The Original Code:
+*systemd is  a system and service management daemon. It is the first process started when the computer boots.
+One of systemds tasks is to keep track of processes using cgroups which makes it natural to put the resource manager into systemd.
+Systemd wraps the concept of cgroups with service and slice files. A service file encodes information about
+ a process controlled and supervised by systemd. Slices are a way to group the services resources.
+
+
+
+Socket communication:
+Icoming messages are read in the main loop of systemd. The epoll technique allows systemd to know which sockets has messages,
+The gtrm has a single socket that is added to this epoll instance so that the socket gets watched. The 
+
+
+Service and slice files:
+
+Service files always lies under a slice file.
+Service files describes how systemd will treat an application.
+One setting in the service files is the CPUShares settings.
+Resources are inherited from a parent slice according to how big chink of the total 
+CPUShares the service/slice file has of the total amount of CPUShares on that level on that branch.	
+
+
+
+
+
+
+
+
+
+
+
