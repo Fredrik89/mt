@@ -62,7 +62,7 @@
 
 \begin{titlepages}
 \author{Fredrik Johnsson and Olle Svensson}
-\title{Resource management and prioritization in an embedded Linux system}
+\title{Resource Management and Prioritization in an Embedded Linux System}
 \year{2014}
 \month{June}
 \TFRT{9999}  %%  You will get the number from the department.
@@ -77,7 +77,7 @@
 This master thesis tackles the problem of limited computing resources on a
 camera that is executing computing applications together with image
 acquisition and streaming. The thesis was carried out at Axis Communications
-in cooperation with the Department of Control at Lunds University. The
+in cooperation with the Department of Automatic Control at Lund University. The
 problem of limited resources on an Axis camera is handled by a two part
 solution where a resource manager (RM) distributes the available resources
 and services can adapt their service level (SL) in order to finish their
@@ -90,13 +90,13 @@ resource manager is incorporated into \texttt{systemd}, and uses
 \texttt{cgroups}~\cite{cgroups} to distribute the computing capacity. The
 experimental results show that the resource manager is fully operational and
 capable of managing and prioritizing resources as intended on the embedded
-system. However the work with adapting the video quality adaptation is still
+system. However, the work with adapting the video quality adaptation is still
 left to be completed.
 
 \chapter*{Acknowledgements}
 
 We want to thank our supervisors, Umut Tezduyar-Lindskog, Axis and Martina 
-Maggio, LTH Department of Control. We would also like to thank engineering 
+Maggio, LTH Department of Automatic Control. We would also like to thank engineering 
 manager Pontus Bergendahl, Axis.
 
 
@@ -128,7 +128,7 @@ of the camera, when the execution scenarios bring the camera under a load
 that is heavier than the usual design one. For example, when answering calls
 from the network, the camera is subject to a heavier demand. 
 
-In this scenarios it would be advisable to have a technique to diminish
+In these scenarios it would be advisable to have a technique to diminish
 the load produced by services that are not necessary, ideally without
 affecting their timing properties. The quality of service reduction is
 often addressed via the introduction of service levels, where services can
@@ -180,10 +180,10 @@ al.~\cite{Eke00}. However they do not implement the concept of varying the
 computation quality, or service level.
 
 The QoS-based Resource Allocation Model (Q-RAM) was proposed by Rajkumar et 
-al.~\cite{Raj97a} for managing of multidimensional resources. Here it is 
+al.~\cite{Raj97a} for managing multidimensional resources. Here it is 
 desired to minimize the QoS constraints while maximizing the total 
 utility. The solution is centralized and every application receives a
-certain quality to be used for the computation and cooperate with the
+certain quality to be used for the computation and cooperates with the
 architecture by enforcing that quality. However, the amount of communication
 needed to achieve this goal is non-negligible and therefore it is not
 advisable for a video surveillance and streaming systems where the network
@@ -230,14 +230,14 @@ The remaining of this report is organized as follows.
 
 The aim of the resource manager is to make sure that the running applications
 have acceptable performance levels. The decision about how much resource to
-allocate to each application is based on its performance. The applications
-performance are measured in terms of \emph{matching functions}, that is how
-good is the match between the resource given to the application and the
+allocate to each application is based on its performance. The application's
+performance is measured in terms of a \emph{matching function}, that tells how
+good the match is between the resource given to the application and the
 corresponding deadline. The assumption behind this is that the resource
 distribution determines the execution time to complete a job. The applications
 are supposed to be made of jobs. 
 
-The matching function, is calculated as the difference between the
+The matching function is calculated as the difference between the
 applications deadline and the execution time of the jobs. Ideally the matching
 function should be zero. When zero, the application has just enough resources
 to meet its deadline running with some service level. When positive, the
@@ -276,23 +276,23 @@ The \emph{independent adaptation} simply multiplies the current service level,
 the matching function and a constant scale factor $\epsilon$. This adaptation
 decreases the service level if the performance is negative and increases it 
 if the matching function is positive. The scaling factor $\epsilon$ slows 
-down the adaption rate to avoid instability. 
+down the adaption rate to avoid instability. The service level $sl_i$ of an application $i$, is calculated from the matching function, $f_i$ and from the previous service level as,
 
 \begin{equation}
-sl_i(t+1)= sl_i(t) + \epsilon*(f_i(t)*sl_i(t))
+sl_i(t+1)= sl_i(t) + \epsilon \cdot (f_i(t)*sl_i(t)).
 \label{eq:simple_sl_rec}
 \end{equation}
 
 The \emph{coordinated adaptation} follows a suggestion given by the resource
-manager, that includes also the variation of the resource allocation. In fact,
+manager, that includes also the variation of the resource allocation, that is the virtual platform $vp$. In fact,
 the resource manager sends to the application a \emph{performance multiplier}
 $PM_i$ that is used as an estimation of how much the service levels should
 change to match the current allocation, that is unknown on the application
 side.
 
-The performance multiplier $PM_i$ is computed as
+The performance multiplier $PM_i$ is computed as,
 \begin{equation}
-PM_i = (1+f_i) \cdot (vp_i(i+1)/vp(i))
+PM_i = (1+f_i) \cdot (vp_i(i+1)/vp(i)),
 \end{equation}
 and the applications sets the new service level as
 \begin{equation}
@@ -310,50 +310,16 @@ meaning we have a fixed amount of computations done each iteration, thus
 increasing the service level would instead increase the amount of
 computational iterations.
 
-\subsection{Service Level update}
-In the following we discuss two possible ways of adjusting the service level.
-In the first case, the application only considers information that are
-internally available, while in the second case, the application receives a
-hint from the GTRM and follows those hints.
-
-The \emph{independent adaptation} simply multiplies the current service level,
-the matching function and a constant scale factor $\epsilon$. This adaptation
-decreases the service level if the performance is negative and increases it 
-if the matching function is positive. The scaling factor $\epsilon$ slows 
-down the adaption rate to avoid instability. 
-
-\begin{equation}
-sl_i(t+1)= sl_i(t) + \epsilon*(f_i(t)*sl_i(t))
-\label{eq:servicelevelsimple}
-\end{equation}
-
-The \emph{coordinated adaptation} follows a suggestion given by the resource
-manager, that includes also the variation of the resource allocation. In fact,
-the resource manager sends to the application a \emph{performance multiplier}
-$PM_i$ that is used as an estimation of how much the service levels should
-change to match the current allocation, that is unknown on the application
-side.
-
-The performance multiplier $PM_i$ is computed as
-\begin{equation}
-PM_i = (1+f_i) \cdot (vp_i(i+1)/vp(i))
-\end{equation}
-and the applications sets the new service level as
-\begin{equation}
-sl_i(t+1) = sl_i(t) + (\epsilon \cdot sl_i(t) \cdot PM_i).
-\label{eq:servicelevelnotsimple}
-\end{equation}
-
 \subsection{The Test Application}
 The test application from~\cite{gtrm} has been adapted to work with the implementation in this paper. Below follows an explanation of how it works to provide an example of how an application could implement SL adaptation and be managed by the GTRM.
-The applications considered in this paper typically has a periodic task to perform , here called job, with a associated soft deadline.
-The test application has a linear relationship between the SL and the time it takes for the CPU/CPUs to perform a job described by equation~\ref{eq:cputime}. 
+The applications considered in this paper typically have a periodic task to perform, here called job, with an associated soft deadline.
+The test application has a linear relationship between the SL and the time it takes for the CPU/CPUs to perform a job described by equation~\ref{eq:cputime},
 
 \begin{equation}
-C_{cpu} = a_{cpu}*SL + b_{cpu}
+C_{cpu} = a_{cpu}*SL + b_{cpu},
 \label{eq:cputime}
 \end{equation} 
-Where $C_{cpu}$ is the number of times a random number is generated which
+where $C_{cpu}$ is the number of times a random number is generated which
 should be proportional to time it takes the CPU/CPUS to perform the job.
 The SL adaptation is  performed for each job. The average performance of the
 last ten jobs are then sent to the RM and the SL adaptation is made as
@@ -368,10 +334,9 @@ applications, for them to meet their performance requirements. The resources
 are modeled as ``virtual platforms''. A virtual platform represents a
 percentage of the total available resources; for example, the amount of time
 an application is allowed to use the CPU with respect to the other 
-applications. Here ``resources'' could refer to something rather than CPU,
+applications. Here ``resources'' could refer to something else than CPU,
 such as memory or network bandwidth, depending on what is allocated in the
-system. The GTRM is run in the main loop of systemd which checks sockets for 
-messages and dispatches jobs from the incoming messages. This means that the 
+system. The GTRM is run in the main loop of \texttt{systemd}, (see section ~\ref{sec:systemdandcroups}), which checks sockets for messages and dispatches jobs from the incoming messages. This means that the 
 GTRM acts in irregular time intervals with the shortest being the time it 
 takes to pass the main loop when there are no incoming messages and the 
 longest depending on the amount of incoming messages and the execution time of 
@@ -433,7 +398,7 @@ computation.
 \label{sec:systemdandcroups}
 Systemd ~\cite{sysd1}~\cite{sysd2} is a daemon for Linux, that executes system
 management operations. It is the first process that starts during boot, and 
-thus it is given the PID 1. Systemd implements a lot of features for increased
+thus it is given the PID 1. \texttt{Systemd} implements a lot of features for increased
 performance and system management over previous start up processes, like
 initd. It also has different features for management of resources, using
 cgroups~\cite{cgroups}, which makes it interesting for a resource manager
@@ -682,9 +647,9 @@ at the same time, especially due to the video analytics co-processor.
 These cameras are very common amongst Axis' costumers and also by the 
 developers and will serve as realistic testing platforms for this project. 
 Initially the M1033 was the only camera considered but during development a 
-later version of systemd was brought to the P3367 and the project moved to 
+later version of \texttt{systemd} was brought to the P3367 and the project moved to 
 that camera instead. Testing will thus only be carried out only on the P3367 
-as the previous cameras systemd implementation differs to much to bring the 
+as the previous cameras \texttt{systemd} implementation differs to much to bring the 
 software to both of them.
 
 \chapter{Implementation}
@@ -2666,7 +2631,7 @@ Writes information about the resource management to a log file, which can then b
 \end{itemize}
 
 \section{manager.c/h}
-One of the main files in systemd and is for example responsible for inter process communication. The following fields are added to the \emph{Manager} struct in manager.h:
+One of the main files in \texttt{systemd} and is for example responsible for inter process communication. The following fields are added to the \emph{Manager} struct in manager.h:
 \begin{itemize}
 \item gtrm\_socket: String that represent the socket used by GTRM.
 \item gtrm\_fd: A file descriptor, which is an integer, for communicating with GTRM.
