@@ -1288,7 +1288,7 @@ the CPUShares directly.
 \begin{lstlisting}
 int manager_set_cpu_shares(Manager *m, pid_t pid, int shares){
 \end{lstlisting}
-Two local variables are needed, a pointer to a \texttt{Unit} and one to a 
+Two local variables are needed, a pointer to a \texttt{Unit}, which is a parent class to Service and Slice classes, describing how systemd should handle a process/application, and one to a 
 \texttt{CGroupContext}. From the PID of an application, the corresponding 
 Unit pointer can be obtained.
 \begin{lstlisting}
@@ -1298,7 +1298,7 @@ Unit pointer can be obtained.
 \end{lstlisting}
 In case the application does not exist, because the application terminated,
 the Unit pointer produced previously will be a NULL-pointer. The application
-is thus removed from the hashmap, which requires that we reset the virtual
+is thus removed from the hashmap, which requires a reset of the virtual
 platforms, and the function call returns.
 \begin{lstlisting}
   if(u == NULL) {
@@ -1314,7 +1314,7 @@ can be acquired from the Unit-pointer.
   c = unit_get_cgroup_context(u);
 \end{lstlisting}
 In this context, the CPUShares can be set to what is desired and it is
-followed be a necessary call to apply the changes.
+followed by a necessary call to apply the changes.
 \begin{lstlisting}
   c->cpu_shares = shares;
   cgroup_context_apply(c, CGROUP_CPU, u->cgroup_path);
@@ -1322,8 +1322,8 @@ followed be a necessary call to apply the changes.
 }
 \end{lstlisting}
 
-In Section~\ref{sec:systemdandcroups} we introduced CPUShares, which assigns 
-CPU-resources between the application proportionally to the amount of shares 
+In Section~\ref{sec:systemdandcroups} the concept of CPUShares was introduced. 
+CPUShares assigns CPU-resources between the application proportionally to the amount of shares 
 assigned to each application. This implies that assigning an application an 
 amount of shares, will give different amount of resources depending on how the 
 shares are assigned to the competing applications. The CPUShares also define a 
@@ -1331,8 +1331,8 @@ minimum amount of resources, an application can thus receive more resources
 than specified if there is free resources available. This is different to the 
 approach in~\cite{gtrm} where the resources where set exact via 
 \texttt{SCHED\_DEADLINE}. Some risks are introduced by using 
-\texttt{SCHED\_DEADLINE} which are not present in the CPUShares approach. Such 
-as assigning, in total, more resources than available, causing a kernel-panic 
+\texttt{SCHED\_DEADLINE} which are not present in the CPUShares approach, e.g., 
+assigning, in total, more resources than available, causing a kernel-panic, 
 or not fully utilizing the system by assigning less resources, in total. 
 \texttt{SCHED\_DEADLINE} also has to take the amount of CPU cores into 
 consideration, which CPUShares is independent of.
@@ -1341,7 +1341,7 @@ consideration, which CPUShares is independent of.
 \section{Service Level Update}
 \label{sec:servicelevelupdatesection}
 
-The applications using the GTRM framework have all a similar structure,
+The applications using the GTRM framework all have a similar structure,
 the main difference being how they implement the update in the service
 level to match the resource allocation. In fact, the service level changes
 are mapped into some parameter changes, that in turn affect the resource
@@ -1351,10 +1351,10 @@ to make it require less or more resource and provide a worse or better
 quality of service.
 
 In general, however, a few elements can be identified. The service level
-adaptation should run periodically and a socket nees to be established
-and read during the adaptation phase. Below, we show an example of
-test application, to show how the service level adaptation can be performed
-and what functions are provided by \texttt{gtrm\_app\_lib.c}.
+adaptation should run periodically and a socket needs to be established
+and read during the adaptation phase. Below follows an example of a test application,
+ to show how the service level adaptation can be performed
+ and what functions are provided by \texttt{gtrm\_app\_lib.c}.
 The test application and library are altered versions of the test 
 application and library \texttt{jobsignaler.c} used within~\cite{gtrm}.
 The modifications are mainly due to the presence of sockets, instead of
