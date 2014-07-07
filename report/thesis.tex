@@ -387,7 +387,7 @@ Theoretic Resource Manager (\emph{GTRM}).
 Decoupling the two adaptations makes it possible to obtain a linear time
 complexity for the resource adaptation algorithm. In fact, the amount of
 operations that are necessary to perform the adaptation defined by
-Equation~\eqref{eq:RecursionForResources} depends only on the number of
+Equation~\ref{eq:RecursionForResources} depends only on the number of
 running applications. Also, one of the main benefits of this decoupling is
 that the task of adjusting the SL is given to the applications that have
 knowledge of how to tune their parameters in order to adjust them to their
@@ -1307,9 +1307,9 @@ quality of service.
 
 In general, however, a few elements can be identified. The service level
 adaptation should run periodically and a socket needs to be established
-and read during the adaptation phase. Below follows an example of a test application,
- to show how the service level adaptation can be performed
- and what functions are provided by \texttt{gtrm\_app\_lib.c}.
+and read during the adaptation phase. Below follows an example of a test application, in order
+to show how the service level adaptation can be performed
+and what functions that are provided by \texttt{gtrm\_app\_lib.c}.
 The test application and library are altered versions of the test 
 application and library \texttt{jobsignaler.c} used within~\cite{gtrm}.
 The modifications are mainly due to the presence of sockets, instead of
@@ -1334,7 +1334,7 @@ int main (int argc, char* argv[]) {
 	double performance;
 \end{lstlisting}
 
-The application creates the socket adress and pass it as an argument to 
+The application creates the socket address and passes it as an argument to 
 \texttt{gtrm\_lib\_setup\_socket}. The file descriptor is then linked to
 a file with the application name.
 \begin{lstlisting}
@@ -1375,9 +1375,8 @@ deadlines within the same code. For example, this is the case of a video
 decoder/encoder, that could process different types of frames (I/B/P)
 with different requirements. Encoding an I frame requires to simply
 transfer the information from one place to the other, while encoding a B and
-P frame, in fact, require to compute the differences between the previous
-I frame and eventually the subsequent ones. The test application has 
-only one job type but the framework directly supports multiple job types. 
+P frame, in fact, requires that the difference between frames are calculated.
+The test application has only one job type but the framework directly supports multiple job types. 
 An application can have different job types corresponding to different deadlines. The test application only has one job type. 
 
 \begin{framed}
@@ -1432,7 +1431,7 @@ The main loop of the program follows.
 		  // saturation											
 			if (service_level < MINIMUM_SERVICE_LEVEL)
 				service_level = MINIMUM_SERVICE_LEVEL;
-			if (service_level != service_level) // avoid nans
+			if (service_level != service_level) // avoid NANs
 				service_level = 1.0;
 		} else if(myself->happy == false) {			
 			myself->happy = true;
@@ -1473,14 +1472,14 @@ In the code, the following functions are used.
 \begin{framed}
 	\begin{flushleft}	
 		\emph{\textbf{{double gtrm\_lib\_get\_performance\_number \newline
-	(\_application\_h* a, int job\_type)}}} \newline
-		Calculates the peformance (matching function) by averaging 
-	the performance of the last ten jobs of a specified type.
+    (\_application\_h* a, int job\_type)}}} \newline
+		Calculates the performance (matching function) by averaging 
+    the performance of the last ten jobs of a specified type.
 		\begin{itemize}
 		\item a: Struct representing an application.
 		\item type: Which job type for which we want to calculate 
-	  the performance.
-		\item Return value: Applications performance.
+      the performance.
+		\item Return value: Performance of the application.
 		\end{itemize}
 	\end{flushleft}
 \end{framed}
@@ -1519,9 +1518,9 @@ The identity element calls a callback function by sending a ``handoff''
 signal each time it receives a new buffer, where a buffer can contain one or 
 more frames.
 
-The time in between each incoming buffer to the identity element is the 
+The time between each incoming buffer to the identity element is the 
 ``job time'' for the streaming application, which is used when calculating the 
-matching function, see Equation~\eqref{eq:matchingfunctiongeneral}. 
+matching function, see equation \ref{eq:matchingfunctiongeneral}. 
 If a buffer contains only one frame, this job time should correspond to 
 \emph{fps} on the camera.
 
@@ -1554,10 +1553,8 @@ use is decided by setting the bit-rate priority field in \texttt{video.c}.
 		\item service\_level: Initial service level.
 		\item epsilon: Constant which specifies service level adaptation rate.
 		\item weight: Determines how the much of the adaptation will be done 
-	  by altering the service level or the changing the amount of resources.
-		\item deadline\_seconds: This deadline will correspond to the 
-
-	  desired frame rate.
+      by altering the service level or the changing the amount of resources.
+		\item deadline\_seconds: This deadline will correspond to the desired frame rate.
 		\item Return value: None.
 	\end{itemize}
 	\end{flushleft}
@@ -1591,7 +1588,7 @@ including the newly introduced identity element, which is called
 \texttt{gtrm\_sl\_adapt}. A call to \texttt{setup\_sl\_adapt} sets
 the variables needed for the service level adaptation.
 
-At first all the different elements for the pipeline is defined, including the identity element, which is called \emph{gtrm\_sl\_adapt}. A call to \emph{setup\_sl\_adapt} sets up the what is needed for the service level adaptation.
+At first all the different elements for the pipeline are defined, including the identity element, which is called \emph{gtrm\_sl\_adapt}. A call to \emph{setup\_sl\_adapt} sets up the what is needed for the service level adaptation.
 \begin{lstlisting}
   GstElement *gtrm_sl_adapt = NULL;
   setup_sl_adapt (service_level, epsilon, 
@@ -1626,8 +1623,8 @@ The callback function for the element consists of a single call
 to \texttt{sl\_adapt()}, which is defined in \texttt{sl\_adapt.c}. 
 This adaptation looks more or less identical to that in the test 
 application described in Section~\ref{sec:servicelevelupdatesection} and
-in Equations~\eqref{eq:servicelevelsimple} 
-and~\eqref{eq:servicelevelnotsimple}.
+in Equations~\ref{eq:servicelevelsimple} 
+and~\ref{eq:servicelevelnotsimple}.
 
 \begin{lstlisting}
 static void gtrm_sl_cb (GstElement * identity, 
@@ -1674,25 +1671,24 @@ GTRM-slice. A service can reserve a minimum percentage of allocated
 resources referring to its parent slice.
 In the Pie chart above the static slice would be guaranteed a minimum of 
 \sfrac{1}{3} of the total resources while the two \emph{GTRM} services are given 
-
 half of the \sfrac{2}{3} reserved by its parent slice, therefore obtaining
 a minimum of \sfrac{1}{3} of the total available resources each.
 
-In the \emph{GTRM} slice, some of the applications are service level aware and some
-other are not. Ideally all applications running in the GTRM-slice should, 
+In the \emph{GTRM} slice, some of the applications are service level-aware and some
+ are not. Ideally all applications running in the GTRM-slice should, 
 if it makes sense to the application, have a concept of service level.
 Each application is assigned a weight, that sets how much responsibility
-for the adaptation is taken care by the application that changes its service
+for the adaptation is taken care of by the application that changes its service
 level and how much adaptation should be realized via resource allocation.
-All applications in the \emph{GTRM} slice must implement the performance evaluatio
-via matching function and the communication with the resource manager via
+All applications in the \emph{GTRM} slice must implement the performance evaluation
+via a matching function and the communication with the resource manager via a 
 socket.
 
 \subsection{Resource allocation in practice}
 The resource split shown in Figure~\ref{fig:Piechart} is made by creating 
 a \texttt{gtrm.slice} file in the folder \texttt{/etc/systemd/system}.
 Any application that wants to take advantage of the \emph{GTRM} capabilities needs
-to create a service file in the same folder. When the service is started a folder named \texttt{gtrm.slice} will be created in the corresponding cgroup-controller-folder to represent the slice. The controller is a combination of the CPU-and CPUAccounting, \texttt{cpu,cpuacct}. The applications run in this slice will be represented as a folder within the slice-folder. The resulting path to the service will look like this.
+to create a service file in the same folder. When the service is started a folder named \texttt{gtrm.slice} will be created in the corresponding cgroup controller-folder to represent the slice. The controller is a combination of the CPU-and CPUAccounting, \texttt{cpu,cpuacct}. The applications run in this slice will be represented as a folder within the slice-folder. The resulting path to the service will look like this.
 
 \begin{verbatim}
 /sys/fs/cgroup/cpu,cpuacct/.slice/gtrm.service/
@@ -1742,8 +1738,8 @@ nothing is specified in the unit file.
 \section{Sequence Diagram}
 
 The sequence diagram in Figure~\ref{fig:sdiag} describes the flow of 
-execution of the system via pseudo-code. Some functions call that are 
-not relevant and have been left out. 
+execution of the system via pseudo-code. Some function calls that are 
+not relevant have been left out. 
 \subsection{Application}
 The application computes its performance (matching function), via a 
 function called \texttt{calculate\_performance()}. According to its value,
@@ -1776,7 +1772,7 @@ that sent the performance measurement. Meanwhile, the resource management
 runs as a part of the main resource manager loop. The resource management
 algorithm uses the information in the hashmap to calculate the new virtual
 platforms via the function \texttt{calculate\_virtual\_platforms} according
-to Equation~\eqref{eq:RecursionForResources} and~\eqref{eq:RecursionForResources}.
+to Equation~\ref{eq:RecursionForResources}.
 These virtual platforms are then used to set the amount of CPUShares to
 be given to each application in the call to \texttt{apply\_virtual\_platforms}.
 
@@ -1803,11 +1799,11 @@ overloading the hardware.
 The service level for all the running applications should be at the
 highest possible value. The matching functions of the applications should
 be either positive or zero for the applications and the deadlines of all
-the running services should be hit.
+the running services should be met.
 
-\section{Overload Conditions (Streaming Dependant)}
+\section{Overload Conditions (Streaming Dependent)}
 
-In this second case, the streaming application is overloading the system.
+In the second case, the streaming application is overloading the system.
 The applications subsequently mentioned are all included in the \emph{GTRM} slice,
 that should allocate the resources available for them in order to match
 the deadlines of every applications, including the streaming service.
@@ -1838,7 +1834,8 @@ execution. The frame rate for the video streaming should be constant during
 the execution, because the internal service adaptation of the streaming
 service should take care of adjusting the compression level of the image.
 
-\section{Overload Conditions (Non-Streaming Dependant)}
+\section{Overload Conditions (Non-Streaming Dependent)}
+
 
 At the beginning of this use case the static slice is not fully loaded,
 therefore some of the resource may be transfered from it to the \emph{GTRM}
@@ -2034,18 +2031,17 @@ services are given an initial $CPUShares = 100$, to be able to send their first 
 	  be made by the RM or by the SL adaptation. Is defined between 0 and 1.
 		\item double deadline, The deadline for the job.
 	\end{itemize}
-	The cpu requirement is a linear function of the SL: 
+	The CPU requirement is a linear function of the SL: 
   $cpu\_req = a\_cpu*ls +b\_cpu  $. Cpu\_req is simply the number 
   of calculations that will be performed each job. 
 \end{flushleft}
 \end{framed}	
 
-In the tests, all the applications are launched at the same time. The
-applications are expected to converge to a matching function close to or
+In the tests, the applications are expected to converge to a matching function close to or
 equal to zero, with a service level that should stabilize over time. It is 
 also expected that the resource manager initially assigns the same amount
 of resource to all the applications. As their demands and adaptation
-rates vary, the applications service level and virtual platforms does not 
+rates vary, the application's service level and virtual platforms do not 
 have to converge identically, but if the system works as intended all the
 applications should end up with a matching function close to zero.
 
@@ -2059,8 +2055,8 @@ shares assigned to it. This is a parameter of \emph{GTRM} that could be changed
 upon request, and the $10\%$ unused resource is intended as a slack, for
 example to run the resource manager itself.
 
-\subsection{Test 1: four applications with the same weights, 
-  service level and resource adaptation}
+\subsection{Test 1: Four applications with the same weights, 
+  service level, and resource adaptation}
 
 \begin{figure}[th]
 \centering
@@ -2108,26 +2104,25 @@ Figure~\ref{fig:test1}.
 It can be seen that the applications receive different amount of resources
 and settle to different service levels. Application 4, which is the last
 one to enter the pool, starts with a very negative matching function. The
-re-arrangement of resources allows the application to obtain a higher virtual
+re-arrangement of resources allows the application to obtain a larger virtual
 platform and therefore compute at a higher service level. It can also be
 observed that --- despite the performance functions being quite noisy --- the
 service levels settle to an equilibrium, as well as the virtual platforms.
 
 \subsubsection{Comments on the results}
-See the plots in figure \ref{fig:test1} and table \ref{tab:settings_test1}.
-The plots behaves on the whole as expected from the settings in 
+The plots in Figure \ref{fig:test1} behave on the whole as expected from the settings in 
 Table~\ref{tab:settings_test1}.
 The mean of the noisy performance converges to zero which corresponds to each 
 application finding a pairing of SL and virtual platform (VP). In the plot a 
 higher/lower SL gives a higher/lower Virtual platform. The SL/VP combination
 for app2 becomes different since the $a_{cpu}$ is twice that of the other apps 
-resulting in a half as big SL compared to what it would have been otherwise. 
+resulting in a half as large compared to what it would have been otherwise. 
 The VP resets after a new app has been started as it should. The SL for app 
-3 and 4 converges slower than that of app 1 and 2 because of the lower
+3 and 4 converge slower than that of app 1 and 2 because of the lower
 $\epsilon$ in app 3 and 4.
 
-\subsection{Test 2: four applications with different weights, 
-  service level and resource adaptation}
+\subsection{Test 2: Four applications with different weights, 
+  service level, and resource adaptation}
 
 \begin{figure}[th]
 \centering
@@ -2179,15 +2174,14 @@ service levels and matching functions. As can be seen, the performance
 functions, despite being noisy, converge to signals with zero mean.
 
 \subsubsection{Comments on the result.} 
-See the plots in figure \ref{fig:test2} and table \ref{tab:settings_test2}.
 This test behaves alot like the previous one but with one difference in how 
 the SL/VL combinations converge. The main point of this test is to see how the 
-weight affects the VP:s convergence points.
-As can be seen in the plot of the virtual platforms in fig \ref{fig:test2}, 
+weight affects the VPs convergence points.
+As can be seen in the plot of the virtual platforms in Figure \ref{fig:test2}, 
 the applications with higher weights are assigned a higher VP which is in 
 accordance with the theory.
 
-\subsection{Test 3: four applications with zero weights and 
+\subsection{Test 3: Four applications with zero weights and 
   service level adaptation}
 
 In this third test, four applications are started as done for the previous
@@ -2218,10 +2212,9 @@ The result is shown in Figure~\ref{fig:test3}.
 \end{figure}
 
 \subsubsection{Comments on the results}
-See the plots in fig \ref{fig:test3}
-As expected there is no change in VP except for the even split when a new application is added. The Performance looks a bit noisier than previously indicating an improvement when both SL and VP adaptation is being used.
+As expected there is no change in VP except for the even split when a new application is added. The performance looks a bit noisier than previously indicating an improvement when both SL and VP adaptation is being used.
 
-\subsection{Test 4: four applications with weights equal to one and 
+\subsection{Test 4: Four applications with weights equal to one and 
   service level adaptation}
 
 This test is the dual of the previous one but all the weights are set to 1.
@@ -2251,12 +2244,10 @@ With all weights set to one the adaptation is expected to be done by varying the
 
 \clearpage
 \subsubsection{Comments on the results}
-See the plots in figure \ref{fig:test4}
-From comparing the two SL plots from test1 ,in figure \ref{fig:test1},and test4, in figure \ref{fig:test4}, it seems like the SL for app3 and app4 converges slower in the test 4 case. 
-The VP plot also displays greater difference between the 4 applications than in the test 1 case. Although these changes are small in comparison to the changes in test 3 it can be argued that more of the adaptation is done by varying the VP in test 4 as opposed to in test 1.
-Once again the performance seems a bit noisier compared to the test 1 case indicating an improvement when both SL and VP adaptation is being used.
+By comparing the two SL plots from Test1 ,in Figure \ref{fig:test1},and Test4, in Figure \ref{fig:test4}, it seems like the SLs for app3 and app4 converge slower in the Test4 case. 
+The VP plot also displays greater difference between the 4 applications than in the Test1 case. Although these changes are small in comparison to the changes in Test3 it can be argued that more of the adaptation is done by varying the VP in Test4 as opposed to in Test1. Once again the performance seems a bit noisier compared to the Test1 case indicating an improvement when both SL and VP adaptation is being used.
 
-\subsection{Test 5: four applications with no service level adaptation}
+\subsection{Test 5: Four applications with no service level adaptation}
 
 Four applications are started one by one with the settings in 
 Table \ref{tab:settings_test5}. As can be seen, the value of $a\_cpu$ is
@@ -2355,10 +2346,9 @@ for redistribution.
 \begin{flushleft}
 \emph{Test with a lower $b_{cpu},$}
 \end{flushleft}
-See the plots in figure \ref{fig:test5} and table \ref{tab:settings_test5}.
 In this test only the VP and performance plots are of interest since $a_{cpu}=0$ and hence changes in SL has no effect.
 The VP for the different applications does not seem to converge to the theoretical ones which probably is because of a too small static SL, $b_{cpu}$.
-The effects of this small $b_{cpu}$ can be seen in the performance plot in figure \ref{fig:test5} when 25 < t35 where the performance is stuck in the upper half plane indicating that the applications need a higher SL 
+The effects of this small $b_{cpu}$ can be seen in the performance plot in Figure \ref{fig:test5} when 25 < t < 35 where the performance is stuck in the upper half plane indicating that the applications need a higher SL 
 in order to make use of all of their available CPU. After time t = 45 the time between updates of the performance in the RM increases drastically, (the performance plots shows the performance that the RM has received). This is most likely due to a temporary problem with sending messages on DBus which in turn might have been caused by the flood of sent messages due to the high performance.
 
 The test is repeated, increasing the value of $b_{cpu}$. Also, in this
@@ -2373,14 +2363,13 @@ platforms in this second case.
 \begin{flushleft}
 \emph{Test with a higher $b_{cpu}$,}
 \end{flushleft}
-See the plots in figure \ref{fig:test5b} and table \ref{tab:settings_test5b}.
-The values that the VP for the different applications converges to, compensated for the scale factor,  together with the theoretical values and the weights are shown in table \ref{tab:VP_test5b}.
-From the table it can be seen that the applications have not reached their theoretical values, however they are not far from them.
-The discrepancy might be explained by all the noise that performance still displays. This noise seems to have been reduced by the cpu hog on the system.slice.
+The values that the VP for the different applications converges to, compensated for the scale factor, together with the theoretical values and the weights are shown in Table \ref{tab:VP_test5b}.
+From the table it can be seen that the applications have not reached their theoretical values, however, they are not far from them.
+The discrepancy might be explained by all the noise that the performance still displays. This noise seems to have been reduced by the CPU load generator on the system.slice.
 
 
 
-\subsection{Test 6: mixed load of applications with and without service 
+\subsection{Test 6: Mixed load of applications with and without service 
   level adaptation}
 
 
@@ -2429,9 +2418,8 @@ depicts the result of the run.
 
 
 \subsubsection{Comments on the results}
-See the plots in Figure \ref{fig:test6} and Table \ref{tab:settings_test6}.
 The plots looks as expected. That the weights influence how much VP an
-application gets can be seen in that $VP_{app5}>VP_{app2}>VP_{app4}$. 
+application gets can be seen in that $vp_{app5}>vp_{app2}>vp_{app4}$. 
 The small $\epsilon$ for app 5 makes the SL adaptation very slow.
 
 
@@ -2454,12 +2442,12 @@ The small $\epsilon$ for app 5 makes the SL adaptation very slow.
 \section{Result discussion}
 
 Overall the plots of the virtual platforms and the service level look good,
-with the exception of the extremely noisy matching functions. They do 
-however have zero mean which is why it is deemed as a good enough result.
+with the exception of the extremely noisy matching functions. They do, 
+however, have zero mean which is why it is deemed as a good enough result.
 There are a couple of possible explanations for the noisy performance; one
 being the extra CPU that the \emph{GTRM} slice receives when the system slice has
 spare resources to lend. This introduces a disturbance driving the 
-performance up. However when loading the system slice with a cpu hunger
+performance up. However when loading the system slice with a CPU hungry
 application, no major changes in performance were shown.
 To reduce the amount of noise in the matching functions, one could average
 over a larger interval of samples, therefore smoothening the function's
@@ -2476,13 +2464,13 @@ computation, together with the quality of the offered service.
 
 \section{Result discussion}
 
-Overall the plots of the virtual platforms and the service level looks good but the main problem are
-the extremely noisy performances. They do however have zero mean which is why it is deemed as a good enough result.
-There are a couple of possible explanations for the noisy performance ; one being the extra CPU that the \emph{GTRM} slice receives when the system.slice has
-spare resources to lend. This introduces a disturbance driving the performance up. However when loading the system.slice with a cpu hog no major changes in performance were shown.
-Another explanation could be the delay in the sockets communication since delays tend to make systems oscillate. 
+Overall the plots of the virtual platforms and the service level look good but the main problem is
+the extremely noisy performance plots. They do, however, have zero mean which is why it is deemed as a good enough result.
+There are a couple of possible explanations for the noisy performance; one being the extra CPU that the \emph{GTRM} slice receives when the system.slice has
+spare resources to lend. This introduces a disturbance driving the performance up. However when loading the system.slice with a CPU load generator no major changes in performance were shown.
+Another explanation could be the delay in the socket communication since delays tend to make systems oscillate. 
 A third reason is simply a bug somewhere in the code.
-The time between actions from the \emph{GTRM} is irregular, how this affects the system has not been taken in to consideration.
+The time between actions from the \emph{GTRM} is irregular, how this affects the system has not been taken into consideration.
 
 \section{Conclusion}
 
@@ -2616,7 +2604,11 @@ Calculates, updates and sends the performance multiplier to each application, us
 Writes information about the resource management to a log file, which can then be used to generate some nice graphs.
 \begin{itemize} 
 \item gtrm\_apps: Hash-map containing rm\_app\_t structs for each application.
+<<<<<<< HEAD
 \item num\_applications: Used to make sure we do not try to print an empty hash-map.
+=======
+\item num\_applications: Used to avoid printing an empty hash-map.
+>>>>>>> baa53d7d018201d6bd7f70a511b99ef4ec14b918
 \item Return value: None.
 \end{itemize}
 
@@ -2797,7 +2789,7 @@ The argv[] gets parsed to the following variables:
 		\item double deadline, The deadline for the job.
 
 \end{itemize}
-The cpu requirement is a linear function of the SL: $cpu\_req = a\_cpu*ls +b\_cpu  $. Cpu\_req is simply the number of calculations 
+The CPU requirement is a linear function of the SL: $cpu\_req = a\_cpu*ls +b\_cpu  $. Cpu\_req is simply the number of calculations 
 that will be performed each job. 
 
 \chapter{Source Code}
