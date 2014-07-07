@@ -532,19 +532,18 @@ already compressed by external hardware through another application which
 reads a file descriptor in order to get the frames from the encoding device.
 The data is then sent through a number of filters and finally is released to
 the network by the sink element. This chain is dynamically created depending
-on different settings like codecs used (\emph{mjpeg, h264 and more}) or 
+on different settings like which are beings codecs used (\emph{mjpeg, h264 and more}) or 
 network connection (\emph{http or udp}).
 
-For streaming using \texttt{h264} over \texttt{rtp}, two pipeline are used
-which looks likes this.
+For streaming using \texttt{h264} over \texttt{rtp}, two pipelines are used
+which look like this.
 \begin{verbatim}
 artpecsrc > cachesink
 cachesrc > rtph264pay > rtpbin > udpsink
 \end{verbatim}
-The first pipeline simply fetches images from the camera sensor to be used 
-by different video streams. 
+The first pipeline simply fetches images from the camera sensor, in the \texttt{artpecsrc}-element to be used by different video streams. \emph{Artpec} is the system-on-a-chip on the camera, providing the images.
 
-The second pipeline consists of different elements depending on what kind if 
+The second pipeline consists of different elements depending on what kind of 
 stream is required. The first element will provide the pipeline with incoming 
 buffers produced by the first pipeline. The 
 \texttt{rtph264pay}-element~\cite{gst-elements} payload-encodes the H264 video 
@@ -594,7 +593,7 @@ installed, although the P3367 runs a more updated version of it.
 
 \subsection{Axis M1033}
 
-This is a small camera, connected to the network either wired or wireless. 
+The Axis M1033 is a small camera as can be seen in figure ~\ref{fig:M1033}, connected to the network either wired or wireless. 
 It supports multiple H.264 streams and Motion JPEG running at a maximum
 resolution of 800x600 at 30 frames per second. It has two audio streaming
 channels, which means that it can both record and play audio clips. ~\cite{m1033} 
@@ -614,10 +613,10 @@ using the collected data, for example some motion detection application.
 
 \subsection{Axis P3367}
 
-The Axis P3367~\cite{p3367} is a fixed dome network camera capable of 
+The Axis P3367~\cite{p3367} is a fixed dome network camera, see figure ~\ref{fig:P3367} and ~\ref{fig:P3367case}, which is capable of 
 multiple H.264 streams as well as Motion JPEG streams. It supports 
-various frame rates and resolutions up to 5 Megapixel at 12 frames per 
-second, it also supports HDTV 1080p at 30 frames per second and has two 
+various frame rates and resolutions of up to 5 Megapixel at 12 frames per 
+second. It also supports HDTV 1080p at 30 frames per second and has two 
 way audio streaming capabilities.
 
 \begin{figure}[h]
@@ -631,12 +630,12 @@ way audio streaming capabilities.
     \centering
     \includegraphics[width=0.5\textwidth]{p3367incase}
     \caption{The Axis P3367 camera, here in its final form}
-    \label{fig:P3367}
+    \label{fig:P3367case}
 \end{figure}
 
 The power is supplied using Power over Ethernet, therefore the camera does 
 not need a separate power supply and is powered directly through the network
-cable. It features an ARTPEC-4~\cite{artpec-4} system-on-chip, developed 
+cable. It features an \emph{ARTPEC-4}~\cite{artpec-4} system-on-chip, developed 
 by Axis, which contains a single-core CPU running at 400 MHz and a 
 co-processor dedicated to video analytics.
 
@@ -644,13 +643,12 @@ It is clearly more advanced than the M1033 but it shares the same
 characteristics of being extremely flexible to execute multiple applications
 at the same time, especially due to the video analytics co-processor.
 
-These cameras are very common amongst Axis' costumers and also by the 
-developers and will serve as realistic testing platforms for this project. 
+These cameras are very common among Axis' customers and also by
+developers, and will serve as realistic testing platforms for this project. 
 Initially the M1033 was the only camera considered but during development a 
 later version of \texttt{systemd} was brought to the P3367 and the project moved to 
-that camera instead. Testing will thus only be carried out only on the P3367 
-as the previous cameras \texttt{systemd} implementation differs to much to bring the 
-software to both of them.
+that camera instead. Testing will thus only be carried out on the P3367 
+as the previous camera's \texttt{systemd} implementation differs to much to bring the software to both of them.
 
 \chapter{Implementation}
 \label{chp:development}
@@ -1705,7 +1703,7 @@ Any application that wants to take advantage of the \emph{GTRM} capabilities nee
 to create a service file in the same folder. When the service is started a folder named \texttt{gtrm.slice} will be created in the corresponding cgroup controller-folder to represent the slice. The controller is a combination of the CPU-and CPUAccounting, \texttt{cpu,cpuacct}. The applications run in this slice will be represented as a folder within the slice-folder. The resulting path to the service will look like this.
 
 \begin{verbatim}
-/sys/fs/cgroup/cpu,cpuacct/gtrm.slice/gtrm.service/
+/sys/fs/cgroup/cpu,cpuacct/.slice/gtrm.service/
 \end{verbatim}
 
 The unit file to represent the \texttt{gtrm.slice} is defined as follows. Here the only parameter specified is the amount of CPUShares. By setting this field the system is given the ability to change the CPUShares of this slice.
