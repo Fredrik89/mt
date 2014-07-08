@@ -122,7 +122,7 @@ services in isolation, without being subject to the interference of
 other services. The two conflicting requirements make different services 
 compete for resources like CPU and RAM. This may result in poor performance 
 of the camera, when the execution scenarios bring the camera under a load
-that is heavier than the usual design one. For example, when answering calls
+that is heavier than usual. For example, when answering calls
 from the network, the camera is subject to a heavier demand. 
 
 In these scenarios it would be advisable to have a technique to diminish
@@ -276,7 +276,7 @@ if the matching function is positive. The scaling factor $\epsilon$ slows
 down the adaption rate to avoid instability. The service level $sl_i$ of an application $i$, is calculated from the matching function, $f_i$ and from the previous service level as,
 
 \begin{equation}
-sl_i(t+1)= sl_i(t) + \epsilon \cdot (f_i(t)*sl_i(t)).
+sl_i(t+1)= sl_i(t) + \epsilon \cdot (f_i(t) \cdot sl_i(t)).
 \label{eq:simple_sl_rec}
 \end{equation}
 
@@ -294,6 +294,7 @@ PM_i = (1+f_i) \cdot (vp_i(i+1)/vp(i)),
 and the applications sets the new service level as
 \begin{equation}
 sl_i(t+1) = sl_i(t) + (\epsilon \cdot sl_i(t) \cdot PM_i).
+\label{eq:not_simple_sl_rec}
 \end{equation}
 
 The test applications used in this thesis simply makes some random
@@ -313,7 +314,7 @@ The applications considered in this paper typically have a periodic task to perf
 The test application has a linear relationship between the SL and the time it takes for the CPU/CPUs to perform a job described by equation~\ref{eq:cputime},
 
 \begin{equation}
-C_{cpu} = a_{cpu}*SL + b_{cpu},
+C_{cpu} = a_{cpu} \cdot SL + b_{cpu},
 \label{eq:cputime}
 \end{equation} 
 where $C_{cpu}$ is the number of times a random number is generated which
@@ -333,7 +334,7 @@ percentage of the total available resources; for example, the amount of time
 an application is allowed to use the CPU with respect to the other 
 applications. Here ``resources'' could refer to something else than CPU,
 such as memory or network bandwidth, depending on what is allocated in the
-system. The \emph{GTRM} is run in the main loop of \texttt{systemd}, (see section ~\ref{sec:systemdandcroups}), which checks sockets for messages and dispatches jobs from the incoming messages. This means that the 
+system. The \emph{GTRM} is run in the main loop of \texttt{systemd}, (see section~\ref{sec:systemdandcroups}), which checks sockets for messages and dispatches jobs from the incoming messages. This means that the 
 \emph{GTRM} acts in irregular time intervals with the shortest being the time it 
 takes to pass the main loop when there are no incoming messages and the 
 longest depending on the amount of incoming messages and the execution time of 
@@ -393,7 +394,7 @@ computation.
 
 \section{Systemd and Cgroups}
 \label{sec:systemdandcroups}
-Systemd ~\cite{sysd1}~\cite{sysd2} is a daemon for Linux, that executes system
+Systemd~\cite{sysd1}~\cite{sysd2} is a daemon for Linux, that executes system
 management operations. It is the first process that starts during boot, and 
 thus it is given the PID 1. \texttt{Systemd} implements a lot of features for increased
 performance and system management over previous start up processes, like
@@ -401,7 +402,7 @@ initd. It also has different features for management of resources, using
 cgroups~\cite{cgroups}, which makes it interesting for a resource manager
 implementation. 
 
-Cgroups~\cite{cgroups}, abbreviated from control groups, can be used to set
+Cgroups, abbreviated from control groups, can be used to set
 the amount of resources, such as CPU or memory, of a process or a group of
 processes via a virtual file system. This file system forms a tree where the
 resources of a parent folder are shared by its children. The division of the
@@ -431,8 +432,8 @@ children has been given.
 CPU & 1 & 100 \\ \hline
 Slice 1 & 400 & 80 \\ \hline
 Slice 2 & 100 & 20 \\ \hline
-Service 1 & 200 & $2/3 * 80 = 53$ \\ \hline
-Service 2 & 100 & $1/3 * 80 = 27$\\ \hline
+Service 1 & 200 & $2/3 \cdot 80 = 53$ \\ \hline
+Service 2 & 100 & $1/3 \cdot 80 = 27$\\ \hline
 \end{tabular}
 \label{fig:ctable}
 \caption{Table over assigned CPU for the different units.}
@@ -481,8 +482,9 @@ Service 1 will thus be given \sfrac{2}{3} of the shares in slice 1 and service
 
 \section{Video Streaming}
 
+
 The video streaming application is based upon the GStreamer multimedia
-framework ~\cite{gst}~\cite{gst-tutorial}. The framework is a modular system,
+framework~\cite{gst}~\cite{gst-tutorial}. The framework is a modular system,
 where a chain is built by linking elements together in a pipeline to form a
 process chain. The data flows downstream from a source element, through
 filter elements and end up in a sink element, see Figure~\ref{fig:pipeline} 
@@ -556,7 +558,7 @@ processes on the system.
 
 \subsection{Sockets}
 The communication between applications and \texttt{systemd} is obtained
-through sockets ~\cite{socket}. The RM runs in the \texttt{systemd} main 
+through sockets~\cite{socket}. The RM runs in the \texttt{systemd} main 
 loop, therefore sockets are used to send data between the RM and 
 the applications.
 
@@ -593,7 +595,7 @@ installed, although the P3367 runs a more updated version of it.
 The Axis M1033 is a small camera as can be seen in figure ~\ref{fig:M1033}, connected to the network either wired or wireless. 
 It supports multiple H.264 streams and Motion JPEG running at a maximum
 resolution of 800x600 at 30 frames per second. It has two audio streaming
-channels, which means that it can both record and play audio clips. ~\cite{m1033} 
+channels, which means that it can both record and play audio clips.~\cite{m1033} 
 
 \begin{figure}[h]
 	\centering
@@ -1289,14 +1291,10 @@ consideration, which CPUShares is independent of.
 \section{Service Level Update}
 \label{sec:servicelevelupdatesection}
 
-<<<<<<< HEAD
-The applications using the GTRM framework all have a similar structure,
-=======
 The applications using the \emph{GTRM} framework have all a similar structure,
->>>>>>> 251ab2091db5734a17dcc454fee22a338e02091f
 the main difference being how they implement the update in the service
 level to match the resource allocation. In fact, the service level changes
-are mapped into some parameter changes, that in turn affect the resource
+are mapped into some parameter changes, that in turn affects the resource
 requirement. This is different on a per application basis and every
 application developer knows better what to change within the application
 to make it require less or more resource and provide a worse or better
@@ -1529,12 +1527,8 @@ $R=\alpha \cfrac{s}{v}$, here the SL and the frame size are set to have a 1:1 re
 The frame size is set to equal the SL by updating the parameter \emph{frame\_size}  in the source element which is read and updated
 each time an image is fetched from the camera. In the  source element update of the frame size, a very simple P-controller is used, where 
 the compression of the images is used as the control signal in order to get the desired frame size. 
-Note that the compression is done on dedicated hardware and not by the CPU being controlled by the GTRM, hence the decrease in execution time when lowering
+Note that the compression is done on dedicated hardware and not by the CPU being controlled by the \emph{GTRM}, hence the decrease in execution time when lowering
 the frame size comes purely from the handling of smaller frames in the Gstreamer elements.
-
-
-
-
 
 \begin{framed}
 	\begin{flushleft}	
@@ -1616,8 +1610,8 @@ The callback function for the element consists of a single call
 to \texttt{sl\_adapt()}, which is defined in \texttt{sl\_adapt.c}. 
 This adaptation looks more or less identical to that in the test 
 application described in Section~\ref{sec:servicelevelupdatesection} and
-in Equations~\ref{eq:servicelevelsimple} 
-and~\ref{eq:servicelevelnotsimple}. The resulting service level is used to set the size of each frame, where a larger frame has higher image quality.
+in Equations~\ref{eq:simple_sl_rec} 
+and~\ref{eq:not_simple_sl_rec}. The resulting service level is used to set the size of each frame, where a larger frame has higher image quality.
 
 \begin{lstlisting}
 static void gtrm_sl_cb (GstElement * identity, 
