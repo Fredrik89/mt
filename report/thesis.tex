@@ -1500,9 +1500,8 @@ In the code, the following functions are used.
 
 \section{Video Streaming}
 
-This work features the modification of the video streaming application,
-that is still undergoing. The proposed solution and implementation is
-discussed here.
+This work features the modification of the video streaming application.
+ The proposed solution and implementation is discussed here.
 
 The streaming service, named \texttt{Monolith}, streams both video and 
 audio. It handles image compression and filtering, manages several different
@@ -1525,23 +1524,20 @@ If a buffer contains only one frame, this job time should correspond to
 \emph{fps} on the camera.
 
 After the matching function is computed, it is possible to calculate a new
-service level for the application and to notify the resource manager. The
-computed service level is then used to set the desired bit-rate in the 
-bit-rate controller.
+service level for the application and to notify the resource manager. 
 
-The bit-rate represents the amount of data that flows through the
-application, measured in kbit per second. A higher bit-rate results in an
-improved image quality, since more data is transmitted per frame. This is
-obtained at the cost of higher computation time. When resources are limited,
-the bit rate can be reduced allowing to restore a higher frame rate.
 
-The bit-rate controller tries to match a specific bit-rate, despite how
-the frame looks like. When the scenery becomes more complex, the bit-rate
-will suddenly rise. There are two ways to cope with this: either the image
-quality is reduced (by acting on the compression rate of the frame) or 
-the frame rate is lowered. When one of these two actions is applied, the 
-bit-rate will adjust to the desired level. The choice of the strategy to 
-use is decided by setting the bit-rate priority field in \texttt{video.c}.
+In the streaming application, the relationship between execution time: R , SL, and VP is assumed to be:
+$R=\alpha \frac{s}{v}$, here the SL and the frame size are set to have a 1:1 relationship.
+The frame size is set to equal the SL by updating the parameter \emph{frame\_size}  in the source element which is read and updated
+each time an image is fetched from the camera. In the  source element update of the frame size , a very simple P-controller is used, where 
+the compression of the images is used as the control signal in order to get the desired frame size. 
+Note that the compression is done on dedicated hardware and not by the CPU being controlled by the GTRM, hence the decrease in execution time when lowering
+the frame size comes purely from the handling of smaller frames in the Gstreamer elements.
+
+
+
+
 
 \begin{framed}
 	\begin{flushleft}	
