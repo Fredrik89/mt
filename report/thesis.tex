@@ -1624,12 +1624,13 @@ to \texttt{sl\_adapt()}, which is defined in \texttt{sl\_adapt.c}.
 This adaptation looks more or less identical to that in the test 
 application described in Section~\ref{sec:servicelevelupdatesection} and
 in Equations~\ref{eq:servicelevelsimple} 
-and~\ref{eq:servicelevelnotsimple}.
+and~\ref{eq:servicelevelnotsimple}. The resulting service level is used to set the size of each frame, where a larger frame has higher image quality.
 
 \begin{lstlisting}
 static void gtrm_sl_cb (GstElement * identity, 
   GstBuffer * buf, GstElement * src) {
-  sl_adapt();
+  int frame_size = sl_adaptation();
+  g_object_set (G_OBJECT (src), "frame_size", frame_size, NULL);
 }
 \end{lstlisting}
 
@@ -2795,7 +2796,7 @@ that will be performed each job.
 \chapter{Source Code}
 This appendix presents all the source code written for this project.
 \section{manager.c}
-Note that this file is a part of \texttt{systemd} and only what was added or changed to this file is included in the following code-snippets. For the rest of the code in this file, please refer to the open-source project ~\cite{sysd}.
+Note that this file is a part of \texttt{systemd} and only what was added or changed to this file is included in the following code-snippets. For the rest of the code in this file, please refer to the open-source project~\cite{sysd1}.
 
 \begin{lstlisting}
 #define GTRM_SOCKET "@/org/freedesktop/systemd1/gtrm"
@@ -3642,6 +3643,156 @@ int gtrm_lib_signalstart(_application_h* a, uint type);
 
 //internal
 void make_named_socket(char *name);
+\end{lstlisting}
+\section{video.c}
+This file is a part of the video streaming application and presented is what was added to it in this project.
+
+\begin{lstlisting}
+
+static void
+gtrm_sl_cb (GstElement * identity, GstBuffer * buf, GstElement * src)
+{
+	int frame_size = sl_adaptation();
+	g_object_set (G_OBJECT (src), "frame_size", frame_size, NULL);
+}
+
+static GstElement *
+cache_video (gpointer key, Props * props, gpointer * user_data)
+{
+	...
+	GstElement *gtrm_sl_adapt = NULL;
+	float sl_start = 100;
+	double epsilon = 0.8;
+	double weight = 0.5;
+ 	double deadline_seconds = 0.0333;
+	setup_sl_adapt (sl_start, epsilon, weight, deadline_seconds);
+	...
+	gtrm_sl_adapt = gst_element_factory_make ("identity", "gtrm");
+	g_object_set (G_OBJECT (gtrm_sl_adapt), "signal-handoffs", TRUE, NULL);
+	g_signal_connect (gtrm_sl_adapt, "handoff", G_CALLBACK (gtrm_sl_cb), src);
+	...
+	gst_bin_add_many (GST_BIN (p), src, gtrm_sl_adapt, convert, bmpenc,
+	caps_filter, sink, NULL);
+	if (!gst_element_link_many (src, gtrm_sl_adapt, convert, bmpenc,
+	    caps_filter, sink, NULL)) {
+		error ("Could not link elements.");
+		goto error_link;
+	}
+	...
+\end{lstlisting}
+\section{sl\_adapt.c}
+\begin{lstlisting}
+#include "sl_adapt.h"
+
+void
+setup_sl_adapt (float service_level_, double epsilon_, double weight_,
+    double deadline_seconds_)
+{
+	// Parameter parsing  
+	service_level = service_level_;
+	epsilon = epsilon_;
+	deadline_seconds = deadline_seconds_;
+	sock_name = (char *) calloc (1, 200); //2do add free
+	sock_path = (char *) calloc (1, 200); //2do add free
+	sprintf (sock_path, "/mnt/flash/fd");
+	int temp_pid = (int) getpid ();
+
+	myself = calloc (1, sizeof (_application_h));
+	sprintf (sock_name, "%s/%d", sock_path, temp_pid);
+	gtrm_lib_setup_socket ((char *) sock_name);
+	uint64_t deadline = (unsigned int) ((double) 1000000000 * deadline_seconds);
+	uint64_t ert[1] = { deadline };
+	gtrm_lib_set (myself, 1, ert);
+	myself->weight = weight_;
+	myself->application_id = getpid ();
+}
+
+
+
+void
+sl_adaptation ()
+{
+	id = 0;
+	gtrm_lib_signalend (myself, id);
+	double performance;
+
+	int type = 0;
+	id = gtrm_lib_signalstart (myself, type);
+
+	performance = gtrm_lib_get_performance_number (myself, type);
+
+	// I want to adapt only if needed
+	if (performance < -0.01 || performance > 0.01) {
+		myself->happy = false;
+		// send performance to systemd
+		gtrm_lib_send_performance (myself, performance);
+	if (gtrm_lib_update_performance_multiplier (myself) == 0) {
+		service_level += epsilon * service_level * (myself->performance_multiplier - 1);
+	} else {
+		service_level += epsilon * performance * service_level;
+	}
+
+	if (service_level < MINIMUM_SERVICE_LEVEL)
+		service_level = MINIMUM_SERVICE_LEVEL;
+	if (service_level != service_level) // avoid nans
+		service_level = 1.0;
+
+	} else if (myself->happy == false) {
+		printf ("happy appy\n");
+		myself->happy = true;
+		gtrm_lib_send_performance (myself, performance);
+	}
+	#ifdef LOGGING_APPLICATION
+		struct timespec time_info;
+		int64_t current_time;
+		clock_gettime (CLOCK_REALTIME, &time_info);
+		current_time = (int64_t) time_info.tv_sec * 1000000000 + (int64_t) time_info.tv_nsec;
+
+		char name[200];
+		sprintf (name, "/mnt/flash/logs/%u.log", myself->application_id);
+		FILE *logfile = fopen (name, "a+");
+
+		if (logfile == NULL)
+			perror ("could not open file");
+		assert (logfile != NULL);
+		fprintf (logfile, "%lld, %f, %f, %lld,%u\n",
+		(long long int) current_time, performance, service_level,
+		(long long int) 0, id);
+		fclose (logfile);
+	#endif
+
+}
+\end{lstlisting}
+\section{sl\_adapt.h}
+\begin{lstlisting}
+#include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <signal.h>
+// Using the library:
+#include "gtrm_app_lib.h"
+#include <unistd.h>
+#include <errno.h>
+
+#define TOTAL_JOBS 100
+#define NOISE_PERCENTAGE 0.0
+#define MINIMUM_SERVICE_LEVEL 0.0001
+#define ERROR_APPLICATION 0
+#define LOGGING_APPLICATION 0
+#define EXIT_APPLICATIONFAILURE -1
+#define DEBUG 0
+
+uint id;
+_application_h *myself;
+float service_level;
+double epsilon;
+uint64_t deadline_seconds;
+char *sock_path;
+char *sock_name;
+
+void sl_adaptation(); 
+void setup_sl_adapt (float service_level_, double epsilon_, double weight_,
+    double deadline_seconds_);
 \end{lstlisting}
 \end{document}
 
