@@ -2499,10 +2499,7 @@ communication over DBus, it does not require a significant amount of time.
 
 
 \section{Future work}
-
-The work done in this thesis should be extended completing the implementation
-of a service level aware video streaming application. The performance of
-the system can be further improved when more applications are using the
+ The performance of the system can be further improved when more applications are using the
 service level framework, therefore every application that can be ported to
 the idea of service levels and varying quality should be improved.
 Implementing the matching function calculation and the service level
@@ -2516,6 +2513,9 @@ memory leaks, if any. Future work would consist of taking this rough
 prototype and develop a more refined product. The consequences of the irregular update times of the VP
 in the \emph{GTRM} should be further looked into, there are simple solutions to using the longest time 
 between updates for all updates which would give uniform updating to the cost of a slower controller.
+The use of sockets should also be further looked into as this may be the root of the noisy performance plots.
+Different SL functions of multiple parameters could also be considered, which might result in faster convergence 
+of the SL. 
 
 
 This project is well 
