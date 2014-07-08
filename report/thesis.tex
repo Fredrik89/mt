@@ -1528,7 +1528,7 @@ service level for the application and to notify the resource manager.
 
 
 In the streaming application, the relationship between execution time: R , SL, and VP is assumed to be:
-$R=\alpha \frac{s}{v}$, here the SL and the frame size are set to have a 1:1 relationship.
+$R=\alpha \cfrac{s}{v}$, here the SL and the frame size are set to have a 1:1 relationship.
 The frame size is set to equal the SL by updating the parameter \emph{frame\_size}  in the source element which is read and updated
 each time an image is fetched from the camera. In the  source element update of the frame size , a very simple P-controller is used, where 
 the compression of the images is used as the control signal in order to get the desired frame size. 
@@ -1819,7 +1819,7 @@ The detailed conditions addressed are the following:
   better performing, applications on the same slice. These better performing
   services lower their service level to accomodate the change in the resource
   allocation.
-\item The scene becomes more static or the camera stops, therefore inflicing
+\item The scene becomes simpler or the camera stops, therefore inflicing
   a lighter load on the system. The service level of the applications can be
   increased since the streaming one is not so demanding in terms of resource.
 \item The \emph{GTRM} and SL adaptation will not drag down performance compared to the old system.
