@@ -95,9 +95,7 @@ left to be completed.
 
 \chapter*{Acknowledgements}
 
-We want to thank our supervisors, Umut Tezduyar-Lindskog, Axis and Martina 
-Maggio, LTH Department of Automatic Control. We would also like to thank engineering 
-manager Pontus Bergendahl, Axis.
+There are many people we would like to thank for helping us with this project. We would especially like to thank our supervisors, Umut Tezduyar-Lindskog, Axis and Martina Maggio, LTH Department of Automatic Control, the project would not have been possible without their feedback and knowledge. Would also like to thank engineering manager Pontus Bergendahl, Axis, who was responsible for actually making this master thesis happen.
 
 
 \tableofcontents
@@ -1527,10 +1525,10 @@ After the matching function is computed, it is possible to calculate a new
 service level for the application and to notify the resource manager. 
 
 
-In the streaming application, the relationship between execution time: R , SL, and VP is assumed to be:
+In the streaming application, the relationship between execution time: R, SL, and VP is assumed to be:
 $R=\alpha \cfrac{s}{v}$, here the SL and the frame size are set to have a 1:1 relationship.
 The frame size is set to equal the SL by updating the parameter \emph{frame\_size}  in the source element which is read and updated
-each time an image is fetched from the camera. In the  source element update of the frame size , a very simple P-controller is used, where 
+each time an image is fetched from the camera. In the  source element update of the frame size, a very simple P-controller is used, where 
 the compression of the images is used as the control signal in order to get the desired frame size. 
 Note that the compression is done on dedicated hardware and not by the CPU being controlled by the GTRM, hence the decrease in execution time when lowering
 the frame size comes purely from the handling of smaller frames in the Gstreamer elements.
@@ -2241,7 +2239,7 @@ With all weights set to one the adaptation is expected to be done by varying the
 
 \clearpage
 \subsubsection{Comments on the results}
-By comparing the two SL plots from Test1 ,in Figure \ref{fig:test1},and Test4, in Figure \ref{fig:test4}, it seems like the SLs for app3 and app4 converge slower in the Test4 case. 
+By comparing the two SL plots from Test1,in Figure \ref{fig:test1},and Test4, in Figure \ref{fig:test4}, it seems like the SLs for app3 and app4 converge slower in the Test4 case. 
 The VP plot also displays greater difference between the 4 applications than in the Test1 case. Although these changes are small in comparison to the changes in Test3 it can be argued that more of the adaptation is done by varying the VP in Test4 as opposed to in Test1. Once again the performance seems a bit noisier compared to the Test1 case indicating an improvement when both SL and VP adaptation is being used.
 
 \subsection{Test 5: Four applications with no service level adaptation}
@@ -3239,7 +3237,7 @@ struct gtrm_t {
 
 void gtrm_char2gtrmstruct(char* str, rm_app_t *re);
 void gtrm_print_struct(rm_app_t *rm );
-int gtrm_send_performance_multiplier(double pm ,int fd , struct sockaddr *sa);
+int gtrm_send_performance_multiplier(double pm,int fd, struct sockaddr *sa);
 void gtrm_update_rm_struct(rm_app_t *src,rm_app_t *dest);
 double gtrm_get_epsilon(unsigned int iterations, unsigned int offset, double c1, double c2);
 void gtrm_update_performance_multipliers(int gtrm_fd,Hashmap *gtrm_apps);
