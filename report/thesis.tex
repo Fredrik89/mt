@@ -84,14 +84,13 @@ and services can adapt their service level (SL) in order to finish their
 jobs on time. The solution is based on game theory, where services are
 players, varying their service levels in order to get a good match between
 given resources and their computing requirements. This service level
-adaptation scheme is partially implemented for the streaming service on the
-camera and for some test services, performing mathematical operations. The
-resource manager is incorporated into \texttt{systemd}, and uses 
+adaptation scheme is implemented for the streaming service on the
+camera and for some test services, performing mathematical operations. 
+The resource manager is incorporated into \texttt{systemd}, and uses 
 \texttt{cgroups}~\cite{cgroups} to distribute the computing capacity. The
 experimental results show that the resource manager is fully operational and
 capable of managing and prioritizing resources as intended on the embedded
-system. However, the work with adapting the video quality adaptation is still
-left to be completed.
+system.
 
 \chapter*{Acknowledgements}
 
