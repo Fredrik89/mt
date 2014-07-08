@@ -311,7 +311,7 @@ computational iterations.
 \subsection{The Test Application}
 The test application from~\cite{gtrm} has been adapted to work with the implementation in this paper. Below follows an explanation of how it works to provide an example of how an application could implement SL adaptation and be managed by the \emph{GTRM}.
 The applications considered in this paper typically have a periodic task to perform, here called job, with an associated soft deadline.
-The test application has a linear relationship between the SL and the time it takes for the CPU/CPUs to perform a job described by equation~\ref{eq:cputime},
+The test application has a linear relationship between the SL and the time it takes for the CPU/CPUs to perform a job described by Equation~\ref{eq:cputime},
 
 \begin{equation}
 C_{cpu} = a_{cpu} \cdot SL + b_{cpu},
@@ -612,7 +612,7 @@ using the collected data, for example some motion detection application.
 
 \subsection{Axis P3367}
 
-The Axis P3367~\cite{p3367} is a fixed dome network camera, see figure ~\ref{fig:P3367} and ~\ref{fig:P3367case}, which is capable of 
+The Axis P3367~\cite{p3367} is a fixed dome network camera, see Figure ~\ref{fig:P3367} and ~\ref{fig:P3367case}, which is capable of 
 multiple H.264 streams as well as Motion JPEG streams. It supports 
 various frame rates and resolutions of up to 5 Megapixel at 12 frames per 
 second. It also supports HDTV 1080p at 30 frames per second and has two 
@@ -1514,7 +1514,7 @@ more frames.
 
 The time between each incoming buffer to the identity element is the 
 ``job time'' for the streaming application, which is used when calculating the 
-matching function, see equation \ref{eq:matchingfunctiongeneral}. 
+matching function, see Equation \ref{eq:matchingfunctiongeneral}. 
 If a buffer contains only one frame, this job time should correspond to 
 \emph{fps} on the camera.
 
