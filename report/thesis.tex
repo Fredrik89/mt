@@ -294,6 +294,7 @@ PM_i = (1+f_i) \cdot (vp_i(i+1)/vp(i)),
 and the applications sets the new service level as
 \begin{equation}
 sl_i(t+1) = sl_i(t) + (\epsilon \cdot sl_i(t) \cdot PM_i).
+\label{eq:not_simple_sl_rec}
 \end{equation}
 
 The test applications used in this thesis simply makes some random
@@ -1293,7 +1294,7 @@ consideration, which CPUShares is independent of.
 The applications using the \emph{GTRM} framework have all a similar structure,
 the main difference being how they implement the update in the service
 level to match the resource allocation. In fact, the service level changes
-are mapped into some parameter changes, that in turn affect the resource
+are mapped into some parameter changes, that in turn affects the resource
 requirement. This is different on a per application basis and every
 application developer knows better what to change within the application
 to make it require less or more resource and provide a worse or better
@@ -1526,12 +1527,8 @@ $R=\alpha \cfrac{s}{v}$, here the SL and the frame size are set to have a 1:1 re
 The frame size is set to equal the SL by updating the parameter \emph{frame\_size}  in the source element which is read and updated
 each time an image is fetched from the camera. In the  source element update of the frame size, a very simple P-controller is used, where 
 the compression of the images is used as the control signal in order to get the desired frame size. 
-Note that the compression is done on dedicated hardware and not by the CPU being controlled by the GTRM, hence the decrease in execution time when lowering
+Note that the compression is done on dedicated hardware and not by the CPU being controlled by the \emph{GTRM}, hence the decrease in execution time when lowering
 the frame size comes purely from the handling of smaller frames in the Gstreamer elements.
-
-
-
-
 
 \begin{framed}
 	\begin{flushleft}	
@@ -1613,8 +1610,8 @@ The callback function for the element consists of a single call
 to \texttt{sl\_adapt()}, which is defined in \texttt{sl\_adapt.c}. 
 This adaptation looks more or less identical to that in the test 
 application described in Section~\ref{sec:servicelevelupdatesection} and
-in Equations~\ref{eq:servicelevelsimple} 
-and~\ref{eq:servicelevelnotsimple}. The resulting service level is used to set the size of each frame, where a larger frame has higher image quality.
+in Equations~\ref{eq:simple_sl_rec} 
+and~\ref{eq:not_simple_sl_rec}. The resulting service level is used to set the size of each frame, where a larger frame has higher image quality.
 
 \begin{lstlisting}
 static void gtrm_sl_cb (GstElement * identity, 
